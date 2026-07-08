@@ -1,0 +1,483 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap');
+
+:root {
+  color: #211812;
+  background: #f6efe4;
+  font-family: 'Noto Sans TC', system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(201, 158, 91, 0.24), transparent 34rem),
+    linear-gradient(135deg, #f9f0df 0%, #efe2cf 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.app-shell {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 24px 16px 112px;
+}
+
+.panel,
+.value-card,
+.rank-item,
+.battle-card,
+.result-card,
+.reflect-card,
+.share-card {
+  border: 1px solid rgba(77, 49, 28, 0.12);
+  box-shadow: 0 20px 60px rgba(65, 43, 23, 0.09);
+}
+
+.hero {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 48px);
+  padding: 48px 22px;
+  border-radius: 32px;
+  background: rgba(255, 250, 241, 0.74);
+  text-align: center;
+}
+
+.kicker,
+.section-header p,
+.round-label {
+  margin: 0;
+  color: #9a6f3e;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.star {
+  margin: 16px 0 8px;
+  color: #b87b31;
+  font-size: 3rem;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: 'Noto Serif TC', serif;
+}
+
+h1 {
+  max-width: 10em;
+  font-size: clamp(2.6rem, 10vw, 5.8rem);
+  line-height: 1.05;
+}
+
+.lead {
+  max-width: 34rem;
+  margin: 24px 0;
+  color: #675446;
+  font-size: 1.08rem;
+  line-height: 1.9;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(100%, 560px);
+  margin-bottom: 28px;
+}
+
+.steps span,
+.summary div {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #5d493a;
+}
+
+.primary,
+.secondary,
+.text-button,
+.custom-row button,
+.choice-row button,
+.rank-actions button {
+  border: 0;
+  border-radius: 999px;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.primary {
+  padding: 15px 28px;
+  background: #1d1711;
+  color: #fff7ec;
+  font-weight: 700;
+}
+
+.secondary,
+.rank-actions button {
+  padding: 12px 18px;
+  background: #eadcc6;
+  color: #31251b;
+}
+
+.primary:hover,
+.secondary:hover,
+.custom-row button:hover,
+.choice-row button:hover,
+.rank-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(68, 44, 25, 0.16);
+}
+
+.progress {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  height: 5px;
+  margin: -24px -16px 28px;
+  background: rgba(117, 87, 54, 0.12);
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: 0 999px 999px 0;
+  background: #b87b31;
+  transition: width 250ms ease;
+}
+
+.flow {
+  display: grid;
+  gap: 20px;
+}
+
+.section-header {
+  display: grid;
+  gap: 8px;
+}
+
+.section-header h2 {
+  font-size: clamp(2rem, 7vw, 4.2rem);
+  line-height: 1.1;
+}
+
+.section-header span {
+  color: #6c5847;
+  line-height: 1.8;
+}
+
+.custom-row {
+  display: flex;
+  gap: 10px;
+}
+
+.custom-row input {
+  width: 100%;
+  border: 1px solid rgba(73, 49, 29, 0.18);
+  border-radius: 999px;
+  padding: 13px 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #251a13;
+  outline: none;
+}
+
+.custom-row button {
+  padding: 0 22px;
+  background: #bd8444;
+  color: white;
+  font-weight: 700;
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.value-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.72);
+}
+
+.value-card.core {
+  background: #eaf4ea;
+}
+
+.value-card.good {
+  background: #f4ecd3;
+}
+
+.value-card.low {
+  background: #f3e5df;
+}
+
+.value-card h3,
+.rank-item h3 {
+  font-size: 1.45rem;
+}
+
+.value-card p,
+.rank-item p,
+.result-card p,
+.battle-card small,
+.share-card p {
+  margin: 0;
+  color: #665346;
+  line-height: 1.7;
+}
+
+.choice-row,
+.rank-actions,
+.sticky-action {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.choice-row button {
+  flex: 1;
+  min-width: max-content;
+  padding: 10px 12px;
+  background: #eee0c9;
+  color: #3b2d22;
+}
+
+.choice-row button.selected {
+  background: #1d1711;
+  color: #fff7ec;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-radius: 24px;
+  background: rgba(255, 250, 241, 0.72);
+}
+
+.summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sticky-action {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  justify-content: center;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px;
+  border: 1px solid rgba(87, 57, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 235, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.rank-list,
+.result-list {
+  display: grid;
+  gap: 12px;
+}
+
+.rank-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.78);
+}
+
+.rank-num {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1d1711;
+  color: #fff7ec;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.battle-screen {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.battle-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.battle-card {
+  display: grid;
+  gap: 14px;
+  min-height: 310px;
+  padding: 28px;
+  border-radius: 32px;
+  background: rgba(255, 253, 248, 0.82);
+  color: #211812;
+  text-align: left;
+}
+
+.battle-card span {
+  justify-self: start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #efe0c8;
+  color: #795429;
+  font-size: 0.86rem;
+}
+
+.battle-card strong {
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(2rem, 7vw, 4rem);
+}
+
+.result-card {
+  padding: 28px;
+  border-radius: 30px;
+}
+
+.result-card span {
+  color: rgba(54, 34, 20, 0.58);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.result-card h3 {
+  margin: 8px 0;
+  font-size: clamp(2rem, 8vw, 4rem);
+}
+
+.medal-1 {
+  background: linear-gradient(135deg, #ffefbf, #f3c771);
+}
+
+.medal-2 {
+  background: linear-gradient(135deg, #f4f4f4, #d3d3d3);
+}
+
+.medal-3 {
+  background: linear-gradient(135deg, #f2d7c1, #c98a5e);
+}
+
+.reflect-card {
+  padding: clamp(28px, 8vw, 56px);
+  border-radius: 34px;
+  background: #1d1711;
+  color: #fff4e6;
+}
+
+.reflect-card p {
+  margin: 0;
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(1.7rem, 6vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.share-card {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 253, 248, 0.76);
+  text-align: center;
+}
+
+.share-card div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.share-card strong {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #b87b31;
+  color: white;
+  font-family: 'Noto Serif TC', serif;
+}
+
+.text-button {
+  justify-self: center;
+  padding: 12px 18px;
+  background: transparent;
+  color: #7a604b;
+  text-decoration: underline;
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  z-index: 20;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #1d1711;
+  color: #fff7ec;
+  box-shadow: 0 16px 40px rgba(29, 23, 17, 0.25);
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 16px 12px 108px;
+  }
+
+  .steps,
+  .summary,
+  .battle-pair,
+  .rank-item {
+    grid-template-columns: 1fr;
+  }
+
+  .rank-actions {
+    width: 100%;
+  }
+
+  .rank-actions button,
+  .sticky-action .primary,
+  .sticky-action .secondary {
+    flex: 1;
+  }
+
+  .battle-card {
+    min-height: 210px;
+  }
+}
