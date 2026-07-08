@@ -1,0 +1,28 @@
+import type { ValueItem } from './types';
+
+export const baseValues: ValueItem[] = [
+  { id: 'challenge', word: '挑戰', description: '我需要生活中有難度的事情，克服困難讓我感到活著', dimension: 'work' },
+  { id: 'comfort', word: '舒適', description: '我重視生活品質，不想為了追求目標而長期過得很辛苦', dimension: 'work' },
+  { id: 'influence', word: '影響力', description: '我需要感覺自己的存在能改變別人或世界的走向', dimension: 'work' },
+  { id: 'mastery', word: '專精', description: '我想在某件事上越做越深，成為真正懂這件事的人', dimension: 'work' },
+  { id: 'explore', word: '探索', description: '我喜歡不斷接觸新的人事物，廣度比深度更吸引我', dimension: 'work' },
+  { id: 'compete', word: '競爭', description: '我在有競爭的環境下會激發出最好的自己', dimension: 'work' },
+  { id: 'collaboration', word: '合作', description: '我在跟別人一起完成一件事的過程中最有能量', dimension: 'relationship' },
+  { id: 'recognition', word: '被認可', description: '我需要我的付出和存在被別人看見，不是默默消失', dimension: 'relationship' },
+  { id: 'belonging', word: '歸屬感', description: '我需要感覺自己屬於某個地方或某群人，有人在乎我在不在', dimension: 'relationship' },
+  { id: 'independence', word: '獨立', description: '我喜歡靠自己走，不需要太多人介入我的選擇和生活', dimension: 'relationship' },
+  { id: 'freedom', word: '自由', description: '我不想被任何人、地點或規則限制我能去的地方和做的事', dimension: 'growth' },
+  { id: 'security', word: '安全感', description: '我需要對未來有掌握感，不確定性會讓我很焦慮', dimension: 'growth' },
+  { id: 'meaning', word: '意義', description: '我需要知道我在做的事情為什麼重要，不只是把時間填滿', dimension: 'growth' },
+  { id: 'wealth', word: '財富', description: '我需要有足夠的錢讓我有選擇的自由，匱乏感讓我無法安心', dimension: 'growth' },
+  { id: 'growth', word: '成長', description: '我需要感覺自己一直在變得更好，原地踏步對我來說很痛苦', dimension: 'growth' },
+  { id: 'achievement', word: '成就感', description: '我需要看到自己做的事有具體的成果，完成一件事讓我滿足', dimension: 'growth' },
+  { id: 'passion', word: '熱情', description: '我需要對我投入的事情有強烈的感受，沒有熱情的事情讓我空洞', dimension: 'growth' },
+  { id: 'discipline', word: '自律', description: '我相信紀律和規則能讓我走得更遠，我不想靠感覺過日子', dimension: 'growth' },
+  { id: 'family', word: '家庭', description: '我把跟重要的人在一起放在生命最高的優先順序', dimension: 'life' },
+  { id: 'career', word: '事業', description: '我想在某件事上留下成績，這是我存在感的重要來源', dimension: 'life' },
+  { id: 'pleasure', word: '享樂', description: '我重視當下的快樂，人生不應該一直為了未來而等待', dimension: 'life' },
+  { id: 'health', word: '健康', description: '我把身體和心理狀態放在一切之前，沒有健康其他都是空談', dimension: 'life' },
+  { id: 'adventure', word: '冒險', description: '我喜歡把自己丟進未知的情境，那種不確定感讓我感到活著', dimension: 'life' },
+  { id: 'stability', word: '穩定', description: '我需要可預期的生活，知道明天會發生什麼讓我感到安心', dimension: 'life' },
+];
