@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { baseValues, categoryLabels, categoryOrder } from './data';
 import { questionShareLink, requestedQuestions, selectQuestions } from './questionPlan';
+import { positionCount, withCategory } from './firstAct';
 import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
 import { ScenarioQuestion } from './ScenarioQuestion';
 import { evidenceId, ResultEvidence } from './ResultEvidence';
@@ -82,12 +83,12 @@ export function App() {
       <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
       <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>
       {notice && <p role="status">{notice}</p>}
-      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><label className="select-label">{value.word}的重要性<select value={value.category ?? ''} onChange={event => updateValue(value.id, { category: event.target.value as Category })}><option value="" disabled>請選擇</option>{categoryOrder.map(category => <option key={category} value={category}>{categoryLabels[category]}</option>)}</select></label></article>)}</div>
+      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><label className="select-label">{value.word}的重要性<select value={value.category ?? ''} onChange={event => { const category = event.target.value as Category; setSession(current => ({ ...current, values: withCategory(current.values, value.id, category) })); }}><option value="" disabled>請選擇</option>{categoryOrder.map(category => <option key={category} value={category}>{categoryLabels[category]}</option>)}</select></label></article>)}</div>
       <nav className="actions"><button className="secondary" onClick={() => go('intro')}>返回說明</button><button className="primary" disabled={session.values.some(value => !value.category)} onClick={() => go('rank')}>下一步：排出順序</button></nav>
     </section>}
     {session.screen === 'rank' && <section>
       <PageHeader eyebrow="第一幕 · 02" title="重要，也可以一樣重要。" description="在每個類別內選擇位置，數字越小越靠前。同一位置代表並列，不必硬分高下。" />
-      {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{session.values.map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
+      {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{Array.from({ length: positionCount(session.values, category) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
       <nav className="actions"><button className="secondary" onClick={() => go('classify')}>返回分類</button><button className="primary" onClick={() => go('scenario')}>進入情境中的取捨</button></nav>
     </section>}
     {session.screen === 'scenario' && scenario && <p className="scenario-progress"><span>第 {session.scenarioIndex + 1} 題，共 {session.scenarios.length} 題</span><span className="progress-track" aria-hidden="true"><span style={{ width: `${(session.scenarioIndex + 1) / session.scenarios.length * 100}%` }} /></span></p>}

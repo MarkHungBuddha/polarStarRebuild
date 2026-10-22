@@ -34,6 +34,23 @@ test('沒有自行排出先後時，同類價值視為並列，結果不標相�
   await expect(page.getByText(/^與第一幕(相符|不同)$/)).toHaveCount(0);
 });
 
+test('排序位置只在同一類別內選擇，換類別後重新從並列開始', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '開始這次反思' }).click();
+  for (const select of await page.getByRole('combobox').all()) await select.selectOption('good');
+  for (const word of ['自主', '成就', '傳承']) await page.getByRole('combobox', { name: `${word}的重要性` }).selectOption('core');
+  await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await expect(page.getByRole('combobox', { name: '自主的位置' }).getByRole('option')).toHaveText(['1', '2', '3']);
+  await expect(page.getByRole('combobox', { name: '安全穩定的位置' }).getByRole('option')).toHaveCount(7);
+  await page.getByRole('combobox', { name: '傳承的位置' }).selectOption('3');
+  await page.getByRole('button', { name: '返回分類' }).click();
+  await page.getByRole('combobox', { name: '成就的重要性' }).selectOption('low');
+  await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await expect(page.getByRole('combobox', { name: '自主的位置' }).getByRole('option')).toHaveText(['1', '2']);
+  await expect(page.getByRole('combobox', { name: '傳承的位置' })).toHaveValue('2');
+  await expect(page.getByRole('combobox', { name: '成就的位置' })).toHaveValue('1');
+});
+
 test('結果只使用最後確認答案，並可呈現相符與不同', async ({ page }) => {
   await page.goto('/');
   await classifyAndRankValues(page);
