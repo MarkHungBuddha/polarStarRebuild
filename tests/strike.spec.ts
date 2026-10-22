@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './support/fixtures';
 import { completeRemainingScenarios, goToScenario } from './support/experience';
 
 async function openStrike(page: Page, tied = false) {

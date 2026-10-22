@@ -49,7 +49,7 @@ function AllocationEvidence({ scenario, answer, values, onEdit }: { scenario: Al
     <p className="evidence-setup">{scenario.setup}</p>
     <span className="evidence-label">{equal ? '平均分配 · 只描述本次配置' : difference === 0 ? '第一幕並列 · 只描述本次配置' : chosen.valueId === preferred.id ? '與第一幕相符' : '與第一幕不同'}</span>
     <p className="evidence-quote">你把 {answer.allocations[0]} {scenario.unit}分給「{scenario.options[0].label}」，{answer.allocations[1]} {scenario.unit}分給「{scenario.options[1].label}」。</p>
-    {comparable && <p>在這題，你分給「{chosen.label}」的{scenario.unit}數較多；這只描述本次的配置方向。</p>}
+    {comparable && <p>在這題，你分給「{chosen.label}」較多資源；這只描述本次的配置方向。</p>}
     <button className="text-button" onClick={onEdit}>修改這題</button>
   </article>;
 }

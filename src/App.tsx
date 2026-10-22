@@ -4,10 +4,14 @@ import { scenarios } from './scenarios';
 import { ScenarioQuestion } from './ScenarioQuestion';
 import { ResultEvidence } from './ResultEvidence';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
-import type { Category, Screen, Session, ValueItem } from './types';
+import type { Category, Scenario, Screen, Session, ValueItem } from './types';
 
 export function createSession(): Session {
-  return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: [...scenarios], answers: {}, scenarioIndex: 0 };
+  const slots = new Map<string, Scenario[]>();
+  for (const scenario of scenarios) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
+  const selected = [...slots.entries()].sort(([left], [right]) => left.localeCompare(right))
+    .map(([, variants]) => variants[Math.floor(Math.random() * variants.length)]);
+  return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: selected, answers: {}, scenarioIndex: 0 };
 }
 export function App() {
   const [initialSaved] = useState(loadSavedSession);
