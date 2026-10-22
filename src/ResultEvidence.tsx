@@ -13,7 +13,7 @@ export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario:
       <button className="text-button" onClick={onEdit}>修改這題</button>
     </article>;
   }
-  if (answer.kind !== 'choice') return null;
+  if (answer.kind === 'slider' || answer.kind !== scenario.kind) return null;
   const option = scenario.options.find(item => item.id === answer.optionId);
   const first = values.find(value => value.id === scenario.pair[0]);
   const second = values.find(value => value.id === scenario.pair[1]);
@@ -27,7 +27,8 @@ export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario:
     <h3>{scenario.title}</h3>
     <p className="evidence-setup">{scenario.setup}</p>
     <span className="evidence-label">{comparable ? option.valueId === preferred.id ? '與第一幕相符' : '與第一幕不同' : '第一幕並列 · 只描述本次選擇'}</span>
-    <p className="evidence-quote">{comparable ? `你把${preferred.word}放在${other.word}之前；在這題，你選擇了「${option.label}」。` : `你將${first.word}與${second.word}並列；在這題，你選擇了「${option.label}」。`}</p>
+    <p className="evidence-quote">{comparable ? `你把${preferred.word}放在${other.word}之前；在這題，你${scenario.kind === 'strike' ? '保留了以下回覆。' : `選擇了「${option.label}」。`}` : `你將${first.word}與${second.word}並列；在這題，你${scenario.kind === 'strike' ? '保留了以下回覆。' : `選擇了「${option.label}」。`}`}</p>
+    {scenario.kind === 'strike' && <blockquote className="kept-reply">{option.label}</blockquote>}
     <p>{option.consequence}</p>
     <button className="text-button" onClick={onEdit}>修改這題</button>
   </article>;

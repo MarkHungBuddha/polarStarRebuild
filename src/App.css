@@ -82,6 +82,9 @@ select { border: 1px solid var(--rule); border-radius: 0; background: transparen
 .condition-control input[type='range']::-moz-range-track { height: 2px; background: var(--ink); }
 .condition-control input[type='range']::-moz-range-thumb { width: 22px; height: 28px; border: 0; border-radius: 0; background: var(--accent); }
 .condition-limits { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 14px; }
+.strike-removed strong { text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.strike-status { display: inline-block; margin-top: 14px; font-size: 14px; font-weight: 700; }
+.kept-reply { margin: 20px 0; padding-left: 20px; border-left: 2px solid var(--ink); font-family: 'Noto Serif TC', serif; font-size: 20px; line-height: 1.9; }
 .result-values, .custom-results { margin: 48px 0; padding-top: 24px; border-top: 2px solid var(--ink); }
 .result-values > h2, .custom-results h2 { font-size: 34px; margin-bottom: 22px; }
 .result-category { padding: 20px 0; border-bottom: 1px solid var(--rule); }

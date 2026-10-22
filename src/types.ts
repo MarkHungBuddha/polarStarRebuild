@@ -37,10 +37,12 @@ export interface SliderScenario {
   resultPrefix: string;
   resultSuffix: string;
 }
-export type Scenario = ChoiceScenario | SliderScenario;
+export interface StrikeScenario extends Omit<ChoiceScenario, 'kind'> { kind: 'strike' }
+export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario;
 export type ChoiceAnswer = { kind: 'choice'; variantId: string; optionId: string };
+export type StrikeAnswer = { kind: 'strike'; variantId: string; optionId: string };
 export type SliderAnswer = { kind: 'slider'; variantId: string; value: number };
-export type Answer = ChoiceAnswer | SliderAnswer;
+export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer;
 export interface Session {
   screen: Screen;
   values: ValueItem[];
