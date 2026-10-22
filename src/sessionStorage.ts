@@ -56,6 +56,8 @@ function validSession(value: unknown): value is Session {
   }
   const currentSlots = new Set(scenarios.map(scenario => scenario.slotId));
   if (slotIds.size !== currentSlots.size || [...currentSlots].some(slot => !slotIds.has(slot))) return false;
+  // A result is only shown for a fully answered question set.
+  if (value.screen === 'result' && !snapshots.every(snapshot => isRecord(snapshot) && typeof snapshot.id === 'string' && isRecord(value.answers) && value.answers[snapshot.id] !== undefined)) return false;
   if (typeof value.scenarioIndex !== 'number' || !Number.isInteger(value.scenarioIndex) || value.scenarioIndex < 0 || value.scenarioIndex >= snapshots.length) return false;
   return Object.entries(value.answers).every(([id, answer]) => {
     const snapshot = snapshots.find(item => isRecord(item) && item.id === id);
