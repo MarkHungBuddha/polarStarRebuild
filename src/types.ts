@@ -20,8 +20,9 @@ export interface ChoiceScenario {
   setup: string;
   options: readonly [ChoiceOption, ChoiceOption];
 }
-export type Scenario = ChoiceScenario;
-export type Answer = { kind: 'choice'; variantId: string; optionId: string };
+export interface StrikeScenario extends Omit<ChoiceScenario, 'kind'> { kind: 'strike' }
+export type Scenario = ChoiceScenario | StrikeScenario;
+export type Answer = { kind: 'choice' | 'strike'; variantId: string; optionId: string };
 export interface Session {
   screen: Screen;
   values: ValueItem[];
