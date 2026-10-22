@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/fixtures';
 import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 test('滑桿需明確操作及確認，結果只描述原始接受條件', async ({ page }) => {
