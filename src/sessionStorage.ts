@@ -22,6 +22,10 @@ function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolea
     const steps = (value - min) / step;
     return value >= min && value <= max && Math.abs(steps - Math.round(steps)) < 1e-7;
   }
+  if (answer.kind === 'allocate') {
+    const amounts = answer.allocations;
+    return Array.isArray(amounts) && amounts.length === 2 && amounts.every(amount => typeof amount === 'number' && Number.isInteger(amount) && amount >= 0) && typeof scenario.total === 'number' && amounts[0] + amounts[1] === scenario.total;
+  }
   return false;
 }
 
