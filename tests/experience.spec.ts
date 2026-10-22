@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/fixtures';
 import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 test('使用者能分類十個共同價值，並在進入情境前保留並列與自訂價值', async ({ page }) => {

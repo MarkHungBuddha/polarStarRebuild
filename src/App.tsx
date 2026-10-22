@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react';
 import { baseValues, categoryLabels, categoryOrder } from './data';
-import { scenarios } from './scenarios';
+import { questionShareLink, requestedQuestions, selectQuestions } from './questionPlan';
+import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
 import { ScenarioQuestion } from './ScenarioQuestion';
 import { ResultEvidence } from './ResultEvidence';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
-import type { Category, Screen, Session, ValueItem } from './types';
+import type { Category, Scenario, Screen, Session, ValueItem } from './types';
 
-export function createSession(): Session {
-  return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: [...scenarios], answers: {}, scenarioIndex: 0 };
+export function createSession(questions: Scenario[] = selectQuestions()): Session {
+  return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
 }
 export function App() {
-  const [initialSaved] = useState(loadSavedSession);
+  const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
+  const [initialHistory] = useState(loadSeenHistory);
+  const [initialSaved] = useState(() => {
+    const saved = loadSavedSession();
+    if (!request.specified || (saved.session && request.questions && JSON.stringify(saved.session.scenarios) === JSON.stringify(request.questions))) return saved;
+    return {};
+  });
   const [resumable, setResumable] = useState(initialSaved.session);
   const [saveEnabled, setSaveEnabled] = useState(false);
-  const [storageNotice, setStorageNotice] = useState(initialSaved.notice ?? '');
-  const [session, setSession] = useState<Session>(createSession);
+  const [storageNotice, setStorageNotice] = useState(initialSaved.notice ?? initialHistory.notice ?? '');
+  const [session, setSession] = useState<Session>(() => createSession(request.questions ?? selectQuestions(initialHistory.ids)));
+  const [sharing, setSharing] = useState(false);
+  const [copyNotice, setCopyNotice] = useState('');
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   useEffect(() => {
@@ -22,11 +31,17 @@ export function App() {
       setStorageNotice('目前無法保存本機紀錄。你仍可完成這次作答，離開後可能無法續答。');
     }
   }, [session, saveEnabled, resumable]);
-  const restart = () => {
+  useEffect(() => {
+    if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice('目前無法保存本機紀錄。你仍可完成這次作答，離開後可能無法續答。');
+  }, [session.screen, session.scenarioIndex, session.scenarios]);
+  const restart = (clearHistory = false, useCurrentVersion = false) => {
     const cleared = clearSavedSession();
-    setSaveEnabled(false); setResumable(undefined); setSession(createSession());
-    setCustomWord(''); setNotice('');
-    setStorageNotice(cleared ? '' : '目前無法清除本機紀錄。你可以開始新作答，但下次開啟可能仍看到舊紀錄。');
+    const historyCleared = !clearHistory || clearSeenHistory();
+    const history = loadSeenHistory();
+    if (useCurrentVersion) { window.history.replaceState(null, '', window.location.pathname); setRequest({ specified: false }); }
+    setSaveEnabled(false); setResumable(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : selectQuestions(history.ids)));
+    setCustomWord(''); setNotice(''); setSharing(false); setCopyNotice('');
+    setStorageNotice(cleared && historyCleared ? history.notice ?? '' : '目前無法清除本機紀錄。你可以開始新作答，但下次開啟可能仍看到舊紀錄。');
     window.scrollTo({ top: 0 });
   };
   const go = (screen: Screen) => { setSaveEnabled(true); setSession(current => ({ ...current, screen })); window.scrollTo({ top: 0 }); };
@@ -39,16 +54,18 @@ export function App() {
     setCustomWord(''); setNotice('');
   };
   const scenario = session.scenarios[session.scenarioIndex];
+  const shareLink = questionShareLink(session.scenarios, window.location);
   return <main className="app-shell">
     <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}>北極星</a><span>一份關於選擇的自我專題</span></header>
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
+    {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={() => restart(false, true)}>使用目前版本重新開始</button></section>}
     {session.screen === 'intro' && <section className="hero">
       <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視的，<br />在選擇裡相遇。</h1>
       <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
       <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
       <p className="caption">目前為情境原型，不涵蓋十個價值的情境。完整體驗的設計目標約十五分鐘。</p>
-      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p><nav className="actions"><button className="primary" onClick={() => { setSession(resumable); setResumable(undefined); setSaveEnabled(true); }}>繼續上次作答</button><button className="secondary" onClick={restart}>重新開始</button></nav></section> : <button className="primary" onClick={() => go('classify')}>開始這次反思</button>}
+      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p><nav className="actions"><button className="primary" onClick={() => { setSession(resumable); setResumable(undefined); setSaveEnabled(true); }}>繼續上次作答</button><button className="secondary" onClick={() => restart()}>重新開始</button></nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
     </section>}
     {session.screen === 'classify' && <section>
       <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
@@ -74,9 +91,13 @@ export function App() {
       {session.values.some(value => value.custom) && <section className="custom-results"><h2>你的自訂價值</h2><p>保留你的分類與順序，獨立呈現；自訂價值不參與情境題及兩幕對照。</p>{session.values.filter(value => value.custom).sort((a,b) => categoryOrder.indexOf(a.category!) - categoryOrder.indexOf(b.category!) || a.rank-b.rank).map(value => <p key={value.id}><strong>{value.word}</strong> · {categoryLabels[value.category!]} · 位置 {value.rank}</p>)}</section>}
       <section><h2>情境中的取捨</h2><p className="caption">有明確先後與選擇方向時，才標示相符或不同。不同不代表言行不一，相符也不代表更真實。</p>{session.scenarios.map((item, index) => session.answers[item.id] && <ResultEvidence key={item.id} scenario={item} answer={session.answers[item.id]} values={session.values} onEdit={() => setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index }))} />)}</section>
       <p className="disclaimer">題目與解讀尚未驗證。你可以用這些具體答案，想想在什麼條件下會做不同的選擇；本次作答不會推論你的原因。</p>
-      <nav className="actions"><button className="secondary" onClick={() => go('rank')}>回顧第一幕</button><button className="primary" onClick={restart}>重新開始</button></nav>
+      <nav className="actions"><button className="secondary" onClick={() => go('rank')}>回顧第一幕</button><button className="primary" onClick={() => restart()}>重新開始</button></nav>
     </section>}
-    <footer>北極星 · 把答案留給自己，把選擇看清楚。<button className="text-button" onClick={restart}>清除本機作答紀錄</button></footer>
+    <footer>北極星 · 把答案留給自己，把選擇看清楚。
+      <button className="text-button" disabled={Boolean(request.notice)} onClick={() => setSharing(current => !current)}>分享這份題目</button>
+      {sharing && <section className="share-questions">{shareLink ? <><p>只分享題目，不包含你的答案、排序或自訂價值。</p><label>題目分享連結<input readOnly value={shareLink} onFocus={event => event.currentTarget.select()} /></label><button className="secondary" onClick={async () => { try { await navigator.clipboard.writeText(shareLink); setCopyNotice('已複製題目連結。'); } catch { setCopyNotice('無法自動複製，請選取上方連結並手動複製。'); } }}>複製題目連結</button>{copyNotice && <p role="status">{copyNotice}</p>}</> : <p>這份題目與目前版本不相容，無法產生相同題目的分享連結。請重新開始。</p>}</section>}
+      <button className="text-button" onClick={() => restart(true)}>清除本機作答紀錄</button><p>清除會同時移除作答與已看題目紀錄；一般重新開始會保留已看紀錄。</p>
+    </footer>
   </main>;
 }
 function PageHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
