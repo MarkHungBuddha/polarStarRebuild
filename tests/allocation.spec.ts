@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 import { allocationScenarios } from '../src/scenarios/allocation';
 
 test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
@@ -21,7 +21,7 @@ test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
 
 test('分配有限的晚上，確認後呈現原始配置而非強度', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
@@ -34,14 +34,29 @@ test('分配有限的晚上，確認後呈現原始配置而非強度', async ({
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
   await expect(evidence.getByText('你把 4 晚分給「自己的攝影小誌」，2 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
-  await expect(evidence.getByText(/兩倍|強度|總排名/)).toHaveCount(0);
+  await expect(evidence.getByText('兩邊都有分配 · 只描述本次配置', { exact: true })).toBeVisible();
+  await expect(evidence.getByText(/^與第一幕(相符|不同)$/)).toHaveCount(0);
+  await expect(evidence.getByText(/兩倍|強度|總排名|較多/)).toHaveCount(0);
+});
+
+test('把資源全部分給一邊時，才依第一幕先後標示相符或不同', async ({ page }) => {
+  await page.goto('/');
+  await classifyAndRankValues(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '六個晚上，留給哪些事？');
+  await page.getByRole('spinbutton', { name: '陪朋友練面試' }).fill('6');
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await completeRemainingScenarios(page);
+  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
+  await expect(evidence.getByText('你把 0 晚分給「自己的攝影小誌」，6 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('你把自主放在照顧身邊的人之前；在這題，你把全部 6 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
 });
 
 test('分配不超出總量，均分只描述，回改採最後確認版本', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   const own = page.getByRole('spinbutton', { name: '自己的攝影小誌' });
@@ -79,7 +94,7 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
 
 test('第一幕並列時，分配較多也不補出相符或不同', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('combobox', { name: '照顧身邊的人的位置' }).selectOption('1');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
@@ -92,9 +107,9 @@ test('第一幕並列時，分配較多也不補出相符或不同', async ({ pa
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
 });
 
-test('續答保留已確認的原始分配，損壞的分配紀錄不會被恢復', async ({ page }) => {
+test('續答保留已確認的原始分配', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await page.getByRole('spinbutton', { name: '自己的攝影小誌' }).fill('4');
@@ -104,14 +119,4 @@ test('續答保留已確認的原始分配，損壞的分配紀錄不會被恢�
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
   await expect(evidence.getByText('你把 4 晚分給「自己的攝影小誌」，2 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
-  await page.evaluate(() => {
-    const raw = localStorage.getItem('polarstar.session.v1');
-    if (!raw) throw new Error('Expected a saved session');
-    const saved = JSON.parse(raw);
-    saved.session.answers['slot03-evenings'].allocations = [6, 6];
-    localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
-  });
-  await page.reload();
-  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
-  await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
 });

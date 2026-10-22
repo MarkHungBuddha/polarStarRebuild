@@ -1,12 +1,13 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { completeRemainingScenarios, goToScenario } from './support/experience';
+import { completeRemainingScenarios, goToScenario, rankValuesInListedOrder } from './support/experience';
 
 async function openStrike(page: Page, tied = false) {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   for (const select of await page.getByRole('combobox').all()) await select.selectOption('core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await rankValuesInListedOrder(page);
   if (tied) await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('1');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '這份提案，用誰的方法？');

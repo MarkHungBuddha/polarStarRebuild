@@ -10,24 +10,25 @@ export interface ValueItem {
   rank: number;
 }
 export interface ChoiceOption { id: string; label: string; consequence: string; valueId: ValueId }
-export interface ChoiceScenario {
+/** Identity, slot pair and framing every scenario shares, whatever its mechanic. */
+interface ScenarioBase {
   id: string;
   slotId: string;
   pair: readonly [ValueId, ValueId];
-  kind: 'choice';
   domain: string;
   title: string;
   setup: string;
+}
+export interface ChoiceScenario extends ScenarioBase {
+  kind: 'choice';
   options: readonly [ChoiceOption, ChoiceOption];
 }
-export interface SliderScenario {
-  id: string;
-  slotId: string;
-  pair: readonly [ValueId, ValueId];
+export interface StrikeScenario extends ScenarioBase {
+  kind: 'strike';
+  options: readonly [ChoiceOption, ChoiceOption];
+}
+export interface SliderScenario extends ScenarioBase {
   kind: 'slider';
-  domain: string;
-  title: string;
-  setup: string;
   question: string;
   min: number;
   max: number;
@@ -37,15 +38,8 @@ export interface SliderScenario {
   resultPrefix: string;
   resultSuffix: string;
 }
-export interface StrikeScenario extends Omit<ChoiceScenario, 'kind'> { kind: 'strike' }
-export interface AllocationScenario {
-  id: string;
-  slotId: string;
-  pair: readonly [ValueId, ValueId];
+export interface AllocationScenario extends ScenarioBase {
   kind: 'allocate';
-  domain: string;
-  title: string;
-  setup: string;
   total: number;
   unit: string;
   options: readonly [ChoiceOption, ChoiceOption];

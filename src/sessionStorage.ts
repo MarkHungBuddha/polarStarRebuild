@@ -1,6 +1,7 @@
 import type { Session } from './types';
 import { baseValues, categoryOrder } from './data';
 import { scenarios } from './scenarios';
+import { storageReadFailedNotice } from './storageNotices';
 
 const sessionKey = 'polarstar.session.v1';
 const schemaVersion = 1;
@@ -74,7 +75,7 @@ export function loadSavedSession(): { session?: Session; notice?: string } {
     if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session)) return { notice: incompatibleNotice };
     return { session: saved.session };
   } catch {
-    return { notice: '目前無法讀取本機紀錄，仍可完成這次作答，但可能無法保存。' };
+    return { notice: storageReadFailedNotice };
   }
 }
 

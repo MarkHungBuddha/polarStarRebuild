@@ -1,5 +1,6 @@
 import { catalogVersion } from './questionPlan';
 import { scenarios } from './scenarios';
+import { storageReadFailedNotice } from './storageNotices';
 
 const historyKey = 'polarstar.seen.v1';
 
@@ -11,7 +12,7 @@ export function loadSeenHistory(): { ids: Set<string>; notice?: string } {
     if (typeof saved !== 'object' || saved === null || !('catalogVersion' in saved) || saved.catalogVersion !== catalogVersion || !('ids' in saved) || !Array.isArray(saved.ids)) return { ids: new Set() };
     const known = new Set(scenarios.map(scenario => scenario.id));
     return { ids: new Set(saved.ids.filter((id): id is string => typeof id === 'string' && known.has(id))) };
-  } catch { return { ids: new Set(), notice: '目前無法讀取本機紀錄，仍可完成這次作答，但可能無法保存。' }; }
+  } catch { return { ids: new Set(), notice: storageReadFailedNotice }; }
 }
 
 export function markQuestionSeen(id: string): boolean {

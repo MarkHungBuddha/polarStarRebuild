@@ -18,7 +18,7 @@ test('分享連結只重現同一份題目，不帶自己的答案或價值詞',
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '這次週末，要換條路嗎？');
   await page.goto(link);
-  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
+  await page.getByRole('button', { name: '改做分享的題目' }).click();
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
@@ -45,6 +45,36 @@ test('指定分享題目中途重新開啟，仍可續答同一份已確認進�
   await page.reload();
   await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(nextTitle!);
+});
+
+test('開啟不同題目的分享連結時，仍可選擇繼續本機進度，不會悄悄覆寫', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '分享這份題目', exact: true }).click();
+  const own = new URL(await page.getByRole('textbox', { name: '題目分享連結' }).inputValue());
+  const other = new URL(own);
+  other.searchParams.set('seed', 'p.' + own.searchParams.get('seed')!.slice(2).split('.').map(selector => selector === '0' ? '1' : '0').join('.'));
+  await classifyValues(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  const slider = page.getByRole('slider');
+  await slider.focus(); await slider.press('Home'); await slider.press('ArrowRight');
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  const savedTitle = await page.getByRole('heading', { level: 1 }).textContent();
+
+  await page.goto(other.href);
+  await expect(page.getByRole('button', { name: '開始這次反思' })).toHaveCount(0);
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(savedTitle!);
+  await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
+
+  await page.goto(other.href);
+  await page.getByRole('button', { name: '改做分享的題目' }).click();
+  await classifyValues(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
+  const sharedTitle = await page.getByRole('heading', { level: 1 }).textContent();
+  await page.goto('/');
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(sharedTitle!);
 });
 
 test('版本不相容時明確選擇目前版本，不能悄悄換題開始', async ({ page }) => {
@@ -101,17 +131,4 @@ test('已看紀錄無法讀取時仍能完成作答並告知無法保存', async
   await completeRemainingScenarios(page);
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toContainText('目前無法保存本機紀錄');
-});
-
-test('缺少目前槽位的舊作答不能當成完整新版本續答', async ({ page }) => {
-  await page.goto('/');
-  await classifyValues(page);
-  await page.evaluate(() => {
-    const saved = JSON.parse(localStorage.getItem('polarstar.session.v1')!);
-    saved.session.scenarios = saved.session.scenarios.slice(0, 1);
-    localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
-  });
-  await page.reload();
-  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
-  await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
 });

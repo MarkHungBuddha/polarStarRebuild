@@ -54,7 +54,8 @@ export function questionShareLink(questions: readonly Scenario[], location: Pick
   for (const variants of slots) {
     const selected = questions.filter(question => question.slotId === variants[0].slotId);
     if (selected.length !== 1) return undefined;
-    const index = variants.findIndex(variant => JSON.stringify(variant) === JSON.stringify(selected[0]));
+    // Session questions are catalog entries (restored sessions are checked against the catalog), so the id identifies the variant.
+    const index = variants.findIndex(variant => variant.id === selected[0].id);
     if (index < 0) return undefined;
     selectors.push(index.toString(36));
   }

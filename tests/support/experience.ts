@@ -6,6 +6,18 @@ export async function classifyValues(page: Page) {
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
 }
 
+const coreValueWords = ['自主', '探索刺激', '享受生活', '成就', '主導權', '安全穩定', '遵守規範', '傳承', '照顧身邊的人', '普遍關懷'];
+
+// Values start tied; this gives the core values an explicit strict order 1–10 on the ranking page.
+export async function rankValuesInListedOrder(page: Page) {
+  for (const [index, word] of coreValueWords.entries()) await page.getByRole('combobox', { name: `${word}的位置` }).selectOption(String(index + 1));
+}
+
+export async function classifyAndRankValues(page: Page) {
+  await classifyValues(page);
+  await rankValuesInListedOrder(page);
+}
+
 async function confirmCurrentScenario(page: Page) {
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
   if (await confirm.isDisabled()) {
