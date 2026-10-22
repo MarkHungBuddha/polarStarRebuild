@@ -1,12 +1,14 @@
 import { categoryOrder } from './data';
 import type { AllocationAnswer, AllocationScenario, Answer, Scenario, ValueItem } from './types';
 
-export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario: Scenario; answer: Answer; values: ValueItem[]; onEdit: () => void }) {
-  if (scenario.kind === 'allocate') return answer.kind === 'allocate' ? <AllocationEvidence scenario={scenario} answer={answer} values={values} onEdit={onEdit} /> : null;
+export const evidenceId = (scenario: Scenario) => `evidence-${scenario.id}`;
+
+export function ResultEvidence({ scenario, answer, values, position, onEdit }: { scenario: Scenario; answer: Answer; values: ValueItem[]; position: number; onEdit: () => void }) {
+  if (scenario.kind === 'allocate') return answer.kind === 'allocate' ? <AllocationEvidence scenario={scenario} answer={answer} values={values} position={position} onEdit={onEdit} /> : null;
   if (scenario.kind === 'slider') {
     if (answer.kind !== 'slider') return null;
-    return <article className="evidence">
-      <p className="eyebrow">{scenario.domain} · 接受條件</p>
+    return <article className="evidence" id={evidenceId(scenario)} tabIndex={-1}>
+      <p className="eyebrow">第 {position} 題 · {scenario.domain} · 接受條件</p>
       <h3>{scenario.title}</h3>
       <p className="evidence-setup">{scenario.setup}</p>
       <span className="evidence-label">接受條件 · 只描述本次答案</span>
@@ -23,8 +25,8 @@ export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario:
   const preferred = difference < 0 ? first : second;
   const other = difference < 0 ? second : first;
   const comparable = difference !== 0;
-  return <article className="evidence">
-    <p className="eyebrow">{scenario.domain} · {first.word}與{second.word}</p>
+  return <article className="evidence" id={evidenceId(scenario)} tabIndex={-1}>
+    <p className="eyebrow">第 {position} 題 · {scenario.domain} · {first.word}與{second.word}</p>
     <h3>{scenario.title}</h3>
     <p className="evidence-setup">{scenario.setup}</p>
     <span className="evidence-label">{comparable ? option.valueId === preferred.id ? '與第一幕相符' : '與第一幕不同' : '第一幕並列 · 只描述本次選擇'}</span>
@@ -35,7 +37,7 @@ export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario:
   </article>;
 }
 
-function AllocationEvidence({ scenario, answer, values, onEdit }: { scenario: AllocationScenario; answer: AllocationAnswer; values: ValueItem[]; onEdit: () => void }) {
+function AllocationEvidence({ scenario, answer, values, position, onEdit }: { scenario: AllocationScenario; answer: AllocationAnswer; values: ValueItem[]; position: number; onEdit: () => void }) {
   const first = values.find(value => value.id === scenario.pair[0]);
   const second = values.find(value => value.id === scenario.pair[1]);
   if (!first?.category || !second?.category) return null;
@@ -44,8 +46,8 @@ function AllocationEvidence({ scenario, answer, values, onEdit }: { scenario: Al
   const chosen = scenario.options[answer.allocations[0] > answer.allocations[1] ? 0 : 1];
   const preferred = difference < 0 ? first : second;
   const comparable = difference !== 0 && !equal;
-  return <article className="evidence">
-    <p className="eyebrow">{scenario.domain} · {first.word}與{second.word}</p><h3>{scenario.title}</h3>
+  return <article className="evidence" id={evidenceId(scenario)} tabIndex={-1}>
+    <p className="eyebrow">第 {position} 題 · {scenario.domain} · {first.word}與{second.word}</p><h3>{scenario.title}</h3>
     <p className="evidence-setup">{scenario.setup}</p>
     <span className="evidence-label">{equal ? '平均分配 · 只描述本次配置' : difference === 0 ? '第一幕並列 · 只描述本次配置' : chosen.valueId === preferred.id ? '與第一幕相符' : '與第一幕不同'}</span>
     <p className="evidence-quote">你把 {answer.allocations[0]} {scenario.unit}分給「{scenario.options[0].label}」，{answer.allocations[1]} {scenario.unit}分給「{scenario.options[1].label}」。</p>

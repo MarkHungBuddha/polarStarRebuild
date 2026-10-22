@@ -3,7 +3,7 @@ import { baseValues, categoryLabels, categoryOrder } from './data';
 import { questionShareLink, requestedQuestions, selectQuestions } from './questionPlan';
 import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
 import { ScenarioQuestion } from './ScenarioQuestion';
-import { ResultEvidence } from './ResultEvidence';
+import { evidenceId, ResultEvidence } from './ResultEvidence';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import type { Category, Scenario, Screen, Session, ValueItem } from './types';
 
@@ -26,6 +26,7 @@ export function App() {
   const [copyNotice, setCopyNotice] = useState('');
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
+  const [editedEvidence, setEditedEvidence] = useState<string>();
   useEffect(() => {
     if (saveEnabled && !resumable && !saveSession(session)) {
       setStorageNotice('目前無法保存本機紀錄。你仍可完成這次作答，離開後可能無法續答。');
@@ -34,6 +35,14 @@ export function App() {
   useEffect(() => {
     if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice('目前無法保存本機紀錄。你仍可完成這次作答，離開後可能無法續答。');
   }, [session.screen, session.scenarioIndex, session.scenarios]);
+  useEffect(() => {
+    if (session.screen !== 'result' || !editedEvidence) return;
+    // Returning from an edit lands on the evidence that was edited, not the top of a long report.
+    const target = document.getElementById(editedEvidence);
+    target?.scrollIntoView({ block: 'start' });
+    target?.focus({ preventScroll: true });
+    setEditedEvidence(undefined);
+  }, [session.screen, editedEvidence]);
   const restart = (clearHistory = false, useCurrentVersion = false) => {
     const cleared = clearSavedSession();
     const historyCleared = !clearHistory || clearSeenHistory();
@@ -54,6 +63,7 @@ export function App() {
     setCustomWord(''); setNotice('');
   };
   const scenario = session.scenarios[session.scenarioIndex];
+  const complete = session.scenarios.every(item => session.answers[item.id]);
   const shareLink = questionShareLink(session.scenarios, window.location);
   return <main className="app-shell">
     <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}>北極星</a><span>一份關於選擇的自我專題</span></header>
@@ -64,7 +74,8 @@ export function App() {
       <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
       <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
-      <p className="caption">目前為情境原型，不涵蓋十個價值的情境。完整體驗的設計目標約十五分鐘。</p>
+      <p className="caption">第二幕共十五個情境，每個情境都是兩種重視之間的取捨。</p>
+      <p className="caption">整份體驗的設計目標約十五分鐘，這是預估，不是實測的完成時間。</p>
       {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p><nav className="actions"><button className="primary" onClick={() => { setSession(resumable); setResumable(undefined); setSaveEnabled(true); }}>繼續上次作答</button><button className="secondary" onClick={() => restart()}>重新開始</button></nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
     </section>}
     {session.screen === 'classify' && <section>
@@ -79,8 +90,13 @@ export function App() {
       {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{session.values.map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
       <nav className="actions"><button className="secondary" onClick={() => go('classify')}>返回分類</button><button className="primary" onClick={() => go('scenario')}>進入情境中的取捨</button></nav>
     </section>}
-    {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={session.answers[scenario.id] ? () => go('result') : undefined} onConfirm={answer => setSession(current => ({ ...current, answers: { ...current.answers, [scenario.id]: answer }, screen: current.scenarioIndex === current.scenarios.length - 1 ? 'result' : 'scenario', scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) }))} />}
-    {session.screen === 'result' && <section>
+    {session.screen === 'scenario' && scenario && <p className="scenario-progress"><span>第 {session.scenarioIndex + 1} 題，共 {session.scenarios.length} 題</span><span className="progress-track" aria-hidden="true"><span style={{ width: `${(session.scenarioIndex + 1) / session.scenarios.length * 100}%` }} /></span></p>}
+    {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={complete ? () => go('result') : undefined} onConfirm={answer => { setSession(current => {
+      const answers = { ...current.answers, [scenario.id]: answer };
+      // Once every question has a confirmed answer, a confirmation returns to the result instead of walking the remaining questions again.
+      return current.scenarios.every(item => answers[item.id]) ? { ...current, answers, screen: 'result' } : { ...current, answers, scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) };
+    }); window.scrollTo({ top: 0 }); }} />}
+    {session.screen === 'result' && complete && <section>
       <PageHeader eyebrow="本次反思 · 專題報導" title="這一次，你的選擇。" description="把你重視的事，與情境中的答案放在一起看看。這些是反思線索，不是人格或真實行為的判定。" />
       <section className="result-values"><h2>你重視的</h2>
         {categoryOrder.map(category => <div className="result-category" key={category}><h3>{categoryLabels[category]}</h3>{session.values.filter(value => value.category === category && !value.custom).sort((a,b) => a.rank-b.rank).map(value => {
@@ -89,7 +105,9 @@ export function App() {
         })}</div>)}
       </section>
       {session.values.some(value => value.custom) && <section className="custom-results"><h2>你的自訂價值</h2><p>保留你的分類與順序，獨立呈現；自訂價值不參與情境題及兩幕對照。</p>{session.values.filter(value => value.custom).sort((a,b) => categoryOrder.indexOf(a.category!) - categoryOrder.indexOf(b.category!) || a.rank-b.rank).map(value => <p key={value.id}><strong>{value.word}</strong> · {categoryLabels[value.category!]} · 位置 {value.rank}</p>)}</section>}
-      <section><h2>情境中的取捨</h2><p className="caption">有明確先後與選擇方向時，才標示相符或不同。不同不代表言行不一，相符也不代表更真實。</p>{session.scenarios.map((item, index) => session.answers[item.id] && <ResultEvidence key={item.id} scenario={item} answer={session.answers[item.id]} values={session.values} onEdit={() => setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index }))} />)}</section>
+      <section><h2>情境中的取捨</h2><p className="caption">有明確先後與選擇方向時，才標示相符或不同。不同不代表言行不一，相符也不代表更真實。</p>
+        <nav className="evidence-contents" aria-label="本次十五個情境"><ol>{session.scenarios.map((item, index) => <li key={item.id}><a href={`#${evidenceId(item)}`}>第 {index + 1} 題 · {item.title}</a></li>)}</ol></nav>
+        {session.scenarios.map((item, index) => session.answers[item.id] && <ResultEvidence key={item.id} scenario={item} answer={session.answers[item.id]} values={session.values} position={index + 1} onEdit={() => { setEditedEvidence(evidenceId(item)); setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />)}</section>
       <p className="disclaimer">題目與解讀尚未驗證。你可以用這些具體答案，想想在什麼條件下會做不同的選擇；本次作答不會推論你的原因。</p>
       <nav className="actions"><button className="secondary" onClick={() => go('rank')}>回顧第一幕</button><button className="primary" onClick={() => restart()}>重新開始</button></nav>
     </section>}
