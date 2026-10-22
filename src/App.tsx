@@ -1,336 +1,67 @@
 import { useState } from 'react';
-import { baseValues } from './data';
-import type { BattlePair, Category, Screen, ValueItem } from './types';
+import { baseValues, categoryLabels, categoryOrder } from './data';
+import { scenarios } from './scenarios';
+import { ScenarioQuestion } from './ScenarioQuestion';
+import { ResultEvidence } from './ResultEvidence';
+import type { Category, Screen, Session, ValueItem } from './types';
 
-const categoryLabels: Record<Category, string> = {
-  core: '這就是我',
-  good: '還不錯',
-  low: '不太在乎',
-};
-
-const screenStep: Partial<Record<Screen, number>> = {
-  classify: 1,
-  rank: 2,
-  battle: 3,
-  result: 4,
-  reflect: 4,
-};
-
-function buildPairs(players: string[]) {
-  const pairs: BattlePair[] = [];
-  for (let i = 0; i < players.length; i += 1) {
-    for (let j = i + 1; j < players.length; j += 1) {
-      pairs.push([players[i], players[j]]);
-    }
-  }
-
-  for (let i = pairs.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
-  }
-
-  return pairs;
+export function createSession(): Session {
+  return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: [...scenarios], answers: {}, scenarioIndex: 0 };
 }
-
-function App() {
-  const [screen, setScreen] = useState<Screen>('intro');
-  const [values, setValues] = useState<ValueItem[]>(baseValues);
-  const [categories, setCategories] = useState<Partial<Record<string, Category>>>({});
+export function App() {
+  const [session, setSession] = useState<Session>(createSession);
   const [customWord, setCustomWord] = useState('');
-  const [rankedIds, setRankedIds] = useState<string[]>([]);
-  const [battlePlayers, setBattlePlayers] = useState<string[]>([]);
-  const [pairs, setPairs] = useState<BattlePair[]>([]);
-  const [pairIndex, setPairIndex] = useState(0);
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [resultIds, setResultIds] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
-
-  const valueById = new Map(values.map((item) => [item.id, item]));
-  const progress = screen === 'intro' ? 0 : screen === 'reflect' ? 100 : (screenStep[screen] ?? 1) * 22.5;
-  const currentPair = pairs[pairIndex];
-
-  function showNotice(message: string) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(''), 2400);
-  }
-
-  function restart() {
-    setScreen('intro');
-    setValues(baseValues);
-    setCategories({});
-    setCustomWord('');
-    setRankedIds([]);
-    setBattlePlayers([]);
-    setPairs([]);
-    setPairIndex(0);
-    setScores({});
-    setResultIds([]);
-    setNotice('');
-    window.scrollTo({ top: 0 });
-  }
-
-  function go(next: Screen) {
-    setScreen(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function assignCategory(id: string, category: Category) {
-    setCategories((current) => ({ ...current, [id]: category }));
-  }
-
-  function addCustomValue() {
-    const word = customWord.trim().slice(0, 6);
+  const go = (screen: Screen) => { setSession(current => ({ ...current, screen })); window.scrollTo({ top: 0 }); };
+  const updateValue = (id: string, change: Partial<ValueItem>) => setSession(current => ({ ...current, values: current.values.map(value => value.id === id ? { ...value, ...change } : value) }));
+  const addCustom = () => {
+    const word = customWord.trim();
     if (!word) return;
-    if (values.some((item) => item.word === word)) {
-      showNotice('這個詞已經在清單裡了');
-      return;
-    }
-
-    const id = `custom-${Date.now()}`;
-    setValues((current) => [
-      ...current,
-      { id, word, description: `這是我最在意的：${word}`, dimension: 'custom' },
-    ]);
-    setCustomWord('');
-    showNotice(`已新增「${word}」`);
-  }
-
-  function startRanking() {
-    const coreIds = values.filter((item) => categories[item.id] === 'core').map((item) => item.id);
-    if (coreIds.length === 0) {
-      showNotice('請至少選一個「這就是我」的價值觀');
-      return;
-    }
-
-    setRankedIds(coreIds);
-    go('rank');
-  }
-
-  function moveRank(id: string, direction: -1 | 1) {
-    setRankedIds((current) => {
-      const from = current.indexOf(id);
-      const to = from + direction;
-      if (from < 0 || to < 0 || to >= current.length) return current;
-      const next = [...current];
-      [next[from], next[to]] = [next[to], next[from]];
-      return next;
-    });
-  }
-
-  function startBattle() {
-    const players = rankedIds.slice(0, 6);
-    if (players.length === 1) {
-      setResultIds(players);
-      go('result');
-      return;
-    }
-
-    setBattlePlayers(players);
-    setScores(Object.fromEntries(players.map((id) => [id, 0])));
-    setPairs(buildPairs(players));
-    setPairIndex(0);
-    go('battle');
-  }
-
-  function pickWinner(id: string) {
-    const nextScores = { ...scores, [id]: (scores[id] ?? 0) + 1 };
-    setScores(nextScores);
-
-    const isLastPair = pairIndex >= pairs.length - 1;
-    if (!isLastPair) {
-      setPairIndex((current) => current + 1);
-      return;
-    }
-
-    const ordered = [...battlePlayers].sort((a, b) => {
-      const byScore = (nextScores[b] ?? 0) - (nextScores[a] ?? 0);
-      if (byScore !== 0) return byScore;
-      return rankedIds.indexOf(a) - rankedIds.indexOf(b);
-    });
-    setResultIds(ordered.slice(0, 3));
-    go('result');
-  }
-
-  const groups = (['core', 'good', 'low'] as Category[]).map((category) => ({
-    category,
-    items: values.filter((item) => categories[item.id] === category),
-  }));
-  const unclassified = values.filter((item) => !categories[item.id]);
-  const topResults = resultIds.map((id) => valueById.get(id)).filter(Boolean) as ValueItem[];
-
-  return (
-    <main className="app-shell">
-      {screen !== 'intro' && (
-        <div className="progress" aria-label="流程進度">
-          <span style={{ width: `${progress}%` }} />
-        </div>
-      )}
-
-      {screen === 'intro' && (
-        <section className="hero panel">
-          <p className="kicker">Find Your North Star</p>
-          <div className="star">✦</div>
-          <h1>你真正在意的是什麼？</h1>
-          <p className="lead">透過分類、排序與兩兩比較，整理出此刻最靠近你的核心價值觀。</p>
-          <div className="steps">
-            <span>01 分類 24 個價值觀詞彙</span>
-            <span>02 排出重要順序</span>
-            <span>03 兩兩比較驗證直覺</span>
-            <span>04 產生北極星與反思問題</span>
-          </div>
-          <button className="primary" onClick={() => go('classify')}>開始探索</button>
-        </section>
-      )}
-
-      {screen === 'classify' && (
-        <section className="flow">
-          <Header eyebrow="第一步 · 01 / 04" title="把這些詞分一分" description="憑第一直覺選擇分類，不用想太久。" />
-          <div className="custom-row">
-            <input
-              value={customWord}
-              maxLength={6}
-              placeholder="新增自己的價值觀"
-              onChange={(event) => setCustomWord(event.target.value)}
-              onKeyDown={(event) => event.key === 'Enter' && addCustomValue()}
-            />
-            <button onClick={addCustomValue}>新增</button>
-          </div>
-          <div className="value-grid">
-            {values.map((item) => (
-              <article className={`value-card ${categories[item.id] ?? ''}`} key={item.id}>
-                <h3>{item.word}</h3>
-                <p>{item.description}</p>
-                <div className="choice-row" aria-label={`分類 ${item.word}`}>
-                  {(['core', 'good', 'low'] as Category[]).map((category) => (
-                    <button
-                      className={categories[item.id] === category ? 'selected' : ''}
-                      key={category}
-                      onClick={() => assignCategory(item.id, category)}
-                    >
-                      {categoryLabels[category]}
-                    </button>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-          <aside className="summary panel">
-            {groups.map(({ category, items }) => (
-              <div key={category}>
-                <strong>{categoryLabels[category]}</strong>
-                <span>{items.length}</span>
-              </div>
-            ))}
-            <div>
-              <strong>還沒分類</strong>
-              <span>{unclassified.length}</span>
-            </div>
-          </aside>
-          <div className="sticky-action">
-            <button className="primary" onClick={startRanking}>下一步：排出順序</button>
-          </div>
-        </section>
-      )}
-
-      {screen === 'rank' && (
-        <section className="flow">
-          <Header eyebrow="第二步 · 02 / 04" title="排出你的順序" description="最重要的放最上面，系統會取前六個進入比較賽。" />
-          <div className="rank-list">
-            {rankedIds.map((id, index) => {
-              const item = valueById.get(id)!;
-              return (
-                <article className="rank-item" key={id}>
-                  <span className="rank-num">{index + 1}</span>
-                  <div>
-                    <h3>{item.word}</h3>
-                    <p>{item.description}</p>
-                  </div>
-                  <div className="rank-actions">
-                    <button disabled={index === 0} onClick={() => moveRank(id, -1)}>上移</button>
-                    <button disabled={index === rankedIds.length - 1} onClick={() => moveRank(id, 1)}>下移</button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-          <div className="sticky-action">
-            <button className="secondary" onClick={() => go('classify')}>返回分類</button>
-            <button className="primary" onClick={startBattle}>開始比較賽</button>
-          </div>
-        </section>
-      )}
-
-      {screen === 'battle' && currentPair && (
-        <section className="flow battle-screen">
-          <Header eyebrow="第三步 · 03 / 04" title="選一個更重要的" description="每一局只需要選出此刻更靠近你的那個。" />
-          <p className="round-label">第 {pairIndex + 1} 局 · 共 {pairs.length} 局</p>
-          <div className="battle-pair">
-            {currentPair.map((id) => {
-              const item = valueById.get(id)!;
-              return (
-                <button className="battle-card" key={id} onClick={() => pickWinner(id)}>
-                  <span>{scores[id] ?? 0} 分</span>
-                  <strong>{item.word}</strong>
-                  <small>{item.description}</small>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {screen === 'result' && (
-        <section className="flow">
-          <Header eyebrow="第四步 · 04 / 04" title="你的北極星" description="這三個價值觀，是這次比較後浮現出的優先順序。" />
-          <div className="result-list">
-            {topResults.map((item, index) => (
-              <article className={`result-card medal-${index + 1}`} key={item.id}>
-                <span>第 {index + 1} 名</span>
-                <h3>{item.word}</h3>
-                <p>{item.description}</p>
-              </article>
-            ))}
-          </div>
-          <div className="sticky-action">
-            <button className="primary" onClick={() => go('reflect')}>最後一個問題</button>
-          </div>
-        </section>
-      )}
-
-      {screen === 'reflect' && (
-        <section className="flow">
-          <Header eyebrow="✦ 尋找你的北極星" title="一個值得想一想的問題" description="花一分鐘，認真想一想。" />
-          <div className="reflect-card">
-            <p>
-              你最重視 {topResults.map((item) => `「${item.word}」`).join('、')}。
-              <br />
-              你現在的生活，給你這些了嗎？
-            </p>
-          </div>
-          <div className="share-card">
-            <span>你的核心價值觀</span>
-            <div>
-              {topResults.map((item) => <strong key={item.id}>{item.word}</strong>)}
-            </div>
-            <p>可以截圖保存，作為下一次做選擇時的提醒。</p>
-          </div>
-          <button className="text-button" onClick={restart}>重新測驗一次</button>
-        </section>
-      )}
-
-      {notice && <div className="toast">{notice}</div>}
-    </main>
-  );
+    if (session.values.some(value => value.word === word)) { setNotice('這個價值已在清單中。'); return; }
+    setSession(current => ({ ...current, values: [...current.values, { id: 'custom-' + crypto.randomUUID(), word, description: '你自行提出的重要事物。', custom: true, rank: current.values.length + 1 }] }));
+    setCustomWord(''); setNotice('');
+  };
+  const scenario = session.scenarios[session.scenarioIndex];
+  return <main className="app-shell">
+    <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}>北極星</a><span>一份關於選擇的自我專題</span></header>
+    {session.screen === 'intro' && <section className="hero">
+      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視的，<br />在選擇裡相遇。</h1>
+      <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
+      <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
+      <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
+      <p className="caption">目前為單題原型，不涵蓋十個價值的情境。完整體驗的設計目標約十五分鐘。</p>
+      <button className="primary" onClick={() => go('classify')}>開始這次反思</button>
+    </section>}
+    {session.screen === 'classify' && <section>
+      <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
+      <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>
+      {notice && <p role="status">{notice}</p>}
+      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><label className="select-label">{value.word}的重要性<select value={value.category ?? ''} onChange={event => updateValue(value.id, { category: event.target.value as Category })}><option value="" disabled>請選擇</option>{categoryOrder.map(category => <option key={category} value={category}>{categoryLabels[category]}</option>)}</select></label></article>)}</div>
+      <nav className="actions"><button className="secondary" onClick={() => go('intro')}>返回說明</button><button className="primary" disabled={session.values.some(value => !value.category)} onClick={() => go('rank')}>下一步：排出順序</button></nav>
+    </section>}
+    {session.screen === 'rank' && <section>
+      <PageHeader eyebrow="第一幕 · 02" title="重要，也可以一樣重要。" description="在每個類別內選擇位置，數字越小越靠前。同一位置代表並列，不必硬分高下。" />
+      {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{session.values.map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
+      <nav className="actions"><button className="secondary" onClick={() => go('classify')}>返回分類</button><button className="primary" onClick={() => go('scenario')}>進入情境中的取捨</button></nav>
+    </section>}
+    {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={session.answers[scenario.id] ? () => go('result') : undefined} onConfirm={answer => setSession(current => ({ ...current, answers: { ...current.answers, [scenario.id]: answer }, screen: current.scenarioIndex === current.scenarios.length - 1 ? 'result' : 'scenario', scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) }))} />}
+    {session.screen === 'result' && <section>
+      <PageHeader eyebrow="本次反思 · 專題報導" title="這一次，你的選擇。" description="把你重視的事，與情境中的答案放在一起看看。這些是反思線索，不是人格或真實行為的判定。" />
+      <section className="result-values"><h2>你重視的</h2>
+        {categoryOrder.map(category => <div className="result-category" key={category}><h3>{categoryLabels[category]}</h3>{session.values.filter(value => value.category === category && !value.custom).sort((a,b) => a.rank-b.rank).map(value => {
+          const peers = session.values.filter(item => !item.custom && item.category === category && item.rank === value.rank);
+          return <p key={value.id}><span>{peers.length > 1 ? '並列位置 ' : '位置 '}{value.rank}</span><strong>{value.word}</strong></p>;
+        })}</div>)}
+      </section>
+      {session.values.some(value => value.custom) && <section className="custom-results"><h2>你的自訂價值</h2><p>保留你的分類與順序，獨立呈現；自訂價值不參與情境題及兩幕對照。</p>{session.values.filter(value => value.custom).sort((a,b) => categoryOrder.indexOf(a.category!) - categoryOrder.indexOf(b.category!) || a.rank-b.rank).map(value => <p key={value.id}><strong>{value.word}</strong> · {categoryLabels[value.category!]} · 位置 {value.rank}</p>)}</section>}
+      <section><h2>情境中的取捨</h2><p className="caption">有明確先後與選擇方向時，才標示相符或不同。不同不代表言行不一，相符也不代表更真實。</p>{session.scenarios.map((item, index) => session.answers[item.id] && <ResultEvidence key={item.id} scenario={item} answer={session.answers[item.id]} values={session.values} onEdit={() => setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index }))} />)}</section>
+      <p className="disclaimer">題目與解讀尚未驗證。你可以用這些具體答案，想想在什麼條件下會做不同的選擇；本次作答不會推論你的原因。</p>
+      <nav className="actions"><button className="secondary" onClick={() => go('rank')}>回顧第一幕</button><button className="primary" onClick={() => setSession(createSession())}>重新開始</button></nav>
+    </section>}
+    <footer>北極星 · 把答案留給自己，把選擇看清楚。</footer>
+  </main>;
 }
-
-function Header({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <header className="section-header">
-      <p>{eyebrow}</p>
-      <h2>{title}</h2>
-      <span>{description}</span>
-    </header>
-  );
+function PageHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return <header className="section-header"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{description}</p></header>;
 }
-
 export default App;
