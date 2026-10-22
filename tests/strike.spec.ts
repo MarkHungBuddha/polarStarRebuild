@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { completeRemainingScenarios, goToScenario, rankValuesInListedOrder } from './support/experience';
+import { completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder } from './support/experience';
 
 async function openStrike(page: Page, tied = false) {
   await page.goto('/');
@@ -47,7 +47,7 @@ test('刪稿可用鍵盤修正，未確認的修改不改變結果', async ({ pa
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
   await expect(evidence.getByText('這次我想用自己設計的方式說明，讓觀點依我的想法展開；我知道這會偏離共同約定，也需要大家多花時間熟悉。', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expectNoHorizontalScroll(page);
 });
 
 test('第一幕將自主與遵守規範並列時，刪稿只描述保留的回覆', async ({ page }) => {

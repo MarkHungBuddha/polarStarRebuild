@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 
 // The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog.

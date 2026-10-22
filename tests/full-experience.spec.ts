@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
 
 test('開場說明完整體驗共十五個情境與約十五分鐘的設計目標，不再宣稱是原型', async ({ page }) => {
   await page.goto('/');
@@ -81,5 +81,5 @@ test('十五則證據各有題序與目錄，可從目錄找到並修改其中�
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await expect(evidence).toBeInViewport();
   await expect(page.getByText(/總排名|名次差|強度|診斷結果/)).toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expectNoHorizontalScroll(page);
 });

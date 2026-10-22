@@ -51,3 +51,7 @@ export async function completeRemainingScenarios(page: Page) {
   }
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
 }
+
+export async function expectNoHorizontalScroll(page: Page) {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}

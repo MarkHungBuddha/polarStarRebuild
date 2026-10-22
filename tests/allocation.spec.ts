@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
 import { allocationScenarios } from '../src/scenarios/allocation';
 
 test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
@@ -89,7 +89,7 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('你把 5 晚分給「自己的攝影小誌」，1 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expectNoHorizontalScroll(page);
 });
 
 test('第一幕並列時，分配較多也不補出相符或不同', async ({ page }) => {

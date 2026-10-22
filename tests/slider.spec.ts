@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
 
 test('滑桿需明確操作及確認，結果只描述原始接受條件', async ({ page }) => {
   await page.goto('/');
@@ -51,5 +51,5 @@ test('滑桿回改只在再次確認後更新，且保留其他題答案', async
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('你希望先準備 24 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
   await expect(choiceEvidence.getByText('你把探索刺激放在安全穩定之前；在這題，你選擇了「去新團隊試兩週」。', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expectNoHorizontalScroll(page);
 });

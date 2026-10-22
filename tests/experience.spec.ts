@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, classifyValues, completeRemainingScenarios, goToScenario, rankValuesInListedOrder } from './support/experience';
+import { classifyAndRankValues, classifyValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder } from './support/experience';
 
 test('使用者能分類十個共同價值，並在進入情境前保留並列與自訂價值', async ({ page }) => {
   await page.goto('/');
@@ -99,5 +99,5 @@ test('並列不被判成不同，且自訂價值仍在結果獨立呈現', async
   await expect(page.getByRole('heading', { name: '你的自訂價值' })).toBeVisible();
   await expect(page.getByText('創作 · 這就是我 · 位置 11')).toBeVisible();
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expectNoHorizontalScroll(page);
 });
