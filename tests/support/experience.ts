@@ -24,6 +24,7 @@ async function confirmCurrentScenario(page: Page) {
 export async function goToScenario(page: Page, title: string) {
   for (let count = 0; count < 30; count += 1) {
     if (await page.getByRole('heading', { name: title, exact: true }).count()) return;
+    if (!await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
     await confirmCurrentScenario(page);
   }
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
