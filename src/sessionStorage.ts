@@ -54,6 +54,8 @@ function validSession(value: unknown): value is Session {
     if (!current || JSON.stringify(snapshot) !== JSON.stringify(current)) return false;
     variantIds.add(snapshot.id); slotIds.add(snapshot.slotId);
   }
+  const currentSlots = new Set(scenarios.map(scenario => scenario.slotId));
+  if (slotIds.size !== currentSlots.size || [...currentSlots].some(slot => !slotIds.has(slot))) return false;
   if (typeof value.scenarioIndex !== 'number' || !Number.isInteger(value.scenarioIndex) || value.scenarioIndex < 0 || value.scenarioIndex >= snapshots.length) return false;
   return Object.entries(value.answers).every(([id, answer]) => {
     const snapshot = snapshots.find(item => isRecord(item) && item.id === id);
