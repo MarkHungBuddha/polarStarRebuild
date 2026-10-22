@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { completeRemainingScenarios, goToScenario } from './support/experience';
+import { completeRemainingScenarios, goToScenario, rankValuesInListedOrder } from './support/experience';
 
 async function beginAndClassify(page: Page) {
   await page.goto('/');
@@ -9,6 +9,7 @@ async function beginAndClassify(page: Page) {
   await page.getByRole('button', { name: '新增價值' }).click();
   for (const select of await page.getByRole('combobox').all()) await select.selectOption('core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await rankValuesInListedOrder(page);
   await page.getByRole('combobox', { name: '安全穩定的位置' }).selectOption('2');
 }
 

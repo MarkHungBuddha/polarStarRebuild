@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { baseValues } from '../src/data';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 const binarySlots = {
   slot05: ['stimulation', 'tradition'],
@@ -39,7 +39,7 @@ test('其餘五個二選一槽位各有兩個完整變體，識別全域唯一',
 
 test('新二選一題需明確確認，可回改並依第一幕先後標示相符或不同', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '原本留給自己的那一晚。');
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
@@ -76,7 +76,7 @@ test.describe('抽到第二個變體', () => {
   test.use({ scenarioRandom: 0.99 });
   test('第一幕並列時，新二選一題只描述本次選擇', async ({ page }) => {
     await page.goto('/');
-    await classifyValues(page);
+    await classifyAndRankValues(page);
     await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('8');
     await page.getByRole('button', { name: '進入情境中的取捨' }).click();
     await goToScenario(page, '節慶聚會用哪一套餐具？');

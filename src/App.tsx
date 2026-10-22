@@ -59,7 +59,7 @@ export function App() {
     const word = customWord.trim();
     if (!word) return;
     if (session.values.some(value => value.word === word)) { setNotice('這個價值已在清單中。'); return; }
-    setSession(current => ({ ...current, values: [...current.values, { id: 'custom-' + crypto.randomUUID(), word, description: '你自行提出的重要事物。', custom: true, rank: current.values.length + 1 }] }));
+    setSession(current => ({ ...current, values: [...current.values, { id: 'custom-' + crypto.randomUUID(), word, description: '你自行提出的重要事物。', custom: true, rank: 1 }] }));
     setCustomWord(''); setNotice('');
   };
   const scenario = session.scenarios[session.scenarioIndex];

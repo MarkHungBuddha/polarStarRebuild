@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 test('開場說明完整體驗共十五個情境與約十五分鐘的設計目標，不再宣稱是原型', async ({ page }) => {
   await page.goto('/');
@@ -10,7 +10,7 @@ test('開場說明完整體驗共十五個情境與約十五分鐘的設計目�
 
 test('情境頁顯示目前題序與總題數，返回上一題時進度跟著更新', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
   await page.getByRole('slider').focus();
@@ -23,7 +23,7 @@ test('情境頁顯示目前題序與總題數，返回上一題時進度跟著�
 
 test('未完成全部十五題前不提供結果捷徑；從結果修改一題並確認後直接回到結果，其他答案保留', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await page.getByRole('slider').focus();
   await page.getByRole('slider').press('ArrowRight');
@@ -50,7 +50,7 @@ test('未完成全部十五題前不提供結果捷徑；從結果修改一題�
 
 test('停在結果頁但答案不完整的本機紀錄不會被當成可續答的結果', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await page.evaluate(() => {
     const saved = JSON.parse(localStorage.getItem('polarstar.session.v1')!);
@@ -65,7 +65,7 @@ test('停在結果頁但答案不完整的本機紀錄不會被當成可續答�
 test('十五則證據各有題序與目錄，可從目錄找到並修改其中一題，回到結果時停在該題', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await completeRemainingScenarios(page);
   const contents = page.getByRole('navigation', { name: '本次十五個情境' });

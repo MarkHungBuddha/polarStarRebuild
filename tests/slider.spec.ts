@@ -1,9 +1,9 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 test('滑桿需明確操作及確認，結果只描述原始接受條件', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '先準備多少，再換一種工作？');
   const slider = page.getByRole('slider', { name: '存款至少要夠幾個月生活費，你才考慮轉為接案？' });
@@ -25,7 +25,7 @@ test('滑桿需明確操作及確認，結果只描述原始接受條件', async
 test('滑桿回改只在再次確認後更新，且保留其他題答案', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '先準備多少，再換一種工作？');
   const slider = page.getByRole('slider');

@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, classifyValues, completeRemainingScenarios, goToScenario, rankValuesInListedOrder } from './support/experience';
 
 test('使用者能分類十個共同價值，並在進入情境前保留並列與自訂價值', async ({ page }) => {
   await page.goto('/');
@@ -19,9 +19,24 @@ test('使用者能分類十個共同價值，並在進入情境前保留並列�
   await expect(page.getByRole('button', { name: '確認答案' })).toBeDisabled();
 });
 
-test('結果只使用最後確認答案，並可呈現相符與不同', async ({ page }) => {
+test('沒有自行排出先後時，同類價值視為並列，結果不標相符或不同', async ({ page }) => {
   await page.goto('/');
   await classifyValues(page);
+  await expect(page.getByRole('combobox', { name: '探索刺激的位置' })).toHaveValue('1');
+  await expect(page.getByRole('combobox', { name: '安全穩定的位置' })).toHaveValue('1');
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '下週，照原計畫嗎？');
+  await page.getByRole('radio', { name: /留在原團隊/ }).check();
+  await page.getByRole('button', { name: '確認答案' }).click();
+  await completeRemainingScenarios(page);
+  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
+  await expect(evidence.getByText('第一幕並列 · 只描述本次選擇', { exact: true })).toBeVisible();
+  await expect(page.getByText(/^與第一幕(相符|不同)$/)).toHaveCount(0);
+});
+
+test('結果只使用最後確認答案，並可呈現相符與不同', async ({ page }) => {
+  await page.goto('/');
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
   await page.getByRole('radio', { name: /留在原團隊/ }).check();
@@ -51,7 +66,9 @@ test('並列不被判成不同，且自訂價值仍在結果獨立呈現', async
   await page.getByRole('button', { name: '新增價值' }).click();
   for (const select of await page.getByRole('combobox').all()) await select.selectOption('core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await rankValuesInListedOrder(page);
   await page.getByRole('combobox', { name: '安全穩定的位置' }).selectOption('2');
+  await page.getByRole('combobox', { name: '創作的位置' }).selectOption('11');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
   await page.getByRole('radio', { name: /留在原團隊/ }).focus();

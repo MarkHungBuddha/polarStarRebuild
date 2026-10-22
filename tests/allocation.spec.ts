@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 import { allocationScenarios } from '../src/scenarios/allocation';
 
 test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
@@ -21,7 +21,7 @@ test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
 
 test('分配有限的晚上，確認後呈現原始配置而非強度', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
@@ -41,7 +41,7 @@ test('分配有限的晚上，確認後呈現原始配置而非強度', async ({
 test('分配不超出總量，均分只描述，回改採最後確認版本', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   const own = page.getByRole('spinbutton', { name: '自己的攝影小誌' });
@@ -79,7 +79,7 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
 
 test('第一幕並列時，分配較多也不補出相符或不同', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('combobox', { name: '照顧身邊的人的位置' }).selectOption('1');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
@@ -94,7 +94,7 @@ test('第一幕並列時，分配較多也不補出相符或不同', async ({ pa
 
 test('續答保留已確認的原始分配，損壞的分配紀錄不會被恢復', async ({ page }) => {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await page.getByRole('spinbutton', { name: '自己的攝影小誌' }).fill('4');

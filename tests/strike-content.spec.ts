@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
 import { strikeScenarios } from '../src/scenarios/strike';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
 
 function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, string]) {
   const variants = strikeScenarios.filter(scenario => scenario.slotId === slotId);
@@ -22,7 +22,7 @@ function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, st
 
 async function openScenario(page: Page, title: string, tie?: { value: string; position: string }) {
   await page.goto('/');
-  await classifyValues(page);
+  await classifyAndRankValues(page);
   if (tie) await page.getByRole('combobox', { name: `${tie.value}的位置` }).selectOption(tie.position);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, title);
