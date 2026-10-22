@@ -2,6 +2,18 @@ import { categoryOrder } from './data';
 import type { Answer, Scenario, ValueItem } from './types';
 
 export function ResultEvidence({ scenario, answer, values, onEdit }: { scenario: Scenario; answer: Answer; values: ValueItem[]; onEdit: () => void }) {
+  if (scenario.kind === 'slider') {
+    if (answer.kind !== 'slider') return null;
+    return <article className="evidence">
+      <p className="eyebrow">{scenario.domain} · 接受條件</p>
+      <h3>{scenario.title}</h3>
+      <p className="evidence-setup">{scenario.setup}</p>
+      <span className="evidence-label">接受條件 · 只描述本次答案</span>
+      <p className="evidence-quote">{scenario.resultPrefix} {answer.value} {scenario.unit}{scenario.resultSuffix}</p>
+      <button className="text-button" onClick={onEdit}>修改這題</button>
+    </article>;
+  }
+  if (answer.kind !== 'choice') return null;
   const option = scenario.options.find(item => item.id === answer.optionId);
   const first = values.find(value => value.id === scenario.pair[0]);
   const second = values.find(value => value.id === scenario.pair[1]);

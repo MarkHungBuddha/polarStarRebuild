@@ -29,7 +29,7 @@ export function App() {
       <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
       <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
-      <p className="caption">目前為單題原型，不涵蓋十個價值的情境。完整體驗的設計目標約十五分鐘。</p>
+      <p className="caption">目前為互動原型，不涵蓋十個價值的情境。完整體驗的設計目標約十五分鐘。</p>
       <button className="primary" onClick={() => go('classify')}>開始這次反思</button>
     </section>}
     {session.screen === 'classify' && <section>

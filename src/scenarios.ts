@@ -1,4 +1,5 @@
 import type { Scenario } from './types';
+import { sliderScenarios } from './scenarios/slider';
 export const scenarios: Scenario[] = [{
   id: 'slot04-work', slotId: 'slot04', pair: ['stimulation', 'security'], kind: 'choice', domain: '工作',
   title: '下週，照原計畫嗎？',
@@ -7,5 +8,5 @@ export const scenarios: Scenario[] = [{
     { id: 'join', label: '去新團隊試兩週', consequence: '接觸新的工作方式，也接受行程與任務較難預料。', valueId: 'stimulation' },
     { id: 'stay', label: '留在原團隊', consequence: '維持熟悉、可預期的節奏，也放下這次新體驗。', valueId: 'security' },
   ],
-}];
+}, ...sliderScenarios];
 
