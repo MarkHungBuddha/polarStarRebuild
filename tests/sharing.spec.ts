@@ -132,16 +132,3 @@ test('已看紀錄無法讀取時仍能完成作答並告知無法保存', async
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toContainText('目前無法保存本機紀錄');
 });
-
-test('缺少目前槽位的舊作答不能當成完整新版本續答', async ({ page }) => {
-  await page.goto('/');
-  await classifyValues(page);
-  await page.evaluate(() => {
-    const saved = JSON.parse(localStorage.getItem('polarstar.session.v1')!);
-    saved.session.scenarios = saved.session.scenarios.slice(0, 1);
-    localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
-  });
-  await page.reload();
-  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
-  await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
-});

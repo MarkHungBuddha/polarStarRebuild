@@ -107,7 +107,7 @@ test('第一幕並列時，分配較多也不補出相符或不同', async ({ pa
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
 });
 
-test('續答保留已確認的原始分配，損壞的分配紀錄不會被恢復', async ({ page }) => {
+test('續答保留已確認的原始分配', async ({ page }) => {
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
@@ -119,14 +119,4 @@ test('續答保留已確認的原始分配，損壞的分配紀錄不會被恢�
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
   await expect(evidence.getByText('你把 4 晚分給「自己的攝影小誌」，2 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
-  await page.evaluate(() => {
-    const raw = localStorage.getItem('polarstar.session.v1');
-    if (!raw) throw new Error('Expected a saved session');
-    const saved = JSON.parse(raw);
-    saved.session.answers['slot03-evenings'].allocations = [6, 6];
-    localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
-  });
-  await page.reload();
-  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
-  await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
 });

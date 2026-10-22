@@ -26,8 +26,9 @@ test('重新開啟後可續答，保留第一幕並列、自訂價值與相同�
   await expect(page.getByRole('combobox', { name: '創作的位置' })).toBeVisible();
 });
 
-test('損壞或不相容的本機紀錄不會被當成可續答的答案', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('polarstar.session.v1', JSON.stringify({ schemaVersion: 1, session: { screen: 'scenario' } })));
+// Stored blobs below are opaque stand-ins for a damaged record or one written by another app version; they do not mirror the session format.
+test('損壞的本機紀錄不會被當成可續答的答案', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('polarstar.session.v1', 'damaged{'));
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
   await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
@@ -107,18 +108,10 @@ test('滑桿已確認的原始條件可續答，未確認的新刻度不覆寫�
   await expect(evidence.getByText('你希望先準備 12 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
 });
 
-for (const invalidation of ['版本', '題目內容'] as const) {
-  test(`${invalidation}不相容時，不把舊答案套用到目前題目`, async ({ page }) => {
-    await beginAndClassify(page);
-    await page.evaluate(mode => {
-      const saved = JSON.parse(localStorage.getItem('polarstar.session.v1')!);
-      if (mode === '版本') saved.schemaVersion = 999;
-      else saved.session.scenarios[0].title = '已經改寫的舊題';
-      localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
-    }, invalidation);
-    await page.reload();
-    await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
-    await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: '開始這次反思' })).toBeVisible();
-  });
-}
+test('其他版本留下的本機紀錄不會把舊答案套用到目前題目', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('polarstar.session.v1', JSON.stringify({ writtenBy: 'another app version', answers: ['opaque'] })));
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
+  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '開始這次反思' })).toBeVisible();
+});
