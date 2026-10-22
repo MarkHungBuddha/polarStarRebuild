@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { completeRemainingScenarios, goToScenario } from './support/experience';
 
 async function beginAndClassify(page: Page) {
   await page.goto('/');
@@ -35,9 +36,12 @@ test('損壞或不相容的本機紀錄不會被當成可續答的答案', async
 test('未確認的修改不會覆寫重新開啟後的已確認答案', async ({ page }) => {
   await beginAndClassify(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '下週，照原計畫嗎？');
   await page.getByRole('radio', { name: /留在原團隊/ }).check();
   await page.getByRole('button', { name: '確認答案' }).click();
-  await page.getByRole('button', { name: '修改這題' }).click();
+  await completeRemainingScenarios(page);
+  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？' }) });
+  await evidence.getByRole('button', { name: '修改這題' }).click();
   await page.getByRole('radio', { name: /去新團隊試兩週/ }).check();
   await page.reload();
   await page.getByRole('button', { name: '繼續上次作答' }).click();
@@ -63,8 +67,10 @@ test('儲存寫入失敗時告知無法保存，仍能完成當次作答', async
   await beginAndClassify(page);
   await expect(page.getByRole('status')).toContainText('目前無法保存本機紀錄');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '下週，照原計畫嗎？');
   await page.getByRole('radio', { name: /留在原團隊/ }).check();
   await page.getByRole('button', { name: '確認答案' }).click();
+  await completeRemainingScenarios(page);
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。' })).toBeVisible();
 });
 

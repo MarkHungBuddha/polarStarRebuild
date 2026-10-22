@@ -73,6 +73,9 @@ select { border: 1px solid var(--rule); border-radius: 0; background: transparen
 .option strong { display: block; font-family: 'Noto Serif TC', serif; font-size: 25px; color: var(--ink); }
 .option small { display: block; font-size: 15px; line-height: 1.8; margin-top: 10px; }
 .option.selected { border-left: 3px solid var(--ink); padding-left: 7px; }
+.strike-removed strong { text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.strike-status { display: inline-block; margin-top: 14px; font-size: 14px; font-weight: 700; }
+.kept-reply { margin: 20px 0; padding-left: 20px; border-left: 2px solid var(--ink); font-family: 'Noto Serif TC', serif; font-size: 20px; line-height: 1.9; }
 .result-values, .custom-results { margin: 48px 0; padding-top: 24px; border-top: 2px solid var(--ink); }
 .result-values > h2, .custom-results h2 { font-size: 34px; margin-bottom: 22px; }
 .result-category { padding: 20px 0; border-bottom: 1px solid var(--rule); }
