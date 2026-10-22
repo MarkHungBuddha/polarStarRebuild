@@ -83,3 +83,40 @@ test('無法讀取本機儲存時仍可開始，不會卡在續答入口', async
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('combobox')).toHaveCount(10);
 });
+
+test('滑桿已確認的原始條件可續答，未確認的新刻度不覆寫它', async ({ page }) => {
+  await beginAndClassify(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '先準備多少，再換一種工作？');
+  const slider = page.getByRole('slider');
+  await slider.focus();
+  await slider.press('Home');
+  for (let count = 0; count < 12; count += 1) await slider.press('ArrowRight');
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await completeRemainingScenarios(page);
+  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true }) });
+  await evidence.getByRole('button', { name: '修改這題' }).click();
+  await slider.focus();
+  await slider.press('End');
+  await page.reload();
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
+  await expect(page.getByRole('slider')).toHaveValue('12');
+  await page.getByRole('button', { name: '返回已確認結果' }).click();
+  await expect(evidence.getByText('你希望先準備 12 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
+});
+
+for (const invalidation of ['版本', '題目內容'] as const) {
+  test(`${invalidation}不相容時，不把舊答案套用到目前題目`, async ({ page }) => {
+    await beginAndClassify(page);
+    await page.evaluate(mode => {
+      const saved = JSON.parse(localStorage.getItem('polarstar.session.v1')!);
+      if (mode === '版本') saved.schemaVersion = 999;
+      else saved.session.scenarios[0].title = '已經改寫的舊題';
+      localStorage.setItem('polarstar.session.v1', JSON.stringify(saved));
+    }, invalidation);
+    await page.reload();
+    await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
+    await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '開始這次反思' })).toBeVisible();
+  });
+}
