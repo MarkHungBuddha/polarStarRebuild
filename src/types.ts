@@ -38,11 +38,24 @@ export interface SliderScenario {
   resultSuffix: string;
 }
 export interface StrikeScenario extends Omit<ChoiceScenario, 'kind'> { kind: 'strike' }
-export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario;
+export interface AllocationScenario {
+  id: string;
+  slotId: string;
+  pair: readonly [ValueId, ValueId];
+  kind: 'allocate';
+  domain: string;
+  title: string;
+  setup: string;
+  total: number;
+  unit: string;
+  options: readonly [ChoiceOption, ChoiceOption];
+}
+export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario | AllocationScenario;
 export type ChoiceAnswer = { kind: 'choice'; variantId: string; optionId: string };
 export type StrikeAnswer = { kind: 'strike'; variantId: string; optionId: string };
 export type SliderAnswer = { kind: 'slider'; variantId: string; value: number };
-export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer;
+export type AllocationAnswer = { kind: 'allocate'; variantId: string; allocations: readonly [number, number] };
+export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer | AllocationAnswer;
 export interface Session {
   screen: Screen;
   values: ValueItem[];
