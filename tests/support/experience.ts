@@ -14,6 +14,8 @@ async function confirmCurrentScenario(page: Page) {
       await slider.focus();
       await slider.press('Home');
       await slider.press('ArrowRight');
+    } else if (await page.getByRole('spinbutton').count()) {
+      await page.getByRole('spinbutton').first().fill('0');
     } else {
       await page.getByRole('radio').first().check();
     }
