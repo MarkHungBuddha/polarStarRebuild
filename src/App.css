@@ -73,6 +73,15 @@ select { border: 1px solid var(--rule); border-radius: 0; background: transparen
 .option strong { display: block; font-family: 'Noto Serif TC', serif; font-size: 25px; color: var(--ink); }
 .option small { display: block; font-size: 15px; line-height: 1.8; margin-top: 10px; }
 .option.selected { border-left: 3px solid var(--ink); padding-left: 7px; }
+.condition-control { display: grid; gap: 18px; padding: 24px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.condition-control > label { font-size: 18px; line-height: 1.8; }
+.condition-reading { color: var(--ink); font-family: 'Playfair Display', 'Noto Serif TC', serif; font-size: clamp(30px, 5vw, 48px); font-weight: 900; font-variant-numeric: tabular-nums; }
+.condition-control input[type='range'] { appearance: none; -webkit-appearance: none; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer; }
+.condition-control input[type='range']::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
+.condition-control input[type='range']::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 22px; height: 28px; margin-top: -13px; border: 0; border-radius: 0; background: var(--accent); }
+.condition-control input[type='range']::-moz-range-track { height: 2px; background: var(--ink); }
+.condition-control input[type='range']::-moz-range-thumb { width: 22px; height: 28px; border: 0; border-radius: 0; background: var(--accent); }
+.condition-limits { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 14px; }
 .strike-removed strong { text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .strike-status { display: inline-block; margin-top: 14px; font-size: 14px; font-weight: 700; }
 .kept-reply { margin: 20px 0; padding-left: 20px; border-left: 2px solid var(--ink); font-family: 'Noto Serif TC', serif; font-size: 20px; line-height: 1.9; }

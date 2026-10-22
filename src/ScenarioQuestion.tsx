@@ -1,8 +1,16 @@
 import { useState } from 'react';
-import type { Answer, Scenario } from './types';
+import type { Answer, ChoiceAnswer, ChoiceScenario, Scenario, StrikeAnswer, StrikeScenario } from './types';
+import { SliderQuestion } from './SliderQuestion';
 
 export function ScenarioQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
   scenario: Scenario; answer?: Answer; onConfirm: (answer: Answer) => void; onBack: () => void; onReview?: () => void;
+}) {
+  if (scenario.kind === 'slider') return <SliderQuestion scenario={scenario} answer={answer?.kind === 'slider' ? answer : undefined} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;
+  return <ChoiceQuestion scenario={scenario} answer={answer?.kind === 'slider' ? undefined : answer} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;
+}
+
+function ChoiceQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
+  scenario: ChoiceScenario | StrikeScenario; answer?: ChoiceAnswer | StrikeAnswer; onConfirm: (answer: Answer) => void; onBack: () => void; onReview?: () => void;
 }) {
   const [draft, setDraft] = useState<string | null>(answer?.optionId ?? null);
   const strike = scenario.kind === 'strike';
