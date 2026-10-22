@@ -11,14 +11,13 @@ import type { Category, Scenario, Screen, Session, ValueItem } from './types';
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
 }
+const sameQuestions = (left: readonly Scenario[], right: readonly Scenario[]) => left.length === right.length && left.every((scenario, index) => scenario.id === right[index].id);
+
 export function App() {
   const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
-  const [initialSaved] = useState(() => {
-    const saved = loadSavedSession();
-    if (!request.specified || (saved.session && request.questions && JSON.stringify(saved.session.scenarios) === JSON.stringify(request.questions))) return saved;
-    return {};
-  });
+  // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.
+  const [initialSaved] = useState(loadSavedSession);
   const [resumable, setResumable] = useState(initialSaved.session);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState(initialSaved.notice ?? initialHistory.notice ?? '');
@@ -54,6 +53,13 @@ export function App() {
     setStorageNotice(cleared && historyCleared ? history.notice ?? '' : '目前無法清除本機紀錄。你可以開始新作答，但下次開啟可能仍看到舊紀錄。');
     window.scrollTo({ top: 0 });
   };
+  const resume = () => {
+    if (!resumable) return;
+    // Continuing keeps the saved questions, so a share link for other questions no longer applies.
+    if (request.specified) { window.history.replaceState(null, '', window.location.pathname); setRequest({ specified: false }); }
+    setSession(resumable); setResumable(undefined); setSaveEnabled(true);
+  };
+  const sharedDiffers = Boolean(resumable && request.questions && !sameQuestions(resumable.scenarios, request.questions));
   const go = (screen: Screen) => { setSaveEnabled(true); setSession(current => ({ ...current, screen })); window.scrollTo({ top: 0 }); };
   const updateValue = (id: string, change: Partial<ValueItem>) => setSession(current => ({ ...current, values: current.values.map(value => value.id === id ? { ...value, ...change } : value) }));
   const addCustom = () => {
@@ -77,7 +83,7 @@ export function App() {
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
       <p className="caption">第二幕共十五個情境，每個情境都是兩種重視之間的取捨。</p>
       <p className="caption">整份體驗的設計目標約十五分鐘，這是預估，不是實測的完成時間。</p>
-      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p><nav className="actions"><button className="primary" onClick={() => { setSession(resumable); setResumable(undefined); setSaveEnabled(true); }}>繼續上次作答</button><button className="secondary" onClick={() => restart()}>重新開始</button></nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
+      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={() => restart()}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
     </section>}
     {session.screen === 'classify' && <section>
       <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
