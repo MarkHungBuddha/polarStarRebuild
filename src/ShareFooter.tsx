@@ -16,6 +16,6 @@ export function ShareFooter({ shareLink, shareDisabled, onClearRecords }: { shar
       <button className="secondary" onClick={() => copy(shareLink)}>複製題目連結</button>
       {copyNotice && <p role="status">{copyNotice}</p>}
     </> : <p>這份題目與目前版本不相容，無法產生相同題目的分享連結。請重新開始。</p>}</section>}
-    <button className="text-button" onClick={onClearRecords}>清除本機作答紀錄</button><p>清除會同時移除作答與已看題目紀錄；一般重新開始會保留已看紀錄。</p>
+    <button className="text-button" onClick={onClearRecords}>清除本機作答紀錄</button><p>清除後，作答和看過的題目紀錄都會刪除；按「重新開始」則會保留看過的題目紀錄。</p>
   </footer>;
 }

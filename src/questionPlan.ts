@@ -40,11 +40,11 @@ export function requestedQuestions(search: string): { questions?: Scenario[]; no
   const params = new URLSearchParams(search);
   const seed = params.get('seed');
   if (seed === null) return { specified: false };
-  if (params.get('v') !== catalogVersion) return { specified: true, notice: '這份分享題目的版本目前無法使用。你可以明確選擇以目前版本重新開始。' };
+  if (params.get('v') !== catalogVersion) return { specified: true, notice: '這份分享題目的版本目前無法使用。你可以改用目前的版本重新開始。' };
   try {
     if (!seed || seed.length > 1024) throw new Error('Invalid seed');
     return { specified: true, questions: selectQuestions(new Set(), seed) };
-  } catch { return { specified: true, notice: '這份分享連結的題目資料無法使用。你可以明確選擇以目前版本重新開始。' }; }
+  } catch { return { specified: true, notice: '這份分享連結的題目資料無法使用。你可以改用目前的版本重新開始。' }; }
 }
 
 export function questionShareLink(questions: readonly Scenario[], location: Pick<Location, 'origin' | 'pathname'>): string | undefined {

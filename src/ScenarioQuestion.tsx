@@ -20,12 +20,12 @@ function ChoiceQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
   const [draft, setDraft] = useState<string | null>(answer?.optionId ?? null);
   const stage = choiceStages[scenario.id];
   const selected = scenario.options.findIndex(option => option.id === draft);
-  return <ScenarioFrame scenario={scenario} caption="兩個去向都在畫面上。可以拖曳，也可以點目的地；確認之前都能重來。" canConfirm={draft !== null} onConfirm={() => draft !== null && onConfirm({ kind: scenario.kind, variantId: scenario.id, optionId: draft })} onBack={onBack} onReview={onReview}>
+  return <ScenarioFrame scenario={scenario} caption="把物件拖到目的地，或直接點選目的地。按下確認前都能更改。" canConfirm={draft !== null} onConfirm={() => draft !== null && onConfirm({ kind: scenario.kind, variantId: scenario.id, optionId: draft })} onBack={onBack} onReview={onReview}>
     <div className="game-board">
       <p className="game-instruction">{stage.instruction}</p>
       <TransferScene prop={stage.prop} destinations={stage.destinations} labels={[scenario.options[0].label, scenario.options[1].label]} selected={selected < 0 ? null : selected} onChoose={index => setDraft(scenario.options[index].id)} />
       <div className="scene-key">{scenario.options.map((option, index) => <p key={option.id}><b>{stage.destinations[index]}</b>{option.consequence}</p>)}</div>
-      <p className="scene-feedback" aria-live="polite">{selected < 0 ? '你還站在決定之前。' : scenario.options[selected].label}</p>
+      <p className="scene-feedback" aria-live="polite">{selected < 0 ? '還沒選好。' : scenario.options[selected].label}</p>
     </div>
   </ScenarioFrame>;
 }

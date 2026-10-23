@@ -17,7 +17,7 @@ test('結果以兩份前三名開頭：第一幕自述的前三名，以及情�
   const positions = (await chosen.allTextContents()).map(text => text.match(/第 (\d)/)![1]);
   expect(new Set(positions).size, '並列的價值合在同一列').toBe(positions.length);
   await expect(conclusion.getByText(/^自主：(在情境中選了 \d+ 次／共 \d+ 題|這次沒有能看出選邊的題目)/)).toBeVisible();
-  await expect(conclusion.getByText(/單題即可改動名次|一題改變就可能改動名次/)).toBeVisible();
+  await expect(conclusion.getByText(/改一題就可能換名次/)).toBeVisible();
   await expect(conclusion.getByText(/不在你最重視的前三名/)).toHaveCount(0);
   await expect(conclusion.getByText(/^另外在情境中常選的：/)).toHaveCount(1);
   const differing = conclusion.locator('.conclusion-differing a');

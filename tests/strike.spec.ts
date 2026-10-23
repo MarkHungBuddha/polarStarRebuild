@@ -23,7 +23,7 @@ test('刪稿需明確刪去一段才可確認，並呈現實際保留的回覆',
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '這份提案，用誰的方法？' }) });
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('這次我先沿用共同約定的格式，讓大家可以直接對照；我會把自己的呈現方式留到另一次提案。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('這次我先用大家約好的格式，方便直接對照；我自己的寫法留到下次提案再試。', { exact: true })).toBeVisible();
 });
 
 test('刪稿可用鍵盤修正，未確認的修改不改變結果', async ({ page }) => {
@@ -46,7 +46,7 @@ test('刪稿可用鍵盤修正，未確認的修改不改變結果', async ({ pa
   await page.getByRole('button', { name: '確認答案' }).click();
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('這次我想用自己設計的方式說明，讓觀點依我的想法展開；我知道這會偏離共同約定，也需要大家多花時間熟悉。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('這次我想用自己設計的方式說明觀點。我知道這沒照共同約定，大家也得多花點時間熟悉。', { exact: true })).toBeVisible();
   await expectNoHorizontalScroll(page);
 });
 

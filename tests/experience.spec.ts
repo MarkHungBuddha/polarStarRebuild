@@ -12,7 +12,7 @@ test('使用者能分類十個共同價值，並在進入情境前保留並列�
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await page.getByRole('combobox', { name: '安全穩定的位置' }).selectOption('2');
-  await expect(page.getByText('同一位置代表並列', { exact: false })).toBeVisible();
+  await expect(page.getByText('一樣重要的，就選相同的位置', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
   await expect(page.getByRole('heading', { name: '下週，照原計畫嗎？' })).toBeVisible();

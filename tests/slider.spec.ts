@@ -7,7 +7,7 @@ test('滑桿需明確操作及確認；條件落在兩門檻之間時，結果�
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '先準備多少，再換一種工作？');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  await expect(amountFeedback(page)).toHaveText('還沒有定案，先在場景裡試試看。');
+  await expect(amountFeedback(page)).toHaveText('請先操作上方的物件，再確認答案。');
   await setAmount(page, 8);
   await expect(amountFeedback(page)).toContainText(' 8 個月生活費');
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
