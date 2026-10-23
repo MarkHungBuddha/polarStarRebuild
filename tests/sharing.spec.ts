@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyValues, completeRemainingScenarios, goToScenario, sceneOption, setAmount } from './support/experience';
 
 test('分享連結只重現同一份題目，不帶自己的答案或價值詞', async ({ page, browser }) => {
   await page.goto('/');
@@ -10,7 +10,7 @@ test('分享連結只重現同一份題目，不帶自己的答案或價值詞',
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await page.getByRole('radio', { name: /留在原團隊/ }).check();
+  await sceneOption(page, /留在原團隊/).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await page.getByRole('button', { name: '重新開始', exact: true }).click();
@@ -38,8 +38,7 @@ test('指定分享題目中途重新開啟，仍可續答同一份已確認進�
   await page.goto(link);
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  const slider = page.getByRole('slider');
-  await slider.focus(); await slider.press('Home'); await slider.press('ArrowRight');
+  await setAmount(page, 1);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   const nextTitle = await page.getByRole('heading', { level: 1 }).textContent();
   await page.reload();
@@ -55,8 +54,7 @@ test('開啟不同題目的分享連結時，仍可選擇繼續本機進度，�
   other.searchParams.set('seed', 'p.' + own.searchParams.get('seed')!.slice(2).split('.').map(selector => selector === '0' ? '1' : '0').join('.'));
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  const slider = page.getByRole('slider');
-  await slider.focus(); await slider.press('Home'); await slider.press('ArrowRight');
+  await setAmount(page, 1);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   const savedTitle = await page.getByRole('heading', { level: 1 }).textContent();
 

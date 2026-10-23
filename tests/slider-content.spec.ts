@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { sliderScenarios } from '../src/scenarios/slider';
-import { classifyValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { amountFeedback, classifyValues, completeRemainingScenarios, goToScenario, setAmount } from './support/experience';
 
 test('自主與安全穩定有兩個可辨識的滑桿變體', () => {
   const variants = sliderScenarios.filter(scenario => scenario.slotId === 'slot01');
@@ -55,16 +55,11 @@ test('新槽位的休閒與準備時間可確認回改，結果保留各自單�
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '八週的進修，留多少空白？');
-  const slider = page.getByRole('slider');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  await slider.focus();
-  await slider.press('Home');
-  for (let count = 0; count < 6; count += 1) await slider.press('ArrowRight');
+  await setAmount(page, 6);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await goToScenario(page, '成果發表，要多留一個版本嗎？');
-  await slider.focus();
-  await slider.press('Home');
-  for (let count = 0; count < 3; count += 1) await slider.press('ArrowRight');
+  await setAmount(page, 3);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const leisure = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '八週的進修，留多少空白？', exact: true }) });
@@ -72,9 +67,8 @@ test('新槽位的休閒與準備時間可確認回改，結果保留各自單�
   await expect(leisure.getByText('你希望每週至少保留 6 小時純休閒，再考慮八週進修安排。', { exact: true })).toBeVisible();
   await expect(preparation.getByText('你希望至少多有 3 週準備時間，再考慮延後發表並一併完成易讀版。', { exact: true })).toBeVisible();
   await preparation.getByRole('button', { name: '修改這題' }).click();
-  await expect(slider).toHaveValue('3');
-  await slider.focus();
-  await slider.press('End');
+  await expect(amountFeedback(page)).toContainText(' 3 ');
+  await setAmount(page, 'max');
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await expect(preparation.getByText('你希望至少多有 3 週準備時間，再考慮延後發表並一併完成易讀版。', { exact: true })).toBeVisible();
   for (const evidence of [leisure, preparation]) {
@@ -91,11 +85,8 @@ test('新的居住滑桿變體可作答；第一幕並列時，門檻外的條�
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '搬家之前，想先確定什麼？');
-  const slider = page.getByRole('slider', { name: '至少保障幾個月不調租，你才考慮搬到新住處？' });
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  await slider.focus();
-  await slider.press('Home');
-  for (let count = 0; count < 12; count += 1) await slider.press('ArrowRight');
+  await setAmount(page, 12);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await expect(page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true })).toHaveCount(0);

@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
+import { allocate, classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
 import { allocationScenarios } from '../src/scenarios/allocation';
 
 test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
@@ -25,11 +25,8 @@ test('分配有限的晚上，較多的一邊算偏向並標示相符，但不�
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  const own = page.getByRole('spinbutton', { name: '自己的攝影小誌' });
-  const friend = page.getByRole('spinbutton', { name: '陪朋友練面試' });
-  await own.fill('4');
-  await expect(friend).toHaveValue('2');
-  await expect(page.getByText('已分配 6 / 6 晚', { exact: true })).toBeVisible();
+  await allocate(page, 4);
+  await expect(page.locator('.scene-feedback')).toHaveText('自己的攝影小誌 4 晚 · 陪朋友練面試 2 晚行程排好了。');
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
@@ -44,7 +41,7 @@ test('把資源全部分給一邊時，才依第一幕先後標示相符或不�
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
-  await page.getByRole('spinbutton', { name: '陪朋友練面試' }).fill('6');
+  await allocate(page, 0);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
@@ -59,19 +56,15 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
-  const own = page.getByRole('spinbutton', { name: '自己的攝影小誌' });
-  const friend = page.getByRole('spinbutton', { name: '陪朋友練面試' });
-  await own.fill('99');
-  await expect(own).toHaveValue('6');
-  await expect(friend).toHaveValue('0');
-  await own.fill('-1');
-  await expect(own).toHaveValue('0');
-  await expect(friend).toHaveValue('6');
-  await own.fill('3');
-  await own.focus();
-  await own.press('ArrowUp');
-  await expect(own).toHaveValue('4');
-  await own.press('ArrowDown');
+  const slots = page.locator('[data-planner-slot]');
+  const confirm = page.getByRole('button', { name: '確認答案', exact: true });
+  // The schedule has exactly the six evenings, and nothing is confirmable until every one is placed.
+  await expect(slots).toHaveCount(6);
+  await page.locator('.planner-activities button').nth(0).click();
+  for (const slot of (await slots.all()).slice(0, 5)) await slot.click();
+  await expect(confirm).toBeDisabled();
+  await expect(page.locator('.scene-feedback')).toContainText('還有 1 個空檔。');
+  await allocate(page, 3);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
@@ -80,12 +73,12 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
   await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await own.fill('5');
+  await allocate(page, 5);
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await expect(evidence.getByText('你把 3 晚分給「自己的攝影小誌」，3 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await expect(own).toHaveValue('3');
-  await own.fill('5');
+  await expect(page.locator('.scene-feedback')).toContainText('自己的攝影小誌 3 晚 · 陪朋友練面試 3 晚');
+  await allocate(page, 5);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('你把 5 晚分給「自己的攝影小誌」，1 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
@@ -98,7 +91,7 @@ test('第一幕並列時，分配較多也不補出相符或不同', async ({ pa
   await page.getByRole('combobox', { name: '照顧身邊的人的位置' }).selectOption('1');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
-  await page.getByRole('spinbutton', { name: '自己的攝影小誌' }).fill('1');
+  await allocate(page, 1);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
@@ -112,7 +105,7 @@ test('續答保留已確認的原始分配', async ({ page }) => {
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
-  await page.getByRole('spinbutton', { name: '自己的攝影小誌' }).fill('4');
+  await allocate(page, 4);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: '繼續上次作答' }).click();

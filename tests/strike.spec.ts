@@ -1,11 +1,11 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder } from './support/experience';
+import { classifyAll, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder, sceneOptions } from './support/experience';
 
 async function openStrike(page: Page, tied = false) {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
-  for (const select of await page.getByRole('combobox').all()) await select.selectOption('core');
+  await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await rankValuesInListedOrder(page);
   if (tied) await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('1');
@@ -17,8 +17,8 @@ test('刪稿需明確刪去一段才可確認，並呈現實際保留的回覆',
   await openStrike(page);
   await expect(page.getByRole('heading', { name: '這份提案，用誰的方法？' })).toBeVisible();
   await expect(page.getByRole('button', { name: '確認答案' })).toBeDisabled();
-  await page.getByRole('radio').nth(1).check();
-  await expect(page.getByRole('radio').nth(1)).toBeChecked();
+  await sceneOptions(page).nth(1).click();
+  await expect(sceneOptions(page).nth(1)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '確認答案' }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '這份提案，用誰的方法？' }) });
@@ -29,20 +29,20 @@ test('刪稿需明確刪去一段才可確認，並呈現實際保留的回覆',
 test('刪稿可用鍵盤修正，未確認的修改不改變結果', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openStrike(page);
-  await page.getByRole('radio').nth(1).focus();
+  await sceneOptions(page).nth(1).focus();
   await page.keyboard.press('Space');
   await page.getByRole('button', { name: '確認答案' }).focus();
   await page.keyboard.press('Enter');
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '這份提案，用誰的方法？' }) });
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio').nth(1).focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('radio').nth(0)).toBeChecked();
+  await sceneOptions(page).nth(0).focus();
+  await page.keyboard.press('Space');
+  await expect(sceneOptions(page).nth(0)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio').nth(0).check();
+  await sceneOptions(page).nth(0).click();
   await page.getByRole('button', { name: '確認答案' }).click();
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
@@ -52,7 +52,7 @@ test('刪稿可用鍵盤修正，未確認的修改不改變結果', async ({ pa
 
 test('第一幕將自主與遵守規範並列時，刪稿只描述保留的回覆', async ({ page }) => {
   await openStrike(page, true);
-  await page.getByRole('radio').nth(1).check();
+  await sceneOptions(page).nth(1).click();
   await page.getByRole('button', { name: '確認答案' }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '這份提案，用誰的方法？' }) });

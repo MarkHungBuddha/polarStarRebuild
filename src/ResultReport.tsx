@@ -1,25 +1,22 @@
 import { useState } from 'react';
-import { act1TopThree, scenarioTallies, scenarioTopThree, differsFromFirstAct } from './valueRanking';
+import { differsFromFirstAct } from './valueRanking';
 import { categoryLabels, categoryOrder } from './data';
 import { PageHeader } from './PageHeader';
 import { evidenceId, ResultEvidence } from './ResultEvidence';
-import { ValueConclusion } from './ValueConclusion';
+import { TopThreeColumns, ValueConclusion } from './ValueConclusion';
 import type { Scenario, Session } from './types';
 
 /** The result page: the top-three conclusion, first-act categories and positions, custom values, and the evidence for each confirmed answer. */
 export function ResultReport({ session, onEdit, onRevisitFirstAct, onRestart, initialDetail = false }: { initialDetail?: boolean; session: Session; onEdit: (scenario: Scenario, index: number) => void; onRevisitFirstAct: () => void; onRestart: () => void }) {
   const [detail, setDetail] = useState(initialDetail);
   const changePage = (next: boolean) => { setDetail(next); window.scrollTo({ top: 0 }); };
-  const stated = act1TopThree(session.values).filter(item => item.position === 1).map(item => item.item.word);
-  const chosen = scenarioTopThree(scenarioTallies(session)).filter(item => item.position === 1).map(item => item.item.value.word);
   const differing = session.scenarios.filter(item => differsFromFirstAct(item, session.answers[item.id], session.values)).length;
-  const briefNames = (words: string[]) => words.slice(0, 3).join('、') + (words.length > 3 ? `等 ${words.length} 項（並列）` : '');
   if (!detail) return <section className="result-cover">
     <PageHeader eyebrow="本次反思 · 一頁摘要" title="這一次，你的選擇。" description="先帶走一個發現，再慢慢讀懂每次取捨。" />
-    <div className="summary-pair"><div><p className="eyebrow">你最重視的</p><h2>{briefNames(stated) || '尚未排序'}</h2></div><div><p className="eyebrow">情境裡最常選的</p><h2>{briefNames(chosen) || '沒有明確偏向'}</h2></div></div>
+    <section className="conclusion" aria-labelledby="cover-top-three"><h2 id="cover-top-three">你的前三名</h2><TopThreeColumns session={session} onRevisitFirstAct={onRevisitFirstAct} /></section>
     <p className="summary-takeaway">{differing ? '有些選擇，讓你重視的另一面浮現。' : '這次的選擇，沒有明確偏離你原先的排序。'}</p>
     <p>{differing ? '在 ' + differing + ' 個情境裡，你選了原先排序較後的價值。可以從其中一題開始，看看是什麼條件改變了你的取捨。' : '挑一個最猶豫的場景想想：如果條件改變，你還會做同樣的安排嗎？'}</p>
-    <p className="caption">這是本次答案的整理，不是人格判定；並列與沒有偏向的答案不算落差。</p>
+    <p className="caption">這是本次答案的整理，不是人格判定；並列與沒有偏向的答案不算作答差異。</p>
     <nav className="actions"><button className="primary" onClick={() => changePage(true)}>閱讀詳細報告 →</button><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;
   const coreValues = session.values.filter(value => !value.custom);

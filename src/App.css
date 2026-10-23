@@ -293,11 +293,6 @@ footer .text-button { display: block; margin-top: 18px; font-size: 14px; }
 .planner-slots .assigned { box-shadow:inset 4px 0 var(--ink); }
 .planner-slots .assigned.activity-1 { box-shadow:inset 4px 0 var(--accent); }
 .activity-ghost { position:fixed; z-index:10; pointer-events:none; background:var(--ink); color:var(--bg); padding:12px 16px; max-width:240px; font-size:14px; }
-.summary-pair { display:grid; grid-template-columns:1fr 1fr; border-block:1px solid var(--ink); padding:30px 0; margin:32px 0; }
-.summary-pair > div { padding-right:24px; }
-.summary-pair > div + div { padding-left:24px; border-left:1px solid var(--rule); }
-.summary-pair h2 { font-size:clamp(24px,3vw,38px); line-height:1.6; }
-.summary-pair > div + div h2 { color:var(--accent); }
 .summary-takeaway { font:700 clamp(24px,3vw,36px)/1.7 'Noto Serif TC',serif; max-width:24em; }
 .report-back { margin-bottom:28px; }
 @media(max-width:760px) {
@@ -310,8 +305,6 @@ footer .text-button { display: block; margin-top: 18px; font-size: 14px; }
  .planner-slots button { padding:14px 10px; min-height:155px; }
  .planner-slots strong { font-size:15px; }
  .planner-date { font-size:11px; }
- .summary-pair { grid-template-columns:1fr; gap:24px; }
- .summary-pair > div + div { padding:24px 0 0; border-left:0; border-top:1px solid var(--rule); }
 }
 @media(prefers-reduced-motion:reduce) { .deposit-coin { animation:none; opacity:0; } }
 .real-clock, .piggy-scene, .planner-activities { user-select:none; -webkit-user-select:none; }
