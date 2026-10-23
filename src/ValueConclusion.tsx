@@ -41,14 +41,14 @@ export function ValueConclusion({ session, onRevisitFirstAct }: { session: Sessi
       return <li key={item.id}><strong>{item.word}</strong>：{detail}</li>;
     })}
     {onlyChosen.length > 0 && <li>另外在情境中常選的：{byPosition(onlyChosen).map(row => `${row.items.map(tally => tally.value.word).join('、')}（${counted(row)}）`).join('；')}。</li>}</ul>
-    <h3>帶走這三個問題</h3>
+    <h3>還可以想想</h3>
     <ol className="conclusion-questions">
       <li>{onlyChosen.length ? '兩份前三名不完全一樣。接下來一年，你希望生活更接近哪一份？' : '兩份前三名一致。你現在的時間與精力，有分給這三件事嗎？'}</li>
-      <li>從你最重視的前三名挑一個，寫下下個月能為它多留一點空間的一件具體安排。</li>
+      <li>從你最重視的前三名挑一個：下個月，你可以為它安排一件什麼事？</li>
       <li>{differing.length ? <>回頭看與你最重視的前三名有關、又與第一幕不同的題目：是什麼條件讓你選了另一邊？那個條件在你的生活裡常出現嗎？
         <ul className="conclusion-differing">{differing.map(({ scenario, position }) => <li key={scenario.id}><a href={`#${evidenceId(scenario)}`}>第 {position} 題 · {scenario.title}</a></li>)}</ul></> : allDiffering.length ? '與你最重視的前三名有關的題目，都與第一幕相符。挑一題回頭看：在什麼條件下，你會選另一邊？' : '這次沒有與第一幕不同的題目。挑一題回頭看：在什麼條件下，你會選另一邊？'}
-        {otherDiffering > 0 && <p className="caption">其餘 {otherDiffering} 題與第一幕不同的題目，在下方逐題證據。</p>}</li>
+        {otherDiffering > 0 && <p className="caption">其餘 {otherDiffering} 題與第一幕不同的題目，可以在下方逐題查看。</p>}</li>
     </ol>
-    <p className="disclaimer">每個價值這次只出現在約三題，一題改變就可能改動名次；滑桿條件落在中間、平均分配的題目不計入次數。這份對照是規劃與反思的起點，不是測驗分數或人格判定。</p>
+    <p className="disclaimer">每個價值這次只出現在約三題，改一題就可能換名次。接受條件落在中間範圍，或時間平均分配的答案，都不計入次數。這些排名可以幫你回顧答案，不能當作測驗分數或人格判定。</p>
   </section>;
 }

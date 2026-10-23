@@ -11,8 +11,8 @@ export function SliderQuestion({ scenario, answer, onConfirm, onBack, onReview }
   const money = scenario.id === 'slot01-work';
   const clock = scenario.slotId === 'slot07';
   const lease = scenario.slotId === 'slot01';
-  const instruction = money ? '把硬幣拖進小豬撲滿，或點硬幣存入。每份代表一個月生活費。' : clock ? '拖動紅色時針，留出你希望擁有的休閒時間。' : '翻動桌曆，找到你願意接受的安排。';
-  return <ScenarioFrame scenario={scenario} caption="先在場景裡試試看。確認之前，都可以改變安排。" canConfirm={draft !== null} onConfirm={() => draft !== null && onConfirm({ kind: 'slider', variantId: scenario.id, value: draft })} onBack={onBack} onReview={onReview}>
+  const instruction = money ? '把硬幣拖進小豬撲滿，或點硬幣存入。每份代表一個月生活費。' : clock ? '拖動紅色時針，設定你至少想保留的休閒時數。' : '用桌曆下方的箭頭翻頁，設定你能接受的時間。';
+  return <ScenarioFrame scenario={scenario} caption="調整好後，按下「確認答案」。確認前都能更改。" canConfirm={draft !== null} onConfirm={() => draft !== null && onConfirm({ kind: 'slider', variantId: scenario.id, value: draft })} onBack={onBack} onReview={onReview}>
     <div className="game-board">
       <p className="game-instruction">{instruction}</p>
       <p className="scene-question">{scenario.question}</p>
@@ -26,7 +26,7 @@ export function SliderQuestion({ scenario, answer, onConfirm, onBack, onReview }
         </button>
         <div className="calendar-navigation"><button aria-label="往前翻一頁" disabled={value === scenario.min} onClick={() => setDraft(Math.max(scenario.min, value - scenario.step))}>← 前一頁</button><span>{scenario.min}–{scenario.max} {lease ? '個月' : '週'}</span><button aria-label="往後翻一頁" disabled={value === scenario.max} onClick={() => setDraft(Math.min(scenario.max, value + scenario.step))}>後一頁 →</button></div>
       </div>}
-      <p className="scene-feedback" aria-live="polite">{draft === null ? '還沒有定案，先在場景裡試試看。' : `${scenario.resultPrefix} ${value} ${scenario.unit}${scenario.resultSuffix}`}</p>
+      <p className="scene-feedback" aria-live="polite">{draft === null ? '請先操作上方的物件，再確認答案。' : `${scenario.resultPrefix} ${value} ${scenario.unit}${scenario.resultSuffix}`}</p>
     </div>
   </ScenarioFrame>;
 }

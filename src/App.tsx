@@ -73,7 +73,7 @@ export function App() {
     const word = customWord.trim();
     if (!word) return;
     if (session.values.some(value => value.word === word)) { setNotice('這個價值已在清單中。'); return; }
-    setSession(current => ({ ...current, values: [...current.values, { id: 'custom-' + crypto.randomUUID(), word, description: '你自行提出的重要事物。', custom: true, rank: 1 }] }));
+    setSession(current => ({ ...current, values: [...current.values, { id: 'custom-' + crypto.randomUUID(), word, description: '你自己加入的價值。', custom: true, rank: 1 }] }));
     setCustomWord(''); setNotice('');
   };
   const scenario = session.scenarios[session.scenarioIndex];
@@ -85,23 +85,23 @@ export function App() {
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>使用目前版本重新開始</button></section>}
     {session.screen === 'intro' && <section className="hero">
       <div className="cover-line"><span>THE NORTH STAR</span><span>VOL. 01 / 關於你的特輯</span></div>
-      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視的，<br /><em>在選擇裡相遇。</em></h1>
-      <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
-      <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
+      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視什麼，<br /><em>會怎麼選？</em></h1>
+      <p className="lead">先排出你在意的事，再試著安排時間、做幾個日常決定。當兩件事不能兼顧，你會先顧哪一件？</p>
+      <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />把十個價值分類、排序，一樣重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />試著做出選擇，再和剛才的排序對照。</p></div>
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
-      <p className="caption">第二幕共十五個情境，每個情境都是兩種重視之間的取捨。</p>
-      <p className="caption">整份體驗的設計目標約十五分鐘，這是預估，不是實測的完成時間。</p>
-      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的反思，還在這裡。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
+      <p className="caption">第二幕有十五個情境，每題都有兩件你可能在意、卻無法完全兼顧的事。</p>
+      <p className="caption">預計約十五分鐘完成；這是設計時的估計，尚未實測。</p>
+      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
     </section>}
     {session.screen === 'classify' && <section>
-      <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
+      <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="照你現在的想法，把每個價值放進適合的類別。沒有標準答案。" />
       <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>
       {notice && <p role="status">{notice}</p>}
       <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><fieldset className="value-segments"><legend>{value.word}的重要性</legend><div>{categoryOrder.map(category => <button type="button" key={category} aria-pressed={value.category === category} onClick={() => setSession(current => ({ ...current, values: withCategory(current.values, value.id, category) }))}>{categoryLabels[category]}</button>)}</div></fieldset></article>)}</div>
       <nav className="actions"><button className="secondary" onClick={() => go('intro')}>返回說明</button><button className="primary" disabled={session.values.some(value => !value.category)} onClick={() => go('rank')}>下一步：排出順序</button></nav>
     </section>}
     {session.screen === 'rank' && <section>
-      <PageHeader eyebrow="第一幕 · 02" title="重要，也可以一樣重要。" description="在每個類別內選擇位置，數字越小越靠前。同一位置代表並列，不必硬分高下。" />
+      <PageHeader eyebrow="第一幕 · 02" title="排個順序，也可以並列。" description="在各類別裡排出順序，數字越小越重要。一樣重要的，就選相同的位置。" />
       {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{Array.from({ length: positionCount(session.values, category) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
       <nav className="actions"><button className="secondary" onClick={() => go('classify')}>返回分類</button><button className="primary" onClick={() => go('scenario')}>進入情境中的取捨</button></nav>
     </section>}

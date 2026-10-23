@@ -3,8 +3,8 @@ import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalSc
 
 test('開場說明完整體驗共十五個情境與約十五分鐘的設計目標，不再宣稱是原型', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('第二幕共十五個情境，每個情境都是兩種重視之間的取捨。', { exact: true })).toBeVisible();
-  await expect(page.getByText('整份體驗的設計目標約十五分鐘，這是預估，不是實測的完成時間。', { exact: true })).toBeVisible();
+  await expect(page.getByText('第二幕有十五個情境，每題都有兩件你可能在意、卻無法完全兼顧的事。', { exact: true })).toBeVisible();
+  await expect(page.getByText('預計約十五分鐘完成；這是設計時的估計，尚未實測。', { exact: true })).toBeVisible();
   await expect(page.getByText(/原型/)).toHaveCount(0);
 });
 

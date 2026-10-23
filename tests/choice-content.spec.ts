@@ -83,7 +83,7 @@ test.describe('抽到第二個變體', () => {
     await sceneOption(page, /沿用各自帶器皿的慣例/).click();
     await page.getByRole('button', { name: '確認答案', exact: true }).click();
     await completeRemainingScenarios(page);
-    await expect(page.getByRole('heading', { name: '新共識遇上紀念聚會。', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '新約定遇上紀念聚會。', exact: true })).toHaveCount(0);
     const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '節慶聚會用哪一套餐具？', exact: true }) });
     await expect(evidence.getByText('第一幕並列 · 只描述本次選擇', { exact: true })).toBeVisible();
     await expect(evidence.getByText('你將遵守規範與傳承並列；在這題，你選擇了「沿用各自帶器皿的慣例」。', { exact: true })).toBeVisible();
