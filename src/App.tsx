@@ -10,7 +10,7 @@ import { PageHeader } from './PageHeader';
 import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
-import type { Category, Scenario, Screen, Session, ValueItem } from './types';
+import type { Scenario, Screen, Session, ValueItem } from './types';
 
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
@@ -84,7 +84,8 @@ export function App() {
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>使用目前版本重新開始</button></section>}
     {session.screen === 'intro' && <section className="hero">
-      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視的，<br />在選擇裡相遇。</h1>
+      <div className="cover-line"><span>THE NORTH STAR</span><span>VOL. 01 / 關於你的特輯</span></div>
+      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視的，<br /><em>在選擇裡相遇。</em></h1>
       <p className="lead">先整理你重視的事物，再走進有代價的日常情境。看看這一次，你如何取捨。</p>
       <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />分類與排序十個價值，重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />在具體條件下選擇，再回顧自己的答案。</p></div>
       <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
@@ -96,7 +97,7 @@ export function App() {
       <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="為每個價值選擇一個類別。沒有正確答案，這是你此刻的看法。" />
       <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>
       {notice && <p role="status">{notice}</p>}
-      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><label className="select-label">{value.word}的重要性<select value={value.category ?? ''} onChange={event => { const category = event.target.value as Category; setSession(current => ({ ...current, values: withCategory(current.values, value.id, category) })); }}><option value="" disabled>請選擇</option>{categoryOrder.map(category => <option key={category} value={category}>{categoryLabels[category]}</option>)}</select></label></article>)}</div>
+      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><fieldset className="value-segments"><legend>{value.word}的重要性</legend><div>{categoryOrder.map(category => <button type="button" key={category} aria-pressed={value.category === category} onClick={() => setSession(current => ({ ...current, values: withCategory(current.values, value.id, category) }))}>{categoryLabels[category]}</button>)}</div></fieldset></article>)}</div>
       <nav className="actions"><button className="secondary" onClick={() => go('intro')}>返回說明</button><button className="primary" disabled={session.values.some(value => !value.category)} onClick={() => go('rank')}>下一步：排出順序</button></nav>
     </section>}
     {session.screen === 'rank' && <section>
@@ -110,7 +111,7 @@ export function App() {
       // Once every question has a confirmed answer, a confirmation returns to the result instead of walking the remaining questions again.
       return current.scenarios.every(item => answers[item.id]) ? { ...current, answers, screen: 'result' } : { ...current, answers, scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) };
     }); window.scrollTo({ top: 0 }); }} />}
-    {session.screen === 'result' && complete && <ResultReport session={session} onRevisitFirstAct={() => go('rank')} onRestart={restart} onEdit={(item, index) => { setEditedEvidence(evidenceId(item)); setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
+    {session.screen === 'result' && complete && <ResultReport initialDetail={Boolean(editedEvidence)} session={session} onRevisitFirstAct={() => go('rank')} onRestart={restart} onEdit={(item, index) => { setEditedEvidence(evidenceId(item)); setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
     <ShareFooter key={shareLink ?? 'unavailable'} shareLink={shareLink} shareDisabled={Boolean(request.notice)} onClearRecords={clearLocalRecords} />
   </main>;
 }

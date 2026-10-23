@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 export async function classifyValues(page: Page) {
   await page.getByRole('button', { name: '開始這次反思' }).click();
-  for (const select of await page.getByRole('combobox').all()) await select.selectOption('core');
+  for (const button of await page.getByRole('button', { name: '這就是我', exact: true }).all()) await button.click();
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
 }
 
@@ -21,15 +21,17 @@ export async function classifyAndRankValues(page: Page) {
 async function confirmCurrentScenario(page: Page) {
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
   if (await confirm.isDisabled()) {
-    const slider = page.getByRole('slider');
-    if (await slider.count()) {
-      await slider.focus();
-      await slider.press('Home');
-      await slider.press('ArrowRight');
-    } else if (await page.getByRole('spinbutton').count()) {
-      await page.getByRole('spinbutton').first().fill('0');
+    const slots = page.locator('[data-planner-slot]');
+    if (await slots.count()) {
+      for (const slot of await slots.all()) await slot.click();
+    } else if (await page.getByRole('slider').count()) {
+      await page.getByRole('slider').focus(); await page.keyboard.press('Home');
+    } else if (await page.locator('.calendar-page').count()) {
+      await page.locator('.calendar-page').click();
+    } else if (await page.getByRole('button', { name: '放入一個月生活費', exact: true }).count()) {
+      await page.getByRole('button', { name: '放入一個月生活費', exact: true }).click();
     } else {
-      await page.getByRole('radio').first().check();
+      await page.locator('.play-scene .scene-action').first().click();
     }
   }
   await confirm.click();
