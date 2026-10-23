@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { baseValues } from '../src/data';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOption, sceneOptions } from './support/experience';
 
 const binarySlots = {
   slot05: ['stimulation', 'tradition'],
@@ -43,13 +43,13 @@ test('新二選一題需明確確認，可回改並依第一幕先後標示相�
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '原本留給自己的那一晚。');
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
-  await expect(page.getByRole('radio')).toHaveCount(2);
+  await expect(sceneOptions(page)).toHaveCount(2);
   await expect(confirm).toBeDisabled();
-  await page.getByRole('radio', { name: /照原計畫去看電影/ }).check();
+  await sceneOption(page, /照原計畫去看電影/).click();
   await confirm.click();
   await goToScenario(page, '這筆活動預算，誰來決定？');
   await expect(confirm).toBeDisabled();
-  await page.getByRole('radio', { name: /讓居民代表共同決定部分預算/ }).check();
+  await sceneOption(page, /讓居民代表共同決定部分預算/).click();
   await confirm.click();
   await completeRemainingScenarios(page);
   const fund = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '這筆活動預算，誰來決定？', exact: true }) });
@@ -60,12 +60,12 @@ test('新二選一題需明確確認，可回改並依第一幕先後標示相�
   await expect(evening.getByText('你把享受生活放在照顧身邊的人之前；在這題，你選擇了「照原計畫去看電影，明天再回覆朋友」。', { exact: true })).toBeVisible();
 
   await fund.getByRole('button', { name: '修改這題' }).click();
-  await expect(page.getByRole('radio', { name: /讓居民代表共同決定部分預算/ })).toBeChecked();
-  await page.getByRole('radio', { name: /保留全部定案權/ }).check();
+  await expect(sceneOption(page, /讓居民代表共同決定部分預算/)).toHaveAttribute('aria-pressed', 'true');
+  await sceneOption(page, /保留全部定案權/).click();
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await expect(fund.getByText('與第一幕不同', { exact: true })).toBeVisible();
   await fund.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio', { name: /保留全部定案權/ }).check();
+  await sceneOption(page, /保留全部定案權/).click();
   await confirm.click();
   await completeRemainingScenarios(page);
   await expect(fund.getByText('與第一幕相符', { exact: true })).toBeVisible();
@@ -80,7 +80,7 @@ test.describe('抽到第二個變體', () => {
     await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('8');
     await page.getByRole('button', { name: '進入情境中的取捨' }).click();
     await goToScenario(page, '節慶聚會用哪一套餐具？');
-    await page.getByRole('radio', { name: /沿用各自帶器皿的慣例/ }).check();
+    await sceneOption(page, /沿用各自帶器皿的慣例/).click();
     await page.getByRole('button', { name: '確認答案', exact: true }).click();
     await completeRemainingScenarios(page);
     await expect(page.getByRole('heading', { name: '新共識遇上紀念聚會。', exact: true })).toHaveCount(0);

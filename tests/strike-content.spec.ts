@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
 import { strikeScenarios } from '../src/scenarios/strike';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOptions } from './support/experience';
 
 function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, string]) {
   const variants = strikeScenarios.filter(scenario => scenario.slotId === slotId);
@@ -39,8 +39,8 @@ test('享受生活與遵守規範有兩個完整的刪稿變體', () => {
 test('聚會散場題可刪去約定段，結果保留享受相聚的回覆並與第一幕相符', async ({ page }) => {
   await openScenario(page, '聚會的散場時間');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  await page.getByRole('radio', { name: '刪掉 B 段' }).check();
-  await expect(page.getByText('保留 A 段', { exact: true })).toBeVisible();
+  await sceneOptions(page).nth(0).click();
+  await expect(sceneOptions(page).nth(0)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = evidenceFor(page, '聚會的散場時間');
@@ -54,9 +54,9 @@ test('主導權與照顧身邊的人有兩個完整的刪稿變體', () => {
 
 test('夥伴主導題可用鍵盤刪稿與回改，結果核對保留回覆與第一幕位置', async ({ page }) => {
   await openScenario(page, '你熟悉的夥伴想主導');
-  await page.getByRole('radio', { name: '刪掉 A 段' }).focus();
+  await sceneOptions(page).nth(1).focus();
   await page.keyboard.press('Space');
-  await expect(page.getByText('保留 B 段', { exact: true })).toBeVisible();
+  await expect(sceneOptions(page).nth(1)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '確認答案', exact: true }).focus();
   await page.keyboard.press('Enter');
   await completeRemainingScenarios(page);
@@ -65,13 +65,13 @@ test('夥伴主導題可用鍵盤刪稿與回改，結果核對保留回覆與�
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
   await expect(evidence.getByText(yielded, { exact: true })).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio', { name: '刪掉 A 段' }).focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByText('保留 A 段', { exact: true })).toBeVisible();
+  await sceneOptions(page).nth(0).focus();
+  await page.keyboard.press('Space');
+  await expect(sceneOptions(page).nth(0)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await expect(evidence.getByText(yielded, { exact: true })).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio', { name: '刪掉 B 段' }).check();
+  await sceneOptions(page).nth(0).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
@@ -86,7 +86,7 @@ test('自主與遵守規範補至兩個變體，刪稿共六題且識別全域�
 
 test('第一幕並列享受生活與遵守規範時，聚會題只描述保留的回覆', async ({ page }) => {
   await openScenario(page, '聚會的散場時間', { value: '遵守規範', position: '3' });
-  await page.getByRole('radio', { name: '刪掉 A 段' }).check();
+  await sceneOptions(page).nth(1).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = evidenceFor(page, '聚會的散場時間');
@@ -101,13 +101,13 @@ test.use({ scenarioRandom: 0.99 });
 test('三個刪稿槽的第二變體都能刪稿確認，結果分別核對保留的回覆', async ({ page }) => {
   await openScenario(page, '週末的打掃，照誰的時間？');
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
-  await page.getByRole('radio', { name: '刪掉 B 段' }).check();
+  await sceneOptions(page).nth(0).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await goToScenario(page, '無手機的晚餐');
-  await page.getByRole('radio', { name: '刪掉 A 段' }).check();
+  await sceneOptions(page).nth(1).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await goToScenario(page, '熟朋友的活動籌備');
-  await page.getByRole('radio', { name: '刪掉 B 段' }).check();
+  await sceneOptions(page).nth(0).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   for (const title of ['這份提案，用誰的方法？', '聚會的散場時間', '你熟悉的夥伴想主導']) {

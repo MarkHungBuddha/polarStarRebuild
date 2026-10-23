@@ -48,7 +48,7 @@ export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario | Alloca
 export type ChoiceAnswer = { kind: 'choice'; variantId: string; optionId: string };
 export type StrikeAnswer = { kind: 'strike'; variantId: string; optionId: string };
 export type SliderAnswer = { kind: 'slider'; variantId: string; value: number };
-export type AllocationAnswer = { kind: 'allocate'; variantId: string; allocations: readonly [number, number] };
+export type AllocationAnswer = { kind: 'allocate'; variantId: string; allocations: readonly [number, number]; placements?: readonly number[] };
 export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer | AllocationAnswer;
 export interface Session {
   screen: Screen;

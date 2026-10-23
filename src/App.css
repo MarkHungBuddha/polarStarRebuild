@@ -164,3 +164,147 @@ footer .text-button { display: block; margin-top: 18px; font-size: 14px; }
 .conclusion-checks, .conclusion-questions { padding-left: 1.4em; }
 .conclusion-checks li, .conclusion-questions li { margin: 8px 0; }
 .conclusion-differing { margin: 6px 0 0; padding-left: 1.2em; font-size: 15px; }
+/* Editorial spreads: paper, ink and a single vermilion accent. */
+.cover-line { display:flex; justify-content:space-between; gap:16px; font:11px/1.6 monospace; letter-spacing:.15em; border-bottom:1px solid var(--rule); padding-bottom:14px; margin-bottom:36px; }
+.hero h1 em { font-style:normal; color:var(--accent); }
+.hero { position:relative; }
+.hero .lead { max-width:580px; border-left:3px solid var(--accent); padding-left:24px; }
+.editorial-folio { display:flex; align-items:center; gap:24px; border-bottom:1px solid var(--ink); margin-bottom:24px; padding-bottom:14px; }
+.editorial-folio > span { font-family:'Playfair Display',serif; font-size:96px; line-height:1; color:var(--accent); letter-spacing:-.06em; }
+.editorial-folio p { font:11px/1.9 monospace; letter-spacing:.15em; }
+.scenario-page { max-width:900px; }
+.scenario-page .section-header { margin-bottom:24px; }
+.scenario-page h1 { font-size:clamp(32px,5vw,56px); }
+.scenario-page .setup { max-width:720px; font-size:17px; margin:20px 0 30px; }
+.condition-scene, .allocation-board { background:#e7e3da; padding:24px; border-top:3px solid var(--ink); }
+.condition-blocks { display:flex; flex-wrap:wrap; gap:5px; margin:24px 0; }
+.condition-blocks button { flex:1 0 28px; max-width:64px; min-height:58px; background:transparent; border:1px solid var(--rule); color:var(--muted); font:12px monospace; }
+.condition-blocks button.filled { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.condition-blocks button[aria-pressed=true] { background:var(--accent); border-color:var(--accent); }
+.scene-reading { font-size:15px; margin-bottom:0; }
+.scene-reading strong { display:block; font-family:'Noto Serif TC',serif; font-size:32px; color:var(--accent); }
+.schedule-tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.schedule-tile { text-align:left; padding:16px; display:flex; flex-direction:column; gap:14px; border:1px solid var(--ink); background:transparent; color:var(--ink); }
+.schedule-tile.own { background:var(--ink); color:var(--bg); }
+.schedule-tile > span { font:32px 'Playfair Display',serif; }
+.schedule-tile strong { font-family:'Noto Serif TC',serif; font-size:16px; line-height:1.7; }
+.schedule-tile small { color:inherit; opacity:.75; }
+.schedule-summary { font-size:14px; margin-bottom:0; }
+.option.selected { border-left-color:var(--accent); background:#e7e3da; }
+.option.selected .option-letter { color:var(--accent); }
+.option strong { font-size:20px; line-height:1.8; }
+@media(min-width:900px) {
+  .scenario-page { display:grid; grid-template-columns:140px minmax(0,1fr); column-gap:36px; }
+  .editorial-folio { grid-column:1; grid-row:1 / span 2; flex-direction:column; align-items:flex-start; justify-content:flex-start; border-bottom:0; border-right:1px solid var(--rule); margin:0; }
+  .scenario-page > :not(.editorial-folio) { grid-column:2; }
+}
+@media(max-width:640px) {
+  .editorial-folio > span { font-size:64px; }
+  .condition-scene, .allocation-board { padding:18px 14px; }
+  .schedule-tiles { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cover-line { font-size:9px; letter-spacing:.06em; }
+  .scenario-page .setup { font-size:16px; }
+}
+
+/* Playable editorial illustrations. Controls live inside the scene itself. */
+.game-board { padding:24px; border-block:2px solid var(--ink); background:#e7e3da; }
+.game-instruction { margin:0 0 12px; font-weight:700; font-size:16px; }
+.scene-question { margin:0; font-size:14px; color:var(--muted); }
+.play-scene { display:block; width:100%; height:auto; margin:16px auto; color:var(--ink); overflow:visible; }
+.scene-action { cursor:pointer; }
+.scene-action:hover { color:var(--accent); }
+.scene-action:focus-visible { outline:none; filter:drop-shadow(0 0 3px var(--accent)); }
+.scene-action.chosen { color:var(--accent); }
+.destination-room { fill:var(--bg); stroke:var(--rule); stroke-width:1.5; }
+.chosen .destination-room { fill:#f4e2d9; stroke:var(--accent); stroke-width:2; }
+.scene-sign { font:700 18px 'Noto Serif TC',serif; fill:currentColor; }
+.scene-small { font:13px 'Noto Sans TC',sans-serif; fill:currentColor; }
+.movable-prop { color:var(--accent); cursor:grab; touch-action:none; }
+.movable-prop:active { cursor:grabbing; }
+.scene-key { display:grid; grid-template-columns:1fr 1fr; gap:20px; border-top:1px solid var(--rule); }
+.scene-key p { font-size:13px; line-height:1.8; margin:16px 0 0; }
+.scene-key b { display:block; color:var(--ink); font-size:15px; margin-bottom:4px; }
+.scene-feedback { margin:20px 0 0; padding-top:16px; border-top:1px solid var(--rule); font-family:'Noto Serif TC',serif; color:var(--accent); line-height:1.8; }
+.time-tickets { display:flex; flex-wrap:wrap; gap:8px; }
+.time-tickets button { flex:1 1 70px; max-width:110px; padding:4px; border:1px solid transparent; color:var(--muted); background:transparent; }
+.time-tickets svg { width:100%; display:block; }
+.time-tickets span { font-size:11px; }
+.time-tickets .active { border-color:var(--accent); color:var(--accent); background:var(--bg); }
+.ticket-current { font-size:13px; text-align:center; margin-bottom:-12px; }
+.clock-number { font:700 42px 'Playfair Display',serif; fill:var(--accent); }
+@media(max-width:640px) {
+  .game-board { padding:16px 8px; margin-inline:-8px; }
+  .game-instruction { font-size:15px; padding-inline:8px; }
+  .scene-key { gap:12px; }
+  .scene-key p { font-size:12px; }
+  .scene-key b { font-size:13px; }
+  .scene-small { font-size:16px; }
+  .scene-sign { font-size:19px; }
+}
+
+/* Direct value selection, physical controls and a short result cover. */
+.value-row { grid-template-columns:minmax(0,1fr) minmax(330px,auto); }
+.value-segments { margin:0; padding:0; border:0; min-width:0; }
+.value-segments legend { font-size:12px; color:var(--muted); margin-bottom:10px; }
+.value-segments > div { display:flex; gap:6px; }
+.value-segments button { flex:1; padding:10px 12px; border:1px solid var(--rule); background:transparent; white-space:nowrap; font-size:14px; color:var(--ink); }
+.value-segments button[aria-pressed=true] { background:var(--ink); color:var(--bg); border-color:var(--ink); box-shadow:inset 0 -3px var(--accent); }
+.scene-tools { display:flex; justify-content:center; gap:20px; }
+.scene-tools button { background:transparent; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--rule); font-size:13px; }
+.pig-coin { color:var(--accent); cursor:grab; touch-action:none; }
+.pig-coin:active { cursor:grabbing; }
+.pig-count { font:700 44px 'Playfair Display',serif; fill:var(--ink); }
+.deposit-coin { color:var(--accent); pointer-events:none; animation:coin-drop .5s ease-in both; }
+@keyframes coin-drop { from { transform:translateY(-45px); opacity:1; } to { transform:translateY(43px) scale(1,.4); opacity:0; } }
+.real-clock { width:min(100%,400px); display:block; margin:24px auto 0; color:var(--ink); touch-action:none; cursor:grab; }
+.real-clock:active { cursor:grabbing; }
+.clock-hour { font:24px 'Noto Serif TC',serif; fill:currentColor; }
+.clock-brand { font:9px monospace; letter-spacing:2px; fill:var(--muted); }
+.clock-readout { font:700 18px 'Noto Serif TC',serif; fill:var(--accent); }
+.desk-calendar { position:relative; max-width:420px; margin:36px auto 28px; background:var(--bg); border:1px solid var(--ink); box-shadow:4px 5px 0 #d0cbc1,7px 8px 0 #ded9cf; }
+.calendar-binding { position:absolute; top:-14px; left:16%; right:16%; display:flex; justify-content:space-between; pointer-events:none; }
+.calendar-binding i { width:8px; height:29px; border-radius:5px; background:var(--ink); }
+.calendar-masthead { display:flex; justify-content:space-between; padding:22px 22px 14px; border-bottom:2px solid var(--ink); font-size:12px; letter-spacing:.14em; }
+.calendar-page { display:flex; align-items:center; flex-direction:column; background:transparent; width:100%; padding:24px 16px 20px; color:var(--ink); }
+.calendar-kicker { font-size:14px; color:var(--muted); }
+.calendar-page strong { font:900 clamp(90px,12vw,136px)/1.2 'Playfair Display',serif; letter-spacing:-.06em; color:var(--accent); }
+.calendar-unit { font:700 20px 'Noto Serif TC',serif; letter-spacing:.12em; }
+.calendar-stamp { font-size:11px; margin-top:20px; padding:4px 12px; border:1px solid var(--accent); color:var(--accent); transform:rotate(-5deg); }
+.calendar-navigation { display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--rule); }
+.calendar-navigation button { background:transparent; padding:14px; font-size:13px; }
+.calendar-navigation > span { font:11px monospace; color:var(--muted); }
+.planner-board { background:#e7e3da; padding:24px; border-block:2px solid var(--ink); }
+.planner-heading h2 { font-size:26px; }
+.planner-heading p { font-size:14px; }
+.planner-heading .eyebrow { font-size:11px; }
+.planner-activities { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0; }
+.planner-activities button { touch-action:none; cursor:grab; display:flex; flex-wrap:wrap; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--rule); padding:14px; color:var(--ink); text-align:left; font-size:15px; }
+.planner-activities button.active { border-color:var(--ink); box-shadow:0 3px 0 var(--ink); }
+.planner-activities small { display:block; flex-basis:100%; padding-left:20px; font-size:11px; }
+.activity-dot { display:inline-block; width:10px; height:10px; background:var(--ink); border-radius:50%; flex-shrink:0; }
+.activity-dot.activity-1 { background:var(--accent); }
+.planner-slots { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--ink); }
+.planner-slots button { display:flex; flex-direction:column; gap:12px; text-align:left; padding:18px; min-height:148px; border:0; border-bottom:1px solid var(--rule); background:var(--bg); color:var(--ink); }
+.planner-slots button:nth-child(odd) { border-right:1px solid var(--rule); }
+.planner-slots .empty { background:transparent; }
+.planner-date { font:12px 'Noto Sans TC',sans-serif; color:var(--muted); }
+.planner-slots strong { font:700 17px/1.6 'Noto Serif TC',serif; }
+.planner-slots small { font-size:11px; margin-top:auto; }
+.planner-slots .assigned { box-shadow:inset 4px 0 var(--ink); }
+.planner-slots .assigned.activity-1 { box-shadow:inset 4px 0 var(--accent); }
+.activity-ghost { position:fixed; z-index:10; pointer-events:none; background:var(--ink); color:var(--bg); padding:12px 16px; max-width:240px; font-size:14px; }
+.summary-takeaway { font:700 clamp(24px,3vw,36px)/1.7 'Noto Serif TC',serif; max-width:24em; }
+.report-back { margin-bottom:28px; }
+@media(max-width:760px) {
+ .value-row { grid-template-columns:1fr; }
+ .value-segments > div { width:100%; }
+ .value-segments button { padding:10px 6px; font-size:13px; }
+ .planner-board { padding:18px 12px; }
+ .planner-activities { gap:8px; }
+ .planner-activities button { padding:10px; font-size:13px; }
+ .planner-slots button { padding:14px 10px; min-height:155px; }
+ .planner-slots strong { font-size:15px; }
+ .planner-date { font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) { .deposit-coin { animation:none; opacity:0; } }
+.real-clock, .piggy-scene, .planner-activities { user-select:none; -webkit-user-select:none; }

@@ -3,6 +3,20 @@ import { act1TopThree, byPosition, differsFromFirstAct, scenarioTallies, scenari
 import type { Session } from './types';
 
 const positionLabel = (row: { position: number; items: readonly unknown[] }) => (row.items.length > 1 ? '並列第 ' : '第 ') + row.position;
+const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => `${row.items.length > 1 ? '各' : ''}選了 ${row.items[0].chosen} 次／共 ${row.items[0].directional} 題`;
+
+/** The two top-three columns, one row per position; shared by the result cover and the detailed conclusion. */
+export function TopThreeColumns({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
+  const statedRows = byPosition(act1TopThree(session.values));
+  const chosenRows = byPosition(scenarioTopThree(scenarioTallies(session)));
+  return <div className="conclusion-columns">
+    <div><h3>你最重視的</h3><p className="caption">第一幕的分類與排序</p>
+      <ol>{statedRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(value => value.word).join('、')}</strong></li>)}</ol>
+      {statedRows.some(row => row.items.length > 1) && <p className="caption">有些價值你沒有排出先後。<button className="text-button" onClick={onRevisitFirstAct}>回第一幕調整</button></p>}</div>
+    <div><h3>你在情境中最常選的</h3><p className="caption">第二幕有偏向一邊的答案</p>
+      {chosenRows.length ? <ol>{chosenRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(tally => tally.value.word).join('、')}</strong><small>{counted(row)}</small></li>)}</ol> : <p>這次沒有偏向一邊的答案。</p>}</div>
+  </div>;
+}
 
 /** The conclusion: the first act's top three beside the values chosen most in the scenarios, one row per position, with what to take away. */
 export function ValueConclusion({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
@@ -13,22 +27,13 @@ export function ValueConclusion({ session, onRevisitFirstAct }: { session: Sessi
   const chosenIds = new Set(chosen.map(placed => placed.item.value.id));
   const statedIds = new Set(stated.map(placed => placed.item.id));
   const onlyChosen = chosen.filter(placed => !statedIds.has(placed.item.value.id));
-  const statedRows = byPosition(stated);
-  const chosenRows = byPosition(chosen);
-  const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => `${row.items.length > 1 ? '各' : ''}選了 ${row.items[0].chosen} 次／共 ${row.items[0].directional} 題`;
   const allDiffering = session.scenarios.map((scenario, index) => ({ scenario, position: index + 1 })).filter(({ scenario }) => session.answers[scenario.id] && differsFromFirstAct(scenario, session.answers[scenario.id], session.values));
   // Only the differing scenarios that touch the stated top three are linked; the rest stay in the evidence below.
   const differing = allDiffering.filter(({ scenario }) => scenario.pair.some(id => statedIds.has(id)));
   const otherDiffering = allDiffering.length - differing.length;
   return <section className="conclusion" aria-labelledby="conclusion-title">
     <h2 id="conclusion-title">你的前三名</h2>
-    <div className="conclusion-columns">
-      <div><h3>你最重視的</h3><p className="caption">第一幕的分類與排序</p>
-        <ol>{statedRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(value => value.word).join('、')}</strong></li>)}</ol>
-        {statedRows.some(row => row.items.length > 1) && <p className="caption">有些價值你沒有排出先後。<button className="text-button" onClick={onRevisitFirstAct}>回第一幕調整</button></p>}</div>
-      <div><h3>你在情境中最常選的</h3><p className="caption">第二幕有偏向一邊的答案</p>
-        {chosen.length ? <ol>{chosenRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(tally => tally.value.word).join('、')}</strong><small>{counted(row)}</small></li>)}</ol> : <p>這次沒有偏向一邊的答案。</p>}</div>
-    </div>
+    <TopThreeColumns session={session} onRevisitFirstAct={onRevisitFirstAct} />
     <h3>對照你最重視的前三名</h3>
     <ul className="conclusion-checks">{stated.map(({ item }) => {
       const tally = tallyOf(item.id);

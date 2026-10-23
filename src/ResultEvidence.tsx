@@ -47,7 +47,7 @@ function ChoiceEvidence({ scenario, optionId, values, position, onEdit }: Eviden
   const option = scenario.options.find(item => item.id === optionId);
   const pair = act1Precedence(values, scenario.pair);
   if (!option || !pair) return null;
-  const choice = scenario.kind === 'strike' ? '保留了以下回覆。' : `選擇了「${option.label}」。`;
+  const choice = scenario.kind === 'strike' ? '選擇了以下回覆。' : `選擇了「${option.label}」。`;
   return <EvidenceArticle scenario={scenario} position={position} topic={pairTopic(pair)} label={pair.ahead ? comparisonLabel(pair, option.valueId) : '第一幕並列 · 只描述本次選擇'} onEdit={onEdit}>
     <p className="evidence-quote">{act1Statement(pair)}；在這題，你{choice}</p>
     {scenario.kind === 'strike' && <blockquote className="kept-reply">{option.label}</blockquote>}

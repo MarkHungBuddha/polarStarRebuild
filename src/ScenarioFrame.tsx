@@ -6,8 +6,9 @@ export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack
   scenario: Scenario; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
 }) {
   return <section className="scenario-page">
+    <div className="editorial-folio" aria-hidden="true"><span>{scenario.slotId.replace('slot', '')}</span><p>FIELD NOTES<br />生活裡的取捨</p></div>
     <header className="section-header"><p className="eyebrow">{scenario.domain} · 情境中的取捨</p><h1>{scenario.title}</h1></header>
-    <p className="setup">{scenario.setup}</p>
+    <p className="setup">{scenario.setup.replace(/^假設/, '').replace(/回覆只能保留一段。/g, '你會怎麼回覆？')}</p>
     {children}
     <p className="caption">{caption}</p>
     <nav className="actions"><button className="secondary" onClick={onBack}>返回上一頁</button>

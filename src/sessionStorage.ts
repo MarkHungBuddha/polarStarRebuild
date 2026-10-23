@@ -25,6 +25,7 @@ function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolea
   }
   if (answer.kind === 'allocate') {
     const amounts = answer.allocations;
+    if (answer.placements !== undefined && (!Array.isArray(answer.placements) || answer.placements.length !== scenario.total || !answer.placements.every(item => item === 0 || item === 1) || !Array.isArray(amounts) || answer.placements.filter(item => item === 0).length !== amounts[0])) return false;
     return Array.isArray(amounts) && amounts.length === 2 && amounts.every(amount => typeof amount === 'number' && Number.isInteger(amount) && amount >= 0) && typeof scenario.total === 'number' && amounts[0] + amounts[1] === scenario.total;
   }
   return false;

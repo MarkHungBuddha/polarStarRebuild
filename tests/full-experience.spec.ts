@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, sceneOption, sceneOptions, setAmount } from './support/experience';
 
 test('開場說明完整體驗共十五個情境與約十五分鐘的設計目標，不再宣稱是原型', async ({ page }) => {
   await page.goto('/');
@@ -13,8 +13,7 @@ test('情境頁顯示目前題序與總題數，返回上一題時進度跟著�
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
-  await page.getByRole('slider').focus();
-  await page.getByRole('slider').press('ArrowRight');
+  await setAmount(page, 7);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回上一頁' }).click();
@@ -25,14 +24,13 @@ test('未完成全部十五題前不提供結果捷徑；從結果修改一題�
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await page.getByRole('slider').focus();
-  await page.getByRole('slider').press('ArrowRight');
+  await setAmount(page, 7);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await page.getByRole('button', { name: '返回上一頁' }).click();
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '返回已確認結果' })).toHaveCount(0);
   await goToScenario(page, '下週，照原計畫嗎？');
-  await page.getByRole('radio', { name: /留在原團隊/ }).check();
+  await sceneOption(page, /留在原團隊/).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   await expect(page.getByRole('article')).toHaveCount(15);
@@ -41,7 +39,7 @@ test('未完成全部十五題前不提供結果捷徑；從結果修改一題�
   await expect(slider.getByText('你希望先準備 7 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
   await choice.getByRole('button', { name: '修改這題' }).click();
   await expect(page.getByText('第 4 題，共 15 題', { exact: true })).toBeVisible();
-  await page.getByRole('radio', { name: /去新團隊試兩週/ }).check();
+  await sceneOption(page, /去新團隊試兩週/).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
   await expect(choice.getByText('你把探索刺激放在安全穩定之前；在這題，你選擇了「去新團隊試兩週」。', { exact: true })).toBeVisible();
@@ -52,8 +50,7 @@ test('只答了部分題目時，重新開啟後回到作答而不是結果', as
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await page.getByRole('slider').focus();
-  await page.getByRole('slider').press('ArrowRight');
+  await setAmount(page, 7);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await page.getByRole('button', { name: '返回上一頁' }).click();
   await expect(page.getByRole('button', { name: '返回已確認結果' })).toHaveCount(0);
@@ -77,7 +74,7 @@ test('十五則證據各有題序與目錄，可從目錄找到並修改其中�
   await expect(evidence.getByText('第 13 題 · 社群 · 主導權與傳承', { exact: true })).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
   await expect(page.getByText('第 13 題，共 15 題', { exact: true })).toBeVisible();
-  await page.getByRole('radio').last().check();
+  await sceneOptions(page).last().click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await expect(evidence).toBeInViewport();
   await expect(page.getByText(/總排名|名次差|強度|診斷結果/)).toHaveCount(0);
