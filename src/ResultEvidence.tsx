@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { act1Precedence, type Act1Pair } from './firstAct';
-import type { AllocationAnswer, AllocationScenario, Answer, ChoiceOption, ChoiceScenario, Scenario, SliderAnswer, SliderScenario, StrikeScenario, ValueItem } from './types';
+import { sliderLeans } from './scenarios/slider-leans';
+import { leaningValue } from './valueRanking';
+import type { AllocationAnswer, AllocationScenario, Answer, ChoiceScenario, Scenario, SliderAnswer, SliderScenario, StrikeScenario, ValueItem } from './types';
 
 export const evidenceId = (scenario: Scenario) => `evidence-${scenario.id}`;
 
@@ -25,13 +27,19 @@ function EvidenceArticle({ scenario, position, topic, label, onEdit, children }:
 }
 
 const pairTopic = (pair: Act1Pair) => `${pair.first.word}與${pair.second.word}`;
-/** 相符／不同 only applies when the first act has a clear order and the answer itself clearly supports one option. */
-const comparisonLabel = (pair: Act1Pair, chosen: ChoiceOption) => chosen.valueId === pair.ahead?.id ? '與第一幕相符' : '與第一幕不同';
+/** 相符／不同 only applies when the first act has a clear order and the answer itself leans to one value. */
+const comparisonLabel = (pair: Act1Pair, leaning: string) => leaning === pair.ahead?.id ? '與第一幕相符' : '與第一幕不同';
+const leanWord = (pair: Act1Pair, leaning: string) => leaning === pair.first.id ? pair.first.word : pair.second.word;
 const act1Statement = (pair: Act1Pair) => pair.ahead && pair.behind ? `你把${pair.ahead.word}放在${pair.behind.word}之前` : `你將${pair.first.word}與${pair.second.word}並列`;
 
-function SliderEvidence({ scenario, answer, position, onEdit }: EvidenceProps & { scenario: SliderScenario; answer: SliderAnswer }) {
-  return <EvidenceArticle scenario={scenario} position={position} topic="接受條件" label="接受條件 · 只描述本次答案" onEdit={onEdit}>
+function SliderEvidence({ scenario, answer, values, position, onEdit }: EvidenceProps & { scenario: SliderScenario; answer: SliderAnswer }) {
+  const pair = act1Precedence(values, scenario.pair);
+  const lean = sliderLeans[scenario.id];
+  const leaning = leaningValue(scenario, answer);
+  const label = !pair || !leaning ? '接受條件 · 只描述本次答案' : pair.ahead ? comparisonLabel(pair, leaning) : '第一幕並列 · 只描述本次答案';
+  return <EvidenceArticle scenario={scenario} position={position} topic="接受條件" label={label} onEdit={onEdit}>
     <p className="evidence-quote">{scenario.resultPrefix} {answer.value} {scenario.unit}{scenario.resultSuffix}</p>
+    {pair && lean && <p>{leaning ? `這個條件算偏向${leanWord(pair, leaning)}` : '這個條件不算偏向任何一邊'}：{lean.atMost} 以下算偏向{leanWord(pair, lean.lowValue)}，{lean.atLeast} 以上算偏向{leanWord(pair, lean.highValue)}。</p>}
   </EvidenceArticle>;
 }
 
@@ -40,7 +48,7 @@ function ChoiceEvidence({ scenario, optionId, values, position, onEdit }: Eviden
   const pair = act1Precedence(values, scenario.pair);
   if (!option || !pair) return null;
   const choice = scenario.kind === 'strike' ? '保留了以下回覆。' : `選擇了「${option.label}」。`;
-  return <EvidenceArticle scenario={scenario} position={position} topic={pairTopic(pair)} label={pair.ahead ? comparisonLabel(pair, option) : '第一幕並列 · 只描述本次選擇'} onEdit={onEdit}>
+  return <EvidenceArticle scenario={scenario} position={position} topic={pairTopic(pair)} label={pair.ahead ? comparisonLabel(pair, option.valueId) : '第一幕並列 · 只描述本次選擇'} onEdit={onEdit}>
     <p className="evidence-quote">{act1Statement(pair)}；在這題，你{choice}</p>
     {scenario.kind === 'strike' && <blockquote className="kept-reply">{option.label}</blockquote>}
     <p>{option.consequence}</p>
@@ -51,11 +59,12 @@ function AllocationEvidence({ scenario, answer, values, position, onEdit }: Evid
   const pair = act1Precedence(values, scenario.pair);
   if (!pair) return null;
   const [firstAmount, secondAmount] = answer.allocations;
-  // Proportions are not a direction: only giving the whole resource to one option is an answer that clearly supports it.
-  const chosen = secondAmount === 0 ? scenario.options[0] : firstAmount === 0 ? scenario.options[1] : undefined;
-  const label = firstAmount === secondAmount ? '平均分配 · 只描述本次配置' : !pair.ahead ? '第一幕並列 · 只描述本次配置' : chosen ? comparisonLabel(pair, chosen) : '兩邊都有分配 · 只描述本次配置';
+  // The larger share is the lean; how much larger is not a strength.
+  const leaning = leaningValue(scenario, answer);
+  const chosen = scenario.options.find(option => option.valueId === leaning);
+  const label = !chosen ? '平均分配 · 只描述本次配置' : !pair.ahead ? '第一幕並列 · 只描述本次配置' : comparisonLabel(pair, chosen.valueId);
   return <EvidenceArticle scenario={scenario} position={position} topic={pairTopic(pair)} label={label} onEdit={onEdit}>
     <p className="evidence-quote">你把 {firstAmount} {scenario.unit}分給「{scenario.options[0].label}」，{secondAmount} {scenario.unit}分給「{scenario.options[1].label}」。</p>
-    {pair.ahead && chosen && <p>{act1Statement(pair)}；在這題，你把全部 {scenario.total} {scenario.unit}分給「{chosen.label}」。</p>}
+    {pair.ahead && chosen && <p>{act1Statement(pair)}；在這題，你把{firstAmount && secondAmount ? `較多${scenario.unit}` : `全部 ${scenario.total} ${scenario.unit}`}分給「{chosen.label}」。</p>}
   </EvidenceArticle>;
 }

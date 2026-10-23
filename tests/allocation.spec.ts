@@ -19,7 +19,7 @@ test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
   }
 });
 
-test('分配有限的晚上，確認後呈現原始配置而非強度', async ({ page }) => {
+test('分配有限的晚上，較多的一邊算偏向並標示相符，但不呈現強度', async ({ page }) => {
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
@@ -34,9 +34,9 @@ test('分配有限的晚上，確認後呈現原始配置而非強度', async ({
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '六個晚上，留給哪些事？', exact: true }) });
   await expect(evidence.getByText('你把 4 晚分給「自己的攝影小誌」，2 晚分給「陪朋友練面試」。', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('兩邊都有分配 · 只描述本次配置', { exact: true })).toBeVisible();
-  await expect(evidence.getByText(/^與第一幕(相符|不同)$/)).toHaveCount(0);
-  await expect(evidence.getByText(/兩倍|強度|總排名|較多/)).toHaveCount(0);
+  await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('你把自主放在照顧身邊的人之前；在這題，你把較多晚分給「自己的攝影小誌」。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText(/兩倍|強度|總排名/)).toHaveCount(0);
 });
 
 test('把資源全部分給一邊時，才依第一幕先後標示相符或不同', async ({ page }) => {

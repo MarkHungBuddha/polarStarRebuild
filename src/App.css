@@ -152,3 +152,15 @@ footer .text-button { display: block; margin-top: 18px; font-size: 14px; }
 .evidence-contents li { break-inside: avoid; }
 .evidence-contents a { display: flex; align-items: center; min-height: 44px; font-size: 15px; line-height: 1.6; text-decoration: none; border-bottom: 1px solid transparent; }
 .evidence-contents a:hover, .evidence-contents a:focus-visible { text-decoration: underline; text-underline-offset: 5px; }
+.conclusion { margin: 48px 0; padding-top: 24px; border-top: 2px solid var(--ink); }
+.conclusion > h2 { font-size: 34px; margin-bottom: 22px; }
+.conclusion h3 { font-size: 18px; margin: 28px 0 10px; color: var(--muted); }
+.conclusion-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 40px; }
+.conclusion-columns ol { list-style: none; padding: 0; margin: 12px 0; }
+.conclusion-columns li { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.conclusion-columns span, .conclusion-columns small { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.conclusion-columns span { min-width: 72px; }
+.conclusion-columns strong { font-family: 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif; font-size: 24px; }
+.conclusion-checks, .conclusion-questions { padding-left: 1.4em; }
+.conclusion-checks li, .conclusion-questions li { margin: 8px 0; }
+.conclusion-differing { margin: 6px 0 0; padding-left: 1.2em; font-size: 15px; }

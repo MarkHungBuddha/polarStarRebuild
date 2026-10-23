@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
 
-test('滑桿需明確操作及確認，結果只描述原始接受條件', async ({ page }) => {
+test('滑桿需明確操作及確認；條件落在兩門檻之間時，結果只描述原始接受條件', async ({ page }) => {
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
@@ -11,15 +11,33 @@ test('滑桿需明確操作及確認，結果只描述原始接受條件', async
   await expect(page.getByText('6 個月生活費', { exact: true })).toBeVisible();
   await slider.focus();
   await slider.press('Home');
+  for (let count = 0; count < 8; count += 1) await slider.press('ArrowRight');
+  await expect(page.getByText('8 個月生活費', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await completeRemainingScenarios(page);
+  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true }) });
+  await expect(evidence.getByText('你希望先準備 8 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('接受條件 · 只描述本次答案', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('這個條件不算偏向任何一邊：3 以下算偏向自主，12 以上算偏向安全穩定。', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
+  await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
+});
+
+test('滑桿條件超出作者門檻時算偏向一邊，並依第一幕先後標示相符或不同', async ({ page }) => {
+  await page.goto('/');
+  await classifyAndRankValues(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await goToScenario(page, '先準備多少，再換一種工作？');
+  const slider = page.getByRole('slider');
+  await slider.focus();
+  await slider.press('Home');
   for (let count = 0; count < 12; count += 1) await slider.press('ArrowRight');
-  await expect(page.getByText('12 個月生活費', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true }) });
   await expect(evidence.getByText('你希望先準備 12 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('接受條件 · 只描述本次答案', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
+  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
+  await expect(evidence.getByText('這個條件算偏向安全穩定：3 以下算偏向自主，12 以上算偏向安全穩定。', { exact: true })).toBeVisible();
 });
 
 test('滑桿回改只在再次確認後更新，且保留其他題答案', async ({ page }) => {

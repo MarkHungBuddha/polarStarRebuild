@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
+import { sliderLeans } from '../src/scenarios/slider-leans';
 
 // The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog.
 const blueprint: Record<string, [string, string, string]> = {
@@ -58,4 +59,15 @@ test('每個變體都有完整題意、雙方代價與結果文案，方向只�
     expect(scenario.options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
     expect(new Set(scenario.options.map(option => option.id)).size, scenario.id).toBe(2);
   }
+});
+
+test('每題滑桿都有作者門檻：兩門檻分屬價值對的兩邊，初始位置落在不算偏向的中間', () => {
+  for (const scenario of scenarios) {
+    if (scenario.kind !== 'slider') continue;
+    const lean = sliderLeans[scenario.id];
+    expect(lean, scenario.id).toBeDefined();
+    expect([lean.lowValue, lean.highValue].sort(), scenario.id).toEqual([...scenario.pair].sort());
+    expect(scenario.min <= lean.atMost && lean.atMost < scenario.initial && scenario.initial < lean.atLeast && lean.atLeast <= scenario.max, scenario.id).toBe(true);
+  }
+  expect(Object.keys(sliderLeans).sort()).toEqual(scenarios.filter(scenario => scenario.kind === 'slider').map(scenario => scenario.id).sort());
 });
