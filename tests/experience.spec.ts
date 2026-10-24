@@ -3,6 +3,7 @@ import { classifyAll, classifyAndRankValues, classifyValues, completeRemainingSc
 
 test('使用者能分類十個共同價值，並在進入情境前保留並列與自訂價值', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: '關於這份題目' }).click();
   await expect(page.getByText('假設性的自我回報', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('group', { name: /的重要性$/ })).toHaveCount(10);

@@ -6,7 +6,9 @@ import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHisto
 import { ScenarioQuestion } from './ScenarioQuestion';
 import { evidenceId } from './ResultEvidence';
 import { ResultReport } from './ResultReport';
+import { HomeIntro } from './HomeIntro';
 import { PageHeader } from './PageHeader';
+import { ThemeControl } from './ThemeControl';
 import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
@@ -79,20 +81,12 @@ export function App() {
   const scenario = session.scenarios[session.scenarioIndex];
   const complete = session.scenarios.every(item => session.answers[item.id]);
   const shareLink = questionShareLink(session.scenarios, window.location);
-  return <main className="app-shell">
-    <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}>北極星</a><span>一份關於選擇的自我專題</span></header>
+  return <main className={`app-shell screen-${session.screen}`}>
+    <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 2 2.8 6.4 7 .7-5.3 4.6 1.6 6.8-6.1-3.6-6.1 3.6 1.6-6.8L2.2 9.1l7-.7Z" /></svg>北極星</a><span className="notebook-stamp">反思筆記 · 01</span></header>
+    <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>使用目前版本重新開始</button></section>}
-    {session.screen === 'intro' && <section className="hero">
-      <div className="cover-line"><span>THE NORTH STAR</span><span>VOL. 01 / 關於你的特輯</span></div>
-      <p className="eyebrow">SELF PORTRAIT · 反思練習</p><h1>你重視什麼，<br /><em>會怎麼選？</em></h1>
-      <p className="lead">先排出你在意的事，再試著安排時間、做幾個日常決定。當兩件事不能兼顧，你會先顧哪一件？</p>
-      <div className="intro-columns"><p><b>第一幕 · 你重視的</b><br />把十個價值分類、排序，一樣重要的可以並列。</p><p><b>第二幕 · 情境中的取捨</b><br />試著做出選擇，再和剛才的排序對照。</p></div>
-      <p className="disclaimer">這是參考 Schwartz 價值理論設計的自編反思工具，題目與解讀尚未驗證。兩幕都是假設性的自我回報，不是診斷，也不代表真實行為。</p>
-      <p className="caption">第二幕有十五個情境，每題都有兩件你可能在意、卻無法完全兼顧的事。</p>
-      <p className="caption">預計約十五分鐘完成；這是設計時的估計，尚未實測。</p>
-      {resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>}
-    </section>}
+    {session.screen === 'intro' && <HomeIntro actions={resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>} />}
     {session.screen === 'classify' && <section>
       <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="照你現在的想法，把每個價值放進適合的類別。沒有標準答案。" />
       <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>

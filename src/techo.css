@@ -1,0 +1,160 @@
+/*
+ * Notebook (手帳) look shared by every screen.
+ * 1. Tokens: the only place colors, fonts, radii and shadows are written. Components use var(--…).
+ * 2. Shared controls and motifs: buttons, focus, paper card, tape, marker, stamp, theme control.
+ * 3. Home page layout.
+ * The theme is chosen by data-theme on <html>, set by the inline script in index.html before first paint.
+ */
+
+/* 1. Tokens ---------------------------------------------------------------- */
+:root {
+  --bg: #f6f1e7;
+  --dot: rgba(120, 100, 70, .22);
+  --paper: #fffdf8;
+  --text: #2b2a27;
+  --text-body: #3d3a34;
+  --text-2: #5e584d;
+  --text-3: #6b655a;
+  --rule: #ddd3c2;
+  --stamp: #8c8273;
+  --accent: #2f4a6d;
+  --on-accent: #fbf8f2;
+  --tape: #edbcaf;
+  --tape-opacity: .85;
+  --marker: var(--tape);
+  --sticky: #fff6d6;
+  --track: #e3dacb;
+  --opt-bg: rgba(255, 253, 248, .7);
+  --opt-bg-selected: #fffdf8;
+  --opt-border: #dcd2c0;
+  --badge-bg: #efe8db;
+  --disabled-bg: #d9d0c1;
+  --disabled-fg: #5e584d;
+  --shadow-paper: 0 1px 0 rgba(60, 40, 10, .06), 0 8px 20px rgba(60, 40, 10, .08);
+  --shadow-button: 0 3px 0 rgba(0, 0, 0, .2);
+  --shadow-button-pressed: 0 1px 0 rgba(0, 0, 0, .2);
+  --radius-paper: 6px;
+  --radius-control: 14px;
+  --radius-sticky: 2px;
+  --tilt-paper: -.6deg;
+  --font-hand: 'LXGW WenKai TC', 'Klee One', 'Kaiti TC', 'DFKai-SB', serif;
+  --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  /* Aliases kept for screens not yet restyled. */
+  --ink: var(--text);
+  --body: var(--text-body);
+  --muted: var(--text-2);
+  color-scheme: light;
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background: var(--bg);
+}
+:root[data-theme='dark'] {
+  --bg: #1e1c19;
+  --dot: rgba(240, 225, 200, .1);
+  --paper: #2a2723;
+  --text: #ede6d8;
+  --text-body: #ddd5c6;
+  --text-2: #b3aa99;
+  --text-3: #a39a89;
+  --rule: #4a443c;
+  --stamp: #6e665a;
+  --accent: #9db6d6;
+  --on-accent: #1e1c19;
+  --tape-opacity: .7;
+  --marker: rgba(237, 188, 175, .35);
+  --sticky: #3a3426;
+  --track: #3a362f;
+  --opt-bg: rgba(42, 39, 35, .85);
+  --opt-bg-selected: #2a2723;
+  --opt-border: #4a443c;
+  --badge-bg: #3a362f;
+  --disabled-bg: #34302a;
+  --disabled-fg: #8f8778;
+  --shadow-paper: 0 1px 0 rgba(0, 0, 0, .25), 0 10px 24px rgba(0, 0, 0, .35);
+  --shadow-button: 0 3px 0 rgba(0, 0, 0, .45);
+  --shadow-button-pressed: 0 1px 0 rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+
+/* 2. Shared base, controls and motifs -------------------------------------- */
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.3px);
+  background-size: 20px 20px;
+  color: var(--text-body);
+  font-size: 15px;
+}
+h1, h2, h3 { color: var(--text); font-family: var(--font-hand); font-weight: 700; letter-spacing: 0; }
+p { line-height: 1.85; }
+button, input, select { font-family: var(--font-sans); }
+button { color: var(--text); }
+button:not(:disabled):hover { filter: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+select { border-radius: var(--radius-control); background-color: var(--paper); color: var(--text); border-color: var(--opt-border); }
+
+.primary, .secondary { border-radius: var(--radius-control); font-size: 17px; letter-spacing: 1px; transition: transform 80ms ease-out, box-shadow 80ms ease-out; }
+.primary { min-height: 56px; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-button); }
+.secondary { min-height: 54px; border: 1.5px solid var(--stamp); background: transparent; color: var(--text); }
+.primary:not(:disabled):active, .secondary:not(:disabled):active { transform: translateY(2px); }
+.primary:not(:disabled):active { box-shadow: var(--shadow-button-pressed); }
+.primary:disabled, .secondary:disabled { background: var(--disabled-bg); color: var(--disabled-fg); border-color: var(--disabled-bg); box-shadow: none; opacity: 1; }
+.text-button { color: var(--accent); min-height: 44px; }
+.text-button:disabled { color: var(--disabled-fg); opacity: 1; text-decoration: none; }
+
+/* Paper card: only the background layer tilts, so text stays horizontal. ::after is the card's single strip of tape. */
+.paper-card { position: relative; isolation: isolate; padding: 32px 22px 24px; }
+.paper-card::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--radius-paper); background: var(--paper); box-shadow: var(--shadow-paper); transform: rotate(var(--tilt-paper)); }
+.paper-card::after { content: ''; position: absolute; top: -11px; left: calc(50% - 48px); width: 96px; height: 25px; background: var(--tape); opacity: var(--tape-opacity); transform: rotate(-3deg); pointer-events: none; }
+.marker { background: linear-gradient(transparent 58%, var(--marker) 58%); }
+
+.app-shell { padding: 24px 24px 0; }
+.masthead { border: 0; margin-bottom: 12px; padding: 0; align-items: center; gap: 12px; }
+.masthead a { display: inline-flex; align-items: center; min-height: 44px; gap: 8px; color: var(--text); font-family: var(--font-hand); font-size: 24px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+.masthead svg { width: 24px; height: 24px; fill: var(--tape); stroke: var(--accent); stroke-width: 1.2; }
+.masthead .notebook-stamp { display: inline-block; font: 13px/1.7 var(--font-hand); color: var(--text-2); letter-spacing: 0; border: 1.5px solid var(--stamp); border-radius: 99px; padding: 3px 12px; white-space: nowrap; transform: rotate(-3deg); }
+.theme-control { display: flex; flex-direction: column; align-items: flex-end; margin: 0 0 24px; }
+.theme-control label { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; }
+.theme-control select { width: auto; min-width: 122px; min-height: 44px; padding-block: 8px; font-size: 14px; }
+.theme-control p { margin: 6px 0 0; font-size: 13px; line-height: 1.7; color: var(--text-2); }
+.storage-notice { color: var(--text); border-color: var(--rule); }
+
+/* 3. Home ------------------------------------------------------------------ */
+.screen-intro { max-width: 488px; }
+.hero { padding: 0; }
+.hero .eyebrow { margin: 0 0 12px; color: var(--text-2); font: 15px/1.7 var(--font-hand); letter-spacing: 0; }
+.hero h1 { max-width: none; font-size: 34px; line-height: 1.35; }
+.hero .lead { margin: 18px 0; color: var(--text-body); font: 15px/1.85 var(--font-sans); }
+.intro-steps { list-style: none; margin: 18px 0; padding: 0; counter-reset: step; }
+.intro-steps li { counter-increment: step; display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 14px 0; border-top: 1.5px dashed var(--rule); }
+.intro-steps li::before { content: counter(step); box-sizing: border-box; width: 30px; height: 30px; border: 1.5px solid var(--accent); border-radius: 50%; color: var(--accent); text-align: center; font: 700 16px/27px var(--font-hand); }
+.intro-steps b { color: var(--text); font-size: 15px; }
+.intro-steps p { margin: 2px 0 0; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+.intro-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding-top: 14px; border-top: 1.5px dashed var(--rule); color: var(--text-3); font-size: 12px; line-height: 1.7; }
+.intro-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.intro-meta svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.intro-bottom { margin-top: 28px; }
+.intro-bottom > .primary { width: 100%; }
+.intro-bottom .disclaimer { margin: 14px 0 0; color: var(--text-3); font-size: 12px; line-height: 1.7; }
+.about-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; background: transparent; color: var(--accent); font-size: 14px; }
+.about-toggle span { text-decoration: underline; text-underline-offset: 4px; }
+.about-toggle::before { content: '+'; width: 1em; text-align: center; }
+.about-toggle[aria-expanded='true']::before { content: '−'; }
+.about-panel { margin-top: 4px; padding: 4px 16px; border-left: 1.5px dashed var(--rule); }
+.about-panel p { margin: 10px 0; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+.resume-panel { margin: 0; padding: 0; border: 0; }
+.resume-panel h2 { font-size: 24px; }
+.resume-panel p { color: var(--text-body); }
+.resume-panel .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 0; padding: 0; border: 0; }
+.resume-panel .actions button { flex: 1 1 160px; }
+.screen-intro footer { margin-top: 32px; border-color: var(--rule); color: var(--text-2); letter-spacing: 0; }
+
+@media (max-width: 360px) {
+  .app-shell { padding-inline: 16px; }
+  .paper-card { padding-inline: 18px; }
+  .hero h1 { font-size: 30px; }
+  .masthead .notebook-stamp { padding-inline: 8px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .primary:not(:disabled):active, .secondary:not(:disabled):active { transform: none; }
+}
