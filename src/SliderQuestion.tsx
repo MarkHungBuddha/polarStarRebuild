@@ -11,7 +11,7 @@ export function SliderQuestion({ scenario, answer, onConfirm, onBack, onReview }
   const money = scenario.id === 'slot01-work';
   const clock = scenario.slotId === 'slot07';
   const lease = scenario.slotId === 'slot01';
-  const instruction = money ? '把硬幣拖進小豬撲滿，或點硬幣存入。每份代表一個月生活費。' : clock ? '拖動紅色時針，設定你至少想保留的休閒時數。' : '用桌曆下方的箭頭翻頁，設定你能接受的時間。';
+  const instruction = money ? '把硬幣拖進小豬撲滿，或點硬幣存入。每份代表一個月生活費。' : clock ? '拖動時針，設定你至少想保留的休閒時數。' : '用桌曆下方的箭頭翻頁，設定你能接受的時間。';
   return <ScenarioFrame scenario={scenario} caption="調整好後，按下「確認答案」。確認前都能更改。" canConfirm={draft !== null} onConfirm={() => draft !== null && onConfirm({ kind: 'slider', variantId: scenario.id, value: draft })} onBack={onBack} onReview={onReview}>
     <div className="game-board">
       <p className="game-instruction">{instruction}</p>
