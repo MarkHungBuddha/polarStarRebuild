@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "check": "tsc -b && eslint .",
     "preview": "vite preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "prototype:share": "vite --host 127.0.0.1 --port 5189 --strictPort --open /?prototype=share&variant=A"
   },
   "dependencies": {
     "react": "^19.2.7",

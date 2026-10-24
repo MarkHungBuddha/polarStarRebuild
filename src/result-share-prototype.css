@@ -1,0 +1,22 @@
+.proto-share { padding-bottom: 150px; }
+.proto-banner { border: 1px dashed var(--accent); padding: 16px; margin: 24px 0; font-size: .9rem; }
+.proto-banner p { margin: 8px 0; }
+.proto-banner button { font-size: .9rem; }
+.proto-banner button[aria-pressed=true] { background: var(--accent); color: var(--on-accent); }
+.proto-share-panel { margin: 36px 0; padding: 28px; background: var(--paper); border: 2px solid var(--accent); border-radius: 6px; }
+.proto-share-panel label { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+.proto-share-panel input { width: 20px; height: 20px; flex: 0 0 20px; }
+.proto-share-panel fieldset { border: 1px solid var(--rule); margin: 20px 0; }
+.proto-scope { padding: 16px; background: var(--sticky); border-left: 4px solid var(--accent); }
+.proto-ranking { margin: 32px 0; }
+.proto-ranking > div { display: grid; grid-template-columns: 140px 1fr; border-top: 1px solid var(--rule); padding: 12px 0; }
+.proto-ranking ol { margin: 0; padding-left: 28px; }
+.proto-ranking li { padding: 6px; }
+.proto-answer { border-bottom: 1px solid var(--rule); padding: 16px 0; }
+.proto-answer summary, .proto-own > summary { cursor: pointer; padding: 10px 0; font-weight: bold; }
+.proto-C .proto-share-panel { border-left-width: 8px; }
+.proto-D .proto-share-panel { background: var(--sticky); }
+.proto-switcher { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 8px; background: #24384d; border-radius: 40px; box-shadow: 0 5px 30px #0004; z-index: 50; width: max-content; max-width: calc(100vw - 20px); }
+.proto-switcher button { border: 0; background: #fff; color: #24384d; border-radius: 50%; min-width: 42px; padding: 8px; }
+.proto-switcher select { min-width: 0; max-width: 280px; background: #24384d; color: white; border: 0; padding: 12px 4px; font: inherit; font-size: .9rem; }
+@media(max-width: 600px) { .proto-share-panel { padding: 18px; } .proto-ranking > div { grid-template-columns: 1fr; } .proto-switcher select { max-width: 230px; font-size: .8rem; } }
