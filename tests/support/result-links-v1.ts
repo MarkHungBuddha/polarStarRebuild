@@ -63,3 +63,8 @@ export const customResultLinksV1 = [
     ]
   }
 ];
+
+// Published links that are not the one correct spelling (docs/result-share-spec.md「只有一種正確寫法」): the site promises to keep reading each of them as corrupt.
+export const nonCanonicalResultLinksV1 = {
+  planLeadingZero: '#r=1.autonomy~stimulation~hedonism.3-3-care~2-3-autonomy-fairness..c18hay5z.00-0-0-0-0-0-0-0-0-0-0-0-0-0-0',
+};

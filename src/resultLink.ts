@@ -21,7 +21,9 @@ export type ResultLinkOutcome =
   | { kind: 'unsupported' };
 
 const coreIds = new Set(baseValues.map(value => value.id));
-const base36 = /^[1-9a-z][0-9a-z]*$/;
+// The one correct spelling of a base36 number: lowercase, no leading zero (docs/result-share-spec.md「只有一種正確寫法」).
+const positiveBase36 = /^[1-9a-z][0-9a-z]*$/;
+const base36 = /^(0|[1-9a-z][0-9a-z]*)$/;
 
 export function sharedResultOf(session: Session): SharedResult | undefined {
   const plan = questionPlan(session.scenarios);
@@ -77,12 +79,12 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   const [, statedField, chosenField, customField, catalog, planField] = fields;
   const plan = planField.split('-');
   const custom = readCustom(customField);
-  if (!custom || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => /^[0-9a-z]+$/.test(selector))) return { kind: 'corrupt' };
+  if (!custom || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => base36.test(selector))) return { kind: 'corrupt' };
   const ids = (text: string[]) => text.length > 0 && text.every(id => coreIds.has(id)) ? text : undefined;
   const stated = statedField.split('~').map(row => ids(row.split('-')));
   const chosen = chosenField === '' ? [] : chosenField.split('~').map(row => {
     const [chosenCount, directional, ...rowIds] = row.split('-');
-    if (!base36.test(chosenCount) || !base36.test(directional) || !ids(rowIds)) return undefined;
+    if (!positiveBase36.test(chosenCount) || !positiveBase36.test(directional) || !ids(rowIds)) return undefined;
     const counts = { chosen: parseInt(chosenCount, 36), directional: parseInt(directional, 36) };
     return counts.chosen <= counts.directional && counts.directional <= plan.length ? { ids: rowIds, ...counts } : undefined;
   });

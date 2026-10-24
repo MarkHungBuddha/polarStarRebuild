@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { createResultImage, type ImageTheme } from './resultImage';
 import type { SharedResult } from './resultLink';
 
@@ -6,8 +6,11 @@ export const imagePreparing = '正在準備結果圖……';
 export const imageFailed = '結果圖沒有產生成功，請再試一次。結果連結仍然可以複製。';
 type Generated = { key: string; file: File; url: string };
 
-/** Own the generated URL and discard completions belonging to previous selections/themes. */
-export function useResultImage(result: SharedResult | undefined, reportFailure: (message: string) => void) {
+/**
+ * Own the generated URL and discard completions belonging to previous selections/themes.
+ * A failure is reported in the share block's status; a later success silently clears the failure or preparing line it left there.
+ */
+export function useResultImage(result: SharedResult | undefined, setStatus: Dispatch<SetStateAction<string>>) {
   const [theme, setTheme] = useState<ImageTheme>(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   const [attempt, setAttempt] = useState(0);
   const [generated, setGenerated] = useState<Generated>();
@@ -25,13 +28,14 @@ export function useResultImage(result: SharedResult | undefined, reportFailure: 
     createResultImage(JSON.parse(serialized) as SharedResult, theme).then(file => {
       if (!active) return;
       url = URL.createObjectURL(file); setGenerated({ key, file, url });
-    }).catch(() => { if (active) { setFailedKey(key); reportFailure(imageFailed); } });
+      setStatus(current => current === imagePreparing || current === imageFailed ? '' : current);
+    }).catch(() => { if (active) { setFailedKey(key); setStatus(imageFailed); } });
     return () => {
       active = false;
       // A later return to this same selection must wait for a fresh image, not show this revoked URL.
       if (url) { URL.revokeObjectURL(url); setGenerated(current => current?.url === url ? undefined : current); }
     };
-  }, [serialized, theme, key, reportFailure]);
+  }, [serialized, theme, key, setStatus]);
   return { image: generated?.key === key ? generated : undefined, failed: failedKey === key, retry: () => setAttempt(value => value + 1) };
 }
 

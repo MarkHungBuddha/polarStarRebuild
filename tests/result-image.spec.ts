@@ -94,6 +94,7 @@ test('準備中按下載只顯示準備句，預覽是隱藏的同比例空白�
   await callPage(page, 'releaseImageFonts');
   await expect(button).toHaveAttribute('aria-disabled', 'false');
   await expect(share.getByRole('img')).toBeVisible();
+  await expect(share.getByRole('status')).toHaveText('');
   const checkbox = share.getByRole('group', { name: '也分享自訂價值' }).getByLabel('保有獨處的時間');
   await checkbox.check();
   await expect(share.getByRole('img')).toHaveAttribute('alt', /另含 1 個自訂價值/);
@@ -121,8 +122,22 @@ test('產生失敗時不顯示預覽，複製結果連結照常可用，再按�
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await share.getByRole('textbox', { name: '結果連結' }).inputValue());
 
   await callPage(page, 'failImageFonts', false);
+  await callPage(page, 'holdImageFonts');
   await button.press('Enter');
   await expect(share.getByRole('status')).toHaveText('正在準備結果圖……');
+  await callPage(page, 'releaseImageFonts');
   await expect(button).toHaveAttribute('aria-disabled', 'false');
   await expect(share.getByRole('img')).toBeVisible();
+  await expect(share.getByRole('status')).toHaveText('');
+});
+
+test('產生失敗後切換主題，新圖產生成功就悄悄清掉失敗句', async ({ page }) => {
+  await controlImageFonts(page);
+  await page.addInitScript(() => (window as unknown as { failImageFonts: (value: boolean) => void }).failImageFonts(true));
+  const share = await reachResultWithCustomValues(page, []);
+  await expect(share.getByRole('status')).toHaveText('結果圖沒有產生成功，請再試一次。結果連結仍然可以複製。');
+  await callPage(page, 'failImageFonts', false);
+  await page.getByRole('button', { name: '深色', exact: true }).click();
+  await expect(share.getByRole('img')).toBeVisible();
+  await expect(share.getByRole('status')).toHaveText('');
 });
