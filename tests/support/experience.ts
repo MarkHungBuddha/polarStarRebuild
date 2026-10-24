@@ -18,7 +18,7 @@ export const sceneOption = (page: Page, name: string | RegExp) => page.locator('
 /** Sets a slider scenario's amount with whichever physical control it uses: piggy bank, clock or desk calendar. */
 export async function setAmount(page: Page, value: number | 'max') {
   const coin = page.getByRole('button', { name: '放入一個月生活費', exact: true });
-  const clock = page.getByRole('slider', { name: '拖動時針安排休閒時間' });
+  const clock = page.getByRole('slider', { name: '拖曳時針安排休閒時間' });
   if (await coin.count()) {
     await page.getByRole('button', { name: '不準備備用金', exact: true }).click();
     for (let count = 0; value === 'max' ? await coin.getAttribute('aria-disabled') !== 'true' : count < value; count += 1) await coin.click();
@@ -136,6 +136,40 @@ export async function expectNoClippedText(scope: Locator) {
     .filter(element => element.offsetParent !== null && element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX !== 'visible')
     .map(element => element.textContent?.slice(0, 40)));
   expect(clipped).toEqual([]);
+}
+
+/** Every piece of text inside `scope` stays horizontal: neither it nor an ancestor inside `scope` is rotated or skewed (only decorative backgrounds may tilt). */
+export async function expectHorizontalText(scope: Locator) {
+  const tilted = await scope.evaluate(root => {
+    const isTilted = (element: Element) => {
+      const transform = getComputedStyle(element).transform;
+      if (transform === 'none') return false;
+      const matrix = new DOMMatrixReadOnly(transform);
+      return Math.abs(matrix.b) > 1e-6 || Math.abs(matrix.c) > 1e-6;
+    };
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent?.trim();
+      if (!text) continue;
+      for (let element = node.parentElement; element; element = element === root ? null : element.parentElement) {
+        if (isTilted(element)) { found.push(text.slice(0, 30)); break; }
+      }
+    }
+    return found;
+  });
+  expect(tilted).toEqual([]);
+}
+
+/** Paragraphs inside `scope` that run longer than three lines use the sans-serif body font, not the handwriting font. */
+export async function expectLongParagraphsInSans(scope: Locator) {
+  const handwritten = await scope.evaluate(root => [...root.querySelectorAll<HTMLElement>('p, li')].filter(element => {
+    if (element.offsetParent === null) return false;
+    const style = getComputedStyle(element);
+    const lines = (element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / parseFloat(style.lineHeight);
+    return lines > 3.2 && !/^"?Noto Sans TC/.test(style.fontFamily);
+  }).map(element => element.textContent?.slice(0, 30)));
+  expect(handwritten).toEqual([]);
 }
 
 /** The whole text is shown: nothing clipped by its own box or pushed past the viewport. */

@@ -38,6 +38,11 @@
 .scenario-page .actions .secondary { flex: 0 1 auto; order: 1; padding-inline: 18px; }
 .scenario-page .actions .text-button { flex-basis: 100%; order: 3; text-align: center; }
 
+/* The planner needs room on desktop, so its screen widens; the situation text keeps a readable line length. */
+@media (min-width: 900px) {
+  .screen-scenario:has(.planner-board) { max-width: 960px; }
+  .scenario-page .setup, .setup-question { max-width: 42em; }
+}
 @media (max-width: 640px) {
   .scenario-page .game-board, .scenario-page .planner-board { padding: 16px 10px; margin-inline: 0; }
   .scenario-page .game-instruction { padding-inline: 4px; }
