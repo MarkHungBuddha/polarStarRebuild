@@ -59,3 +59,6 @@ export function differsFromFirstAct(scenario: Scenario, answer: Answer, values: 
   const leaning = leaningValue(scenario, answer);
   return Boolean(ahead && leaning && leaning !== ahead.id);
 }
+
+/** How often a second-act row was chosen, as every conclusion shows it; tied rows share the count (各). */
+export const chosenCountText = ({ chosen, directional }: { chosen: number; directional: number }, tied: boolean) => `${tied ? '各' : ''}選了 ${chosen} 次／共 ${directional} 題`;

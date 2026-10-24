@@ -1,35 +1,24 @@
 import { useState } from 'react';
-import { baseValues } from './data';
+import { coreValueWord } from './data';
 import { PageHeader } from './PageHeader';
 import { questionShareLink } from './questionPlan';
-import type { ResultLinkOutcome, SharedResult } from './resultLink';
+import { withPositions, type ResultLinkOutcome, type SharedResult } from './resultLink';
 import { clearSeenHistory } from './seenHistory';
 import { clearSavedSession } from './sessionStorage';
 import { ShareFooter } from './ShareFooter';
 import { StarIcon } from './StarIcon';
 import { storageClearFailedNotice } from './storageNotices';
 import { ThemeControl } from './ThemeControl';
-import { ConclusionColumns, type ColumnRow } from './ValueConclusion';
+import { ConclusionColumns } from './ValueConclusion';
+import { chosenCountText } from './valueRanking';
 import './techo-result.css';
-
-const wordOf = (id: string) => baseValues.find(value => value.id === id)!.word;
-
-/** Positions follow row order and row sizes (1, 1, 3…). */
-function positioned<T extends { ids: string[] }>(rows: readonly T[], count?: (row: T) => string): ColumnRow[] {
-  let position = 1;
-  return rows.map(row => {
-    const shown = { position, words: row.ids.map(wordOf), count: count?.(row) };
-    position += row.ids.length;
-    return shown;
-  });
-}
 
 function SharedResultPage({ result, questionLink }: { result: SharedResult; questionLink?: string }) {
   return <section className="result-page result-cover">
     <PageHeader eyebrow="分享給你的反思 · 一頁摘要" title="這一次，分享者的選擇。" description="這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。" />
     <section className="conclusion paper-card"><ConclusionColumns titles={['分享者最重視的', '分享者在情境中最常選的']}
-      stated={positioned(result.stated.map(ids => ({ ids })))}
-      chosen={positioned(result.chosen, row => `${row.ids.length > 1 ? '各' : ''}選了 ${row.chosen} 次／共 ${row.directional} 題`)} /></section>
+      stated={withPositions(result.stated.map(ids => ({ ids }))).map(row => ({ position: row.position, words: row.ids.map(coreValueWord) }))}
+      chosen={withPositions(result.chosen).map(row => ({ position: row.position, words: row.ids.map(coreValueWord), count: chosenCountText(row, row.ids.length > 1) }))} /></section>
     {result.custom.length > 0 && <section className="custom-results"><h2>分享者的自訂價值</h2><p>由分享者自行加入，沒有納入兩份前三名。</p><ul>{result.custom.map((word, index) => <li key={index}>{word}</li>)}</ul></section>}
     <p className="sticky-note" role="note">這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值只出現在約三題，改一題就可能換名次。</p>
     {/* The original question set is offered only while today's catalog can still reproduce it; never swap in today's questions under its name. */}
@@ -63,6 +52,6 @@ export function SharedResultApp({ outcome }: { outcome: ResultLinkOutcome }) {
     <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {outcome.kind === 'result' ? <SharedResultPage result={outcome.result} questionLink={questionLink} /> : <UnreadableResult unsupported={outcome.kind === 'unsupported'} />}
-    <ShareFooter questionShare={false} shareDisabled onClearRecords={clearLocalRecords} />
+    <ShareFooter onClearRecords={clearLocalRecords} />
   </main>;
 }

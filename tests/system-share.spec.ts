@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { answerRemainingScenarios, classifyAndRankValues } from './support/experience';
 import { callPage, controlImageFonts } from './support/result-image';
+import { reachShare } from './support/result-share';
 
 type ShareEnvironment = 'supported' | 'no-share' | 'no-can-share' | 'files-unsupported';
 type ShareCall = { title?: string; text?: string; url?: string; files: number; name?: string; type?: string; signature?: number[]; width?: number; height?: number; activated: boolean };
@@ -39,14 +39,6 @@ async function fakeShare(page: Page, environment: ShareEnvironment) {
   }, environment);
 }
 const shareCalls = (page: Page) => page.evaluate(() => (window as unknown as { shareCalls: ShareCall[] }).shareCalls);
-
-async function reachShare(page: Page) {
-  await page.goto('/');
-  await classifyAndRankValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
-  return page.getByRole('region', { name: '分享結果' });
-}
 
 test('分享結果把 1080 × 1350 PNG、標題、內文和結果連結交給系統分享選單，焦點留在按鈕上', async ({ page }) => {
   await fakeShare(page, 'supported');
@@ -151,6 +143,7 @@ test('結果圖準備中按分享結果只顯示準備句，不開啟系統分�
 
   await callPage(page, 'releaseImageFonts');
   await expect(button).toHaveAttribute('aria-disabled', 'false');
+  await expect(share.getByRole('status')).toHaveText('');
   expect(await shareCalls(page)).toHaveLength(0);
   await button.press('Enter');
   await expect.poll(() => shareCalls(page)).toHaveLength(1);
@@ -166,10 +159,13 @@ test('結果圖產生失敗時按分享結果只重新產生，準備好之後�
   await expect(button).toHaveAttribute('aria-disabled', 'true');
 
   await callPage(page, 'failImageFonts', false);
+  await callPage(page, 'holdImageFonts');
   await button.press('Enter');
   await expect(share.getByRole('status')).toHaveText('正在準備結果圖……');
+  await callPage(page, 'releaseImageFonts');
   await expect(button).toHaveAttribute('aria-disabled', 'false');
   await expect(share.getByRole('img')).toBeVisible();
+  await expect(share.getByRole('status')).toHaveText('');
   expect(await shareCalls(page)).toHaveLength(0);
   await button.click();
   await expect.poll(() => shareCalls(page)).toHaveLength(1);

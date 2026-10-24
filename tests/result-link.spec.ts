@@ -1,22 +1,11 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { answerRemainingScenarios, classifyAndRankValues, classifyValues, confirmCurrentScenario } from './support/experience';
-import { noChosen, resultLinksV1, resultLinksV1Catalog, type PublishedResultLink } from './support/result-links-v1';
+import { classifyValues, confirmCurrentScenario } from './support/experience';
+import { noChosen, resultLinksV1 } from './support/result-links-v1';
+import { chosenColumn, current, expectUnreadable, reachShare, statedColumn } from './support/result-share';
 import { catalogVersion } from '../src/questionPlan';
 
-// A published link opened against today's catalog, so its question set is still reproducible.
-const current = (link: PublishedResultLink) => link.fragment.replace(`.${resultLinksV1Catalog}.`, `.${catalogVersion}.`);
-const statedColumn = (page: Page) => page.getByRole('heading', { name: '分享者最重視的' }).locator('..');
-const chosenColumn = (page: Page) => page.getByRole('heading', { name: '分享者在情境中最常選的' }).locator('..');
 const storageSnapshot = (page: Page) => page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
-
-async function shareFixedFlow(page: Page) {
-  await page.goto('/');
-  await classifyAndRankValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
-  return page.getByRole('region', { name: '分享結果' });
-}
 
 test('收件者打開結果連結，看到分享者的兩份前三名和解讀限制', async ({ page }) => {
   const link = resultLinksV1.general;
@@ -42,7 +31,7 @@ test('定版範例連結的並列、第二幕沒有結果和全部並列都照�
 });
 
 test('分享者的結果連結在別人的瀏覽器打開，兩份前三名和次數都相同', async ({ page, browser }) => {
-  const share = await shareFixedFlow(page);
+  const share = await reachShare(page);
   await expect(share.getByRole('group', { name: '也分享自訂價值' })).toHaveCount(0);
   await expect(share.getByText('結果圖和結果連結只放兩份前三名，不包含逐題答案和第一幕的完整排序。拿到圖片或連結的人都看得到這些內容。')).toBeVisible();
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
@@ -58,14 +47,14 @@ test('分享者的結果連結在別人的瀏覽器打開，兩份前三名和�
 });
 
 test('同樣的作答產生的結果連結，和定版範例連結逐字相同', async ({ page }) => {
-  const share = await shareFixedFlow(page);
+  const share = await reachShare(page);
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
-  expect(new URL(link).hash).toBe(current(resultLinksV1.fixedFlow));
+  expect(new URL(link).hash).toBe(current(resultLinksV1.fixedFlow.fragment));
 });
 
 test('複製結果連結成功或失敗，狀態區都說明結果', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  const share = await shareFixedFlow(page);
+  const share = await reachShare(page);
   await share.getByRole('button', { name: '複製結果連結' }).click();
   await expect(share.getByRole('status')).toHaveText('已複製結果連結。');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await share.getByRole('textbox', { name: '結果連結' }).inputValue());
@@ -75,7 +64,7 @@ test('複製結果連結成功或失敗，狀態區都說明結果', async ({ pa
 });
 
 test('用同一份題目作答，會照題目連結的流程做分享者的原題組', async ({ page, browser }) => {
-  await page.goto('/' + current(resultLinksV1.chosenAllTied));
+  await page.goto('/' + current(resultLinksV1.chosenAllTied.fragment));
   await page.getByRole('button', { name: '用同一份題目作答' }).click();
   await expect(page).toHaveURL(`/?seed=p.1.0.1.0.1.0.1.0.1.0.1.0.1.0.1&v=${catalogVersion}`);
   await classifyValues(page);
@@ -96,14 +85,14 @@ test('打開結果連結不讀也不寫本機的作答和已看題目紀錄', as
   await confirmCurrentScenario(page);
   const before = await storageSnapshot(page);
   expect(before).not.toBe('[]');
-  await page.goto('/' + current(resultLinksV1.general));
+  await page.goto('/' + current(resultLinksV1.general.fragment));
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
   await expect(page.getByText('上次的進度已保留。')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
   expect(await storageSnapshot(page)).toBe(before);
   const fresh = await (await browser.newContext()).newPage();
-  await fresh.goto('/' + current(resultLinksV1.general));
+  await fresh.goto('/' + current(resultLinksV1.general.fragment));
   await expect(fresh.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
   expect(await storageSnapshot(fresh)).toBe('[]');
   await fresh.context().close();
@@ -120,10 +109,8 @@ test('網址同時有題目連結和結果連結時顯示結果；重新整理�
 
 test('結果連結讀不出來時，整份結果都不顯示，改說明連結不完整', async ({ page }) => {
   const full = resultLinksV1.general.fragment;
-  await page.goto('/' + full.slice(0, full.length / 2));
-  await expect(page.getByRole('heading', { level: 1, name: '這條結果連結不完整' })).toBeVisible();
+  await expectUnreadable(page, full.slice(0, full.length / 2));
   await expect(page.getByText('連結可能在複製或轉貼時被截斷或改動，所以整份結果都不顯示。請向分享者要一條新的結果連結。')).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(0);
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('heading', { level: 1, name: /你重視什麼/ })).toBeVisible();
 });

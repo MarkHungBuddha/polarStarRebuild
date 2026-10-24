@@ -7,6 +7,8 @@ test('shared links expose the homepage preview without running JavaScript', asyn
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', '尋找你的北極星');
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', '整理你重視的事物，透過具體情境中的取捨，回顧這一次的選擇。北極星是一份自編價值反思工具。');
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://northstarmetric.org/link-preview.png');
+  // The image shows the site name and the homepage title; its alt reuses that title as written on the homepage.
+  await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', '你重視什麼，會怎麼選？');
   await context.close();
 });
 
