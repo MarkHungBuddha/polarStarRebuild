@@ -46,6 +46,6 @@ export function TransferScene({ prop, destinations, labels, selected, onChoose }
       <circle cx={(drag ?? home).x} cy={(drag ?? home).y} r="42" fill="var(--bg)" stroke="var(--accent)" strokeDasharray="4 5"/>
       <SceneProp kind={prop} {...(drag ?? home)} />
     </g>
-    <text x="300" y="324" textAnchor="middle" className="scene-small">拖動紅圈裡的物件，放到目的地</text>
+    <text x="300" y="324" textAnchor="middle" className="scene-small">拖曳虛線圈裡的物件，放到目的地</text>
   </svg>;
 }

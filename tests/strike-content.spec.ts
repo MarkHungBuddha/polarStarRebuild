@@ -20,10 +20,9 @@ function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, st
   }
 }
 
-async function openScenario(page: Page, title: string, tie?: { value: string; position: string }) {
+async function openScenario(page: Page, title: string) {
   await page.goto('/');
   await classifyAndRankValues(page);
-  if (tie) await page.getByRole('combobox', { name: `${tie.value}的位置` }).selectOption(tie.position);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, title);
 }
@@ -82,18 +81,6 @@ test('自主與遵守規範補至兩個變體，刪稿共六題且識別全域�
   expectCompleteStrikeVariants('slot02', ['autonomy', 'rules']);
   expect(strikeScenarios).toHaveLength(6);
   expect(new Set(strikeScenarios.map(scenario => scenario.id)).size).toBe(6);
-});
-
-test('第一幕並列享受生活與遵守規範時，聚會題只描述保留的回覆', async ({ page }) => {
-  await openScenario(page, '聚會的散場時間', { value: '遵守規範', position: '3' });
-  await sceneOptions(page).nth(1).click();
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
-  await completeRemainingScenarios(page);
-  const evidence = evidenceFor(page, '聚會的散場時間');
-  await expect(evidence.getByText('第一幕並列 · 只描述本次選擇', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
-  await expect(evidence.getByText('我們就照原本約好的九點散場吧；雖然正聊得開心，剩下的話下次再說。', { exact: true })).toBeVisible();
 });
 
 test.describe('抽到第二個變體', () => {

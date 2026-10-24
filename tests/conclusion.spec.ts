@@ -34,17 +34,19 @@ test('結果以兩份前三名開頭：第一幕自述的前三名，以及情�
   await expectNoHorizontalScroll(page);
 });
 
-test('第一幕全部並列時，自述前三名如實顯示並列，不替使用者補出順序', async ({ page }) => {
+test('沒有調整排序時，自述前三名就是清單上的前三個', async ({ page }) => {
   await page.goto('/');
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await completeRemainingScenarios(page);
   const conclusion = page.getByRole('region', { name: '你的前三名' });
   const stated = conclusion.getByRole('list').first().getByRole('listitem');
-  await expect(stated).toHaveCount(1);
-  await expect(stated).toHaveText(/^並列第 1(.+、){9}.+$/);
-  await conclusion.getByRole('button', { name: '回第一幕調整' }).click();
-  await expect(page.getByRole('button', { name: '進入情境中的取捨' })).toBeVisible();
+  await expect(stated).toHaveCount(3);
+  await expect(stated.nth(0)).toContainText('自主');
+  await expect(stated.nth(1)).toContainText('探索刺激');
+  await expect(stated.nth(2)).toContainText('享受生活');
+  await expect(stated.filter({ hasText: '並列' })).toHaveCount(0);
+  await expect(conclusion.getByRole('button', { name: '回第一幕調整' })).toHaveCount(0);
 });
 
 test('結果封面就顯示兩份完整的前三名，一個名次一列，不只第一名', async ({ page }) => {

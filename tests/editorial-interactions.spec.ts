@@ -33,7 +33,7 @@ for (const variant of [0, 0.999]) {
           await page.getByRole('button', { name: '往前翻一頁' }).click();
           await expect(page.getByRole('button', { name: /^選定 0 / })).toBeVisible();
         } else if (question === 7) {
-          const clock = page.getByRole('slider', { name: '拖動時針安排休閒時間' });
+          const clock = page.getByRole('slider', { name: '拖曳時針安排休閒時間' });
           await clock.scrollIntoViewIfNeeded();
           const bounds = (await clock.boundingBox())!;
           await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 91 / 400 * bounds.height); await page.mouse.down();

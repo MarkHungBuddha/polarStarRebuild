@@ -1,7 +1,7 @@
 import type { Category, ValueItem } from './types';
 export const categoryOrder: Category[] = ['core', 'good', 'low'];
 export const categoryLabels: Record<Category, string> = { core: '這就是我', good: '還不錯', low: '不太在乎' };
-// Every value starts tied at position 1 within its category; only an order the user sets creates first-act precedence.
+// Ranks are set when a value is sorted into a category: it joins at the bottom (see withCategory), so classifying in list order gives the list order.
 export const baseValues: ValueItem[] = [
   { id: 'autonomy', word: '自主', description: '自己決定想法、方向與行動。', rank: 1 },
   { id: 'stimulation', word: '探索刺激', description: '追求新鮮、變化與挑戰。', rank: 1 },

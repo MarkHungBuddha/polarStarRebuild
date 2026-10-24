@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { categoryLabels } from '../../src/data';
 import type { Category } from '../../src/types';
 
@@ -18,7 +18,7 @@ export const sceneOption = (page: Page, name: string | RegExp) => page.locator('
 /** Sets a slider scenario's amount with whichever physical control it uses: piggy bank, clock or desk calendar. */
 export async function setAmount(page: Page, value: number | 'max') {
   const coin = page.getByRole('button', { name: '放入一個月生活費', exact: true });
-  const clock = page.getByRole('slider', { name: '拖動時針安排休閒時間' });
+  const clock = page.getByRole('slider', { name: '拖曳時針安排休閒時間' });
   if (await coin.count()) {
     await page.getByRole('button', { name: '不準備備用金', exact: true }).click();
     for (let count = 0; value === 'max' ? await coin.getAttribute('aria-disabled') !== 'true' : count < value; count += 1) await coin.click();
@@ -58,9 +58,35 @@ export async function classifyValues(page: Page) {
 
 const coreValueWords = ['自主', '探索刺激', '享受生活', '成就', '主導權', '安全穩定', '遵守規範', '傳承', '照顧身邊的人', '普遍關懷'];
 
-// Values start tied; this gives the core values an explicit strict order 1–10 on the ranking page.
+/** A value's row on the ranking page; its accessible name is the value's word. */
+export const rankRow = (page: Page, word: string) => page.getByRole('listitem', { name: word, exact: true });
+
+/** The drag handle, which also moves the value with ArrowUp / ArrowDown / Home / End. */
+export const rankHandle = (page: Page, word: string) => page.getByRole('button', { name: `${word}的順序`, exact: true });
+
+/** The position number shown on a value's row. */
+export async function positionOf(page: Page, word: string) {
+  return Number(await rankRow(page, word).locator('[data-position]').textContent());
+}
+
+export async function expectPosition(page: Page, word: string, position: number) {
+  await expect(rankRow(page, word).locator('[data-position]')).toHaveText(String(position));
+}
+
+/** Moves a value with the keyboard on its handle. */
+export async function pressOnHandle(page: Page, word: string, key: 'ArrowUp' | 'ArrowDown' | 'Home' | 'End', times = 1) {
+  await rankHandle(page, word).focus();
+  for (let step = 0; step < times; step += 1) await page.keyboard.press(key);
+}
+
+/** Sends each value to the bottom in turn, so the listed words end up in that order, each on its own position. */
+export async function arrangeInOrder(page: Page, words: readonly string[]) {
+  for (const word of words) await pressOnHandle(page, word, 'End');
+}
+
+// Gives the core values the strict order 1–10 in the listed order on the ranking page.
 export async function rankValuesInListedOrder(page: Page) {
-  for (const [index, word] of coreValueWords.entries()) await page.getByRole('combobox', { name: `${word}的位置` }).selectOption(String(index + 1));
+  await arrangeInOrder(page, coreValueWords);
 }
 
 export async function classifyAndRankValues(page: Page) {
@@ -68,7 +94,8 @@ export async function classifyAndRankValues(page: Page) {
   await rankValuesInListedOrder(page);
 }
 
-async function confirmCurrentScenario(page: Page) {
+/** Gives the current question any valid answer with its own control, then confirms it. */
+export async function confirmCurrentScenario(page: Page) {
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
   if (await confirm.isDisabled()) {
     // Planner slots, then the slider scenes (piggy bank, clock, calendar), then a choice or strike scene.
@@ -115,4 +142,72 @@ export async function completeRemainingScenarios(page: Page) {
 
 export async function expectNoHorizontalScroll(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+/** Every visible button, link, select, text field and slider inside `scope` is at least 44 × 44px. */
+export async function expectTouchTargets(scope: Locator) {
+  const controls = scope.getByRole('button').or(scope.getByRole('link')).or(scope.getByRole('combobox')).or(scope.getByRole('textbox')).or(scope.getByRole('slider'));
+  for (const control of await controls.all()) {
+    if (!await control.isVisible()) continue;
+    const box = await control.boundingBox();
+    const name = await control.getAttribute('aria-label') ?? await control.textContent() ?? '';
+    expect(box?.width, name).toBeGreaterThanOrEqual(44);
+    expect(box?.height, name).toBeGreaterThanOrEqual(44);
+  }
+}
+
+/** No text inside `scope` is cut off: no element scrolls sideways inside its own box (form fields scroll their value by design). */
+export async function expectNoClippedText(scope: Locator) {
+  const clipped = await scope.evaluate(root => [...root.querySelectorAll<HTMLElement>(':not(input, select, textarea)')]
+    .filter(element => element.offsetParent !== null && element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX !== 'visible')
+    .map(element => element.textContent?.slice(0, 40)));
+  expect(clipped).toEqual([]);
+}
+
+/** Every piece of text inside `scope` stays horizontal: neither it nor an ancestor inside `scope` is rotated or skewed (only decorative backgrounds may tilt). */
+export async function expectHorizontalText(scope: Locator) {
+  const tilted = await scope.evaluate(root => {
+    const isTilted = (element: Element) => {
+      const transform = getComputedStyle(element).transform;
+      if (transform === 'none') return false;
+      const matrix = new DOMMatrixReadOnly(transform);
+      return Math.abs(matrix.b) > 1e-6 || Math.abs(matrix.c) > 1e-6;
+    };
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent?.trim();
+      if (!text) continue;
+      for (let element = node.parentElement; element; element = element === root ? null : element.parentElement) {
+        if (isTilted(element)) { found.push(text.slice(0, 30)); break; }
+      }
+    }
+    return found;
+  });
+  expect(tilted).toEqual([]);
+}
+
+/** Paragraphs inside `scope` that run longer than three lines use the sans-serif body font, not the handwriting font. */
+export async function expectLongParagraphsInSans(scope: Locator) {
+  const handwritten = await scope.evaluate(root => [...root.querySelectorAll<HTMLElement>('p, li')].filter(element => {
+    if (element.offsetParent === null) return false;
+    const style = getComputedStyle(element);
+    const lines = (element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / parseFloat(style.lineHeight);
+    return lines > 3.2 && !/^"?Noto Sans TC/.test(style.fontFamily);
+  }).map(element => element.textContent?.slice(0, 30)));
+  expect(handwritten).toEqual([]);
+}
+
+/** The whole text is shown: nothing clipped by its own box or pushed past the viewport. */
+export async function expectFullyShown(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const fits = await locator.evaluate(element => element.scrollWidth <= element.clientWidth + 1 && element.getBoundingClientRect().right <= window.innerWidth);
+  expect(fits).toBe(true);
+}
+
+/** Keyboard focus shows the shared 2px solid outline. */
+export async function expectFocusRing(locator: Locator) {
+  const outline = await locator.evaluate(element => ({ style: getComputedStyle(element).outlineStyle, width: parseFloat(getComputedStyle(element).outlineWidth) }));
+  expect(outline.style).toBe('solid');
+  expect(outline.width).toBeGreaterThanOrEqual(2);
 }
