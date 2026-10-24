@@ -10,6 +10,7 @@ export interface SharedChosenRow { ids: string[]; chosen: number; directional: n
 export interface SharedResult {
   stated: string[][];
   chosen: SharedChosenRow[];
+  custom: string[];
   catalog: string;
   plan: string[];
 }
@@ -29,6 +30,7 @@ export function sharedResultOf(session: Session): SharedResult | undefined {
     stated: byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id)),
     chosen: byPosition(scenarioTopThree(scenarioTallies(session))).map(row => ({ ids: row.items.map(tally => tally.value.id), chosen: row.items[0].chosen, directional: row.items[0].directional })),
     catalog: catalogVersion,
+    custom: [],
     plan,
   };
 }
@@ -37,7 +39,23 @@ export function sharedResultOf(session: Session): SharedResult | undefined {
 export function resultLink(result: SharedResult, location: Pick<Location, 'origin' | 'pathname'>): string {
   const stated = result.stated.map(row => row.join('-')).join('~');
   const chosen = result.chosen.map(row => [row.chosen.toString(36), row.directional.toString(36), ...row.ids].join('-')).join('~');
-  return `${new URL(location.pathname, location.origin).href}#r=1.${stated}.${chosen}..${result.catalog}.${result.plan.join('-')}`;
+  return `${new URL(location.pathname, location.origin).href}#r=1.${stated}.${chosen}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
+}
+
+function encodeCustom(word: string): string {
+  return btoa(String.fromCharCode(...new TextEncoder().encode(word))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function readCustom(field: string): string[] | undefined {
+  if (field === '') return [];
+  const encodedValues = field.split('~');
+  if (encodedValues.length > 10 || encodedValues.some(value => !/^[A-Za-z0-9_-]+$/.test(value))) return undefined;
+  try {
+    const words = encodedValues.map(encoded => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Uint8Array.from(atob(encoded.replace(/-/g, '+').replace(/_/g, '/')), char => char.charCodeAt(0))));
+    // Re-encoding rejects alternate base64 spellings, including nonzero unused bits.
+    if (words.some((word, index) => encodeCustom(word) !== encodedValues[index] || /\p{Cc}/u.test(word) || [...word.trim()].length < 1 || [...word.trim()].length > 24)) return undefined;
+    return words.map(word => word.trim());
+  } catch { return undefined; }
 }
 
 /** Rows of one column hold a top three: every row starts at position 3 or better (1, 1, 3…), and no value appears twice. */
@@ -58,7 +76,8 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   if (fields.length !== 6) return { kind: 'corrupt' };
   const [, statedField, chosenField, customField, catalog, planField] = fields;
   const plan = planField.split('-');
-  if (customField !== '' || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => /^[0-9a-z]+$/.test(selector))) return { kind: 'corrupt' };
+  const custom = readCustom(customField);
+  if (!custom || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => /^[0-9a-z]+$/.test(selector))) return { kind: 'corrupt' };
   const ids = (text: string[]) => text.length > 0 && text.every(id => coreIds.has(id)) ? text : undefined;
   const stated = statedField.split('~').map(row => ids(row.split('-')));
   const chosen = chosenField === '' ? [] : chosenField.split('~').map(row => {
@@ -68,7 +87,7 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
     return counts.chosen <= counts.directional && counts.directional <= plan.length ? { ids: rowIds, ...counts } : undefined;
   });
   if (stated.some(row => !row) || chosen.some(row => !row)) return { kind: 'corrupt' };
-  const result: SharedResult = { stated: stated as string[][], chosen: chosen as SharedChosenRow[], catalog, plan };
+  const result: SharedResult = { stated: stated as string[][], chosen: chosen as SharedChosenRow[], custom, catalog, plan };
   if (!placesTopThree(result.stated) || result.stated.flat().length < 3 || !placesTopThree(result.chosen.map(row => row.ids))) return { kind: 'corrupt' };
   // Second-act rows are strictly ordered: more leans first, then fewer leaning appearances; equal counts would have been one tied row.
   if (result.chosen.some((row, index) => index > 0 && !(row.chosen < result.chosen[index - 1].chosen || (row.chosen === result.chosen[index - 1].chosen && row.directional > result.chosen[index - 1].directional)))) return { kind: 'corrupt' };
