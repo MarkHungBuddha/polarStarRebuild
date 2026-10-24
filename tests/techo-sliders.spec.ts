@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Locator, Page } from '@playwright/test';
-import { allocate, classifyAndRankValues, confirmCurrentScenario, expectFullyShown, expectNoHorizontalScroll, expectTargetsAtLeast44, goToScenario, setAmount } from './support/experience';
+import { allocate, classifyAndRankValues, confirmCurrentScenario, expectFullyShown, expectNoHorizontalScroll, expectTouchTargets, goToScenario, setAmount } from './support/experience';
 
 /** WCAG contrast ratio between two computed `rgb(...)` colors. */
 function contrast(first: string, second: string) {
@@ -109,7 +109,7 @@ for (const scenarioRandom of [0, .999]) {
               for (const boundary of ['min', 'max'] as const) {
                 await setBoundary(page, form, boundary);
                 await expectNoHorizontalScroll(page);
-                await expectTargetsAtLeast44(mechanic);
+                await expectTouchTargets(mechanic);
                 await expectFullyShown(page.locator('.scene-feedback'));
                 if (form === 'calendar') {
                   await expectFullyShown(page.locator('.calendar-navigation'));

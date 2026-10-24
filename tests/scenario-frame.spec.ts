@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { classifyAndRankValues, confirmCurrentScenario, expectNoHorizontalScroll, expectTargetsAtLeast44 } from './support/experience';
+import { classifyAndRankValues, confirmCurrentScenario, expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
 
 async function openFirstScenario(page: Page) {
   await page.goto('/');
@@ -66,9 +66,9 @@ for (const width of [320, 390, 1280]) {
       for (let question = 0; question < 15; question += 1) {
         const choiceScene = page.locator('.play-scene .scene-action');
         await expectNoHorizontalScroll(page);
-        await expectTargetsAtLeast44(frameControls);
+        await expectTouchTargets(frameControls);
         if (await choiceScene.count()) {
-          await expectTargetsAtLeast44(page.locator('.play-scene'));
+          await expectTouchTargets(page.locator('.play-scene'));
           await expect(confirm).toBeDisabled();
           await choiceScene.nth(question % 2).click();
           await expect(choiceScene.nth(question % 2)).toHaveAttribute('aria-pressed', 'true');

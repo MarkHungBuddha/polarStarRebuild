@@ -118,9 +118,10 @@ export async function expectNoHorizontalScroll(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
 
-/** Every visible control inside `scope` is at least 44 × 44px. */
-export async function expectTargetsAtLeast44(scope: Locator) {
-  for (const control of await scope.getByRole('button').or(scope.getByRole('slider')).or(scope.getByRole('combobox')).or(scope.getByRole('link')).all()) {
+/** Every visible button, link, select, text field and slider inside `scope` is at least 44 × 44px. */
+export async function expectTouchTargets(scope: Locator) {
+  const controls = scope.getByRole('button').or(scope.getByRole('link')).or(scope.getByRole('combobox')).or(scope.getByRole('textbox')).or(scope.getByRole('slider'));
+  for (const control of await controls.all()) {
     if (!await control.isVisible()) continue;
     const box = await control.boundingBox();
     const name = await control.getAttribute('aria-label') ?? await control.textContent() ?? '';
@@ -129,15 +130,12 @@ export async function expectTargetsAtLeast44(scope: Locator) {
   }
 }
 
-/** Every visible button, select and text field in the page body is at least 44 × 44px. */
-export async function expectTouchTargets(page: Page) {
-  for (const control of await page.locator('main').getByRole('button').or(page.locator('main').getByRole('combobox')).or(page.locator('main').getByRole('textbox')).all()) {
-    if (!await control.isVisible()) continue;
-    const box = await control.boundingBox();
-    const name = await control.getAttribute('aria-label') ?? await control.textContent() ?? '';
-    expect(box?.width, name).toBeGreaterThanOrEqual(44);
-    expect(box?.height, name).toBeGreaterThanOrEqual(44);
-  }
+/** No text inside `scope` is cut off: no element scrolls sideways inside its own box (form fields scroll their value by design). */
+export async function expectNoClippedText(scope: Locator) {
+  const clipped = await scope.evaluate(root => [...root.querySelectorAll<HTMLElement>(':not(input, select, textarea)')]
+    .filter(element => element.offsetParent !== null && element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).overflowX !== 'visible')
+    .map(element => element.textContent?.slice(0, 40)));
+  expect(clipped).toEqual([]);
 }
 
 /** The whole text is shown: nothing clipped by its own box or pushed past the viewport. */

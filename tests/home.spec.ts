@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { expectNoHorizontalScroll } from './support/experience';
+import { expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
 
 test('首頁保留簡短說明，可用鍵盤開關「關於這份題目」，不換頁並可開始作答', async ({ page }) => {
   await page.goto('/');
@@ -39,12 +39,7 @@ for (const width of [320, 390, 1280]) {
       await page.goto('/');
       await page.getByRole('button', { name: '關於這份題目' }).click();
       await expectNoHorizontalScroll(page);
-      for (const control of await page.locator('main').getByRole('button').or(page.locator('main').getByRole('combobox')).or(page.locator('main').getByRole('link')).all()) {
-        if (!await control.isVisible()) continue;
-        const box = await control.boundingBox();
-        expect(box?.width, await control.textContent() ?? '').toBeGreaterThanOrEqual(44);
-        expect(box?.height, await control.textContent() ?? '').toBeGreaterThanOrEqual(44);
-      }
+      await expectTouchTargets(page.locator('main'));
     });
   }
 }
