@@ -30,22 +30,19 @@
 /* Clock: a paper face, ink hand and readout. */
 .real-clock .clock-face { fill: var(--paper); }
 .scenario-page .clock-hour { font-family: var(--font-hand); fill: var(--text); }
-.scenario-page .clock-brand { font: 9px var(--font-sans); letter-spacing: 2px; fill: var(--text-3); }
 .scenario-page .clock-readout { font: 700 22px var(--font-hand); fill: var(--accent); font-variant-numeric: tabular-nums; }
 
 .scenario-page .desk-calendar { margin: 32px auto 20px; border: 1.5px solid var(--stamp); border-radius: var(--radius-paper); background: var(--paper); box-shadow: var(--shadow-paper); }
 .scenario-page .calendar-binding i { background: var(--text-2); }
 .scenario-page .calendar-masthead { padding: 20px 18px 12px; border-bottom: 1.5px dashed var(--rule); color: var(--text-2); font: 15px/1.5 var(--font-hand); letter-spacing: 0; }
-.scenario-page .calendar-masthead span:last-child { font: 12px/1.9 var(--font-sans); letter-spacing: .12em; color: var(--text-3); }
 .scenario-page .calendar-page { padding: 20px 16px 18px; border-radius: 0; color: var(--text); }
 .scenario-page .calendar-page:focus-visible { outline-offset: -4px; }
 .scenario-page .calendar-kicker { color: var(--text-2); font-size: 14px; line-height: 1.7; }
 .scenario-page .calendar-page strong { color: var(--accent); font: 700 clamp(84px, 24vw, 128px)/1.15 var(--font-hand); font-variant-numeric: tabular-nums; }
 .scenario-page .calendar-unit { color: var(--text); font: 700 20px/1.5 var(--font-hand); letter-spacing: .04em; }
-.scenario-page .calendar-stamp { margin-top: 16px; padding: 2px 14px; border: 1.5px solid var(--accent); border-radius: 99px; color: var(--accent); font: 14px/1.7 var(--font-hand); }
+.scenario-page .calendar-stamp { margin-top: 16px; padding: 2px 14px; border: 1.5px solid var(--accent); border-radius: 99px; color: var(--accent); font: 14px/1.7 var(--font-hand); transform: none; }
 
 /* Planner: activities are option cards; slots are dashed when empty and filled with a colored edge once assigned. */
-.scenario-page .planner-heading .eyebrow { margin: 0 0 6px; color: var(--text-2); font: 15px/1.7 var(--font-hand); letter-spacing: .04em; }
 .scenario-page .planner-heading h2 { font-size: 24px; line-height: 1.4; }
 .scenario-page .planner-heading p { margin: 6px 0 0; color: var(--text-2); font-size: 14px; line-height: 1.7; }
 .scenario-page .planner-activities { gap: 10px; margin: 18px 0; }
@@ -65,6 +62,9 @@
 .scenario-page .planner-slots small { color: var(--text-2); font-size: 12px; line-height: 1.6; }
 .activity-ghost { border-radius: var(--radius-control); background: var(--accent); color: var(--on-accent); font: 500 14px/1.5 var(--font-sans); box-shadow: var(--shadow-paper); }
 
+@media (min-width: 900px) {
+  .scenario-page .planner-slots { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 640px) {
   .scenario-page .planner-activities button { padding: 10px 12px; font-size: 14px; }
   .scenario-page .planner-slots button { min-height: 140px; padding: 12px 10px; }

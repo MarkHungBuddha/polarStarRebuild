@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       // Theme preference is separate from answers. Apply it before styles and React load so the first paint uses the right theme.
+      // This classic script cannot import modules: the storage key and the parse / resolve rules are repeated in src/ThemeControl.tsx. Change them together.
       (function () {
         var preference = 'system';
         try {

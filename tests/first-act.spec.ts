@@ -15,14 +15,14 @@ for (const width of [320, 390, 1280]) {
       await page.getByRole('button', { name: '新增價值' }).click();
       await expectFullyShown(page.getByRole('heading', { name: longCustom }));
       await expectNoHorizontalScroll(page);
-      await expectTouchTargets(page);
+      await expectTouchTargets(page.locator('main'));
       await classifyAll(page, 'core');
       await page.getByRole('button', { name: '下一步：排出順序' }).click();
       await expect(page.getByRole('combobox', { name: '自主的位置' })).toHaveValue('1');
       await expect(page.getByRole('combobox', { name: '成就的位置' })).toHaveValue('1');
       await expectFullyShown(page.getByText(longCustom, { exact: true }));
       await expectNoHorizontalScroll(page);
-      await expectTouchTargets(page);
+      await expectTouchTargets(page.locator('main'));
     });
   }
 }

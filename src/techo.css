@@ -109,15 +109,17 @@ select { border-radius: var(--radius-control); background-color: var(--paper); c
 .paper-card::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--radius-paper); background: var(--paper); box-shadow: var(--shadow-paper); transform: rotate(var(--tilt-paper)); }
 .paper-card::after { content: ''; position: absolute; top: -11px; left: calc(50% - 48px); width: 96px; height: 25px; background: var(--tape); opacity: var(--tape-opacity); transform: rotate(-3deg); pointer-events: none; }
 .marker { background: linear-gradient(transparent 58%, var(--marker) 58%); }
-/* Sticky note for result remarks; like the paper card, only the background tilts. */
-.sticky-note { position: relative; isolation: isolate; margin: 24px 0; padding: 14px 16px; color: var(--text); font: 16px/1.7 var(--font-hand); }
+/* Sticky note for result remarks; like the paper card, only the background tilts. Notes run several lines, so they use the body font. */
+.sticky-note { position: relative; isolation: isolate; margin: 24px 0; padding: 14px 16px; color: var(--text); font: 15px/1.8 var(--font-sans); }
 .sticky-note::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--radius-sticky); background: var(--sticky); box-shadow: 0 2px 6px rgba(60, 40, 10, .08); transform: rotate(1deg); }
 
 .app-shell { padding: 24px 24px 0; }
 .masthead { border: 0; margin-bottom: 12px; padding: 0; align-items: center; gap: 12px; }
 .masthead a { display: inline-flex; align-items: center; min-height: 44px; gap: 8px; color: var(--text); font-family: var(--font-hand); font-size: 24px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
 .masthead svg { width: 24px; height: 24px; fill: var(--tape); stroke: var(--accent); stroke-width: 1.2; }
-.masthead .notebook-stamp { display: inline-block; font: 13px/1.7 var(--font-hand); color: var(--text-2); letter-spacing: 0; border: 1.5px solid var(--stamp); border-radius: 99px; padding: 3px 12px; white-space: nowrap; transform: rotate(-3deg); }
+/* Stamp: the text stays horizontal; only the ring behind it tilts. */
+.masthead .notebook-stamp { position: relative; isolation: isolate; display: inline-block; font: 13px/1.7 var(--font-hand); color: var(--text-2); letter-spacing: 0; padding: 3px 12px; white-space: nowrap; }
+.masthead .notebook-stamp::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1.5px solid var(--stamp); border-radius: 99px; transform: rotate(-3deg); }
 .theme-control { display: flex; flex-direction: column; align-items: flex-end; margin: 0 0 24px; }
 .theme-control label { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; }
 .theme-control select { width: auto; min-width: 122px; min-height: 44px; padding-block: 8px; font-size: 14px; }

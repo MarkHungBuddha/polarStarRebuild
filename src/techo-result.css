@@ -60,9 +60,12 @@
 .evidence { padding: 28px 0; border-top: 1.5px dashed var(--rule); }
 .evidence .eyebrow { margin: 0 0 8px; color: var(--text-2); font: 14px/1.7 var(--font-hand); letter-spacing: 0; }
 .evidence h3 { font-size: 22px; line-height: 1.45; }
-.evidence-setup { color: var(--text-2); font: 15px/1.85 var(--font-hand); }
-.evidence-label { display: inline-block; padding: 3px 12px; border: 1.5px solid var(--stamp); border-radius: 99px; color: var(--text-2); font: 14px/1.7 var(--font-hand); transform: rotate(-2deg); }
-.evidence-quote { padding-left: 14px; border-left: 3px solid var(--tape); color: var(--text); font: 700 19px/1.75 var(--font-hand); }
+.evidence-setup { color: var(--text-2); font: 15px/1.85 var(--font-sans); }
+/* Like the masthead stamp, only the ring tilts; the label text stays horizontal. */
+.evidence-label { position: relative; isolation: isolate; display: inline-block; padding: 3px 12px; border: 0; color: var(--text-2); font: 14px/1.7 var(--font-hand); }
+.evidence-label::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1.5px solid var(--stamp); border-radius: 99px; transform: rotate(-2deg); }
+/* The answer can run several lines on a phone, so it uses the body font in bold rather than the handwriting font. */
+.evidence-quote { padding-left: 14px; border-left: 3px solid var(--tape); color: var(--text); font: 700 17px/1.75 var(--font-sans); }
 .kept-reply { margin: 12px 0; padding: 12px 16px; border: 1.5px dashed var(--rule); border-radius: var(--radius-paper); color: var(--text); }
 .evidence p { max-width: 46em; line-height: 1.8; }
 .kept-reply { max-width: 46em; }

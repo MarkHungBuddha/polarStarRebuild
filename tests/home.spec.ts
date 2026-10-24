@@ -1,12 +1,15 @@
 import { expect, test } from './support/fixtures';
-import { expectNoHorizontalScroll } from './support/experience';
+import { expectHorizontalText, expectLongParagraphsInSans, expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
 
 test('首頁保留簡短說明，可用鍵盤開關「關於這份題目」，不換頁並可開始作答', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/你重視什麼/);
-  await expect(page.getByText('參考 Schwartz 價值理論設計的自編反思工具，不是診斷。')).toBeVisible();
+  await expect(page.getByText('一份關於選擇的自我反思', { exact: true })).toBeVisible();
+  await expect(page.getByText('反思筆記', { exact: true })).toBeVisible();
+  await expect(page.getByText('約十五分鐘', { exact: true })).toBeVisible();
+  await expect(page.getByText('這是參考 Schwartz 價值理論設計的自編反思工具，不是診斷。', { exact: true })).toBeVisible();
   const about = page.getByRole('button', { name: '關於這份題目' });
-  const limits = page.getByText('預計約十五分鐘完成；這是設計時的估計，尚未實測。', { exact: true });
+  const limits = page.getByText('約十五分鐘完成；這是設計時的估計，尚未實測。', { exact: true });
   await expect(about).toHaveAttribute('aria-expanded', 'false');
   await expect(limits).toBeHidden();
   const url = page.url();
@@ -39,12 +42,9 @@ for (const width of [320, 390, 1280]) {
       await page.goto('/');
       await page.getByRole('button', { name: '關於這份題目' }).click();
       await expectNoHorizontalScroll(page);
-      for (const control of await page.locator('main').getByRole('button').or(page.locator('main').getByRole('combobox')).or(page.locator('main').getByRole('link')).all()) {
-        if (!await control.isVisible()) continue;
-        const box = await control.boundingBox();
-        expect(box?.width, await control.textContent() ?? '').toBeGreaterThanOrEqual(44);
-        expect(box?.height, await control.textContent() ?? '').toBeGreaterThanOrEqual(44);
-      }
+      await expectTouchTargets(page.locator('main'));
+      await expectHorizontalText(page.locator('body'));
+      await expectLongParagraphsInSans(page.locator('main'));
     });
   }
 }

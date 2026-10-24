@@ -1,6 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { classifyAndRankValues, confirmCurrentScenario, expectNoHorizontalScroll, expectTargetsAtLeast44 } from './support/experience';
+import { scenarios } from '../src/scenarios';
+import { classifyAndRankValues, confirmCurrentScenario, expectHorizontalText, expectLongParagraphsInSans, expectNoHorizontalScroll, expectTouchTargets, goToScenario } from './support/experience';
 
 async function openFirstScenario(page: Page) {
   await page.goto('/');
@@ -31,6 +32,32 @@ test('長情境以無襯線內文呈現，標題維持手寫字，文字不旋�
   expect(await fontOf('.scenario-page .setup')).toMatch(/^"?Noto Sans TC/);
   expect(await fontOf('.scenario-page h1')).toMatch(/^"?LXGW WenKai TC/);
   for (const text of await page.locator('.scenario-page h1, .scenario-page .setup').all()) expect(await text.evaluate(element => getComputedStyle(element).transform)).toBe('none');
+});
+
+test('每題情境照作者原文顯示，標籤只寫領域，畫面沒有英文裝飾字', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openFirstScenario(page);
+  const confirm = page.getByRole('button', { name: '確認答案', exact: true });
+  for (let question = 0; question < 15 && await confirm.count(); question += 1) {
+    const title = await page.locator('.scenario-page h1').textContent();
+    const candidates = scenarios.filter(scenario => scenario.title === title);
+    const shown = (await page.locator('.scenario-card').locator('.setup, .setup-question').allTextContents()).join('');
+    const scenario = candidates.find(item => item.setup === shown);
+    expect(scenario, `「${title}」的情境文字被改寫：${shown}`).toBeDefined();
+    await expect(page.locator('.scenario-tag')).toHaveText(scenario!.domain);
+    expect(await page.locator('main').textContent()).not.toMatch(/[A-Z]{2,}/);
+    await confirmCurrentScenario(page);
+  }
+});
+
+test('桌面上時間分配題有較寬的操作空間，情境文字仍維持易讀的行長', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openFirstScenario(page);
+  await goToScenario(page, '六個晚上，留給哪些事？');
+  const board = (await page.locator('.planner-board').boundingBox())!;
+  expect(board.width, '分配題寬於一般情境欄').toBeGreaterThan(720);
+  expect((await page.locator('.scenario-card .setup').boundingBox())!.width, '情境內文行長').toBeLessThanOrEqual(680);
+  expect(await page.locator('[data-planner-slot]').evaluateAll(slots => new Set(slots.map(slot => Math.round(slot.getBoundingClientRect().left))).size), '桌面行程至少三欄').toBeGreaterThanOrEqual(3);
 });
 
 test('減少動態效果時情境卡不位移，裝飾不遮住任何控制項', async ({ page }) => {
@@ -66,9 +93,11 @@ for (const width of [320, 390, 1280]) {
       for (let question = 0; question < 15; question += 1) {
         const choiceScene = page.locator('.play-scene .scene-action');
         await expectNoHorizontalScroll(page);
-        await expectTargetsAtLeast44(frameControls);
+        await expectTouchTargets(frameControls);
+        await expectHorizontalText(page.locator('.scenario-page'));
+        await expectLongParagraphsInSans(page.locator('.scenario-page'));
         if (await choiceScene.count()) {
-          await expectTargetsAtLeast44(page.locator('.play-scene'));
+          await expectTouchTargets(page.locator('.play-scene'));
           await expect(confirm).toBeDisabled();
           await choiceScene.nth(question % 2).click();
           await expect(choiceScene.nth(question % 2)).toHaveAttribute('aria-pressed', 'true');

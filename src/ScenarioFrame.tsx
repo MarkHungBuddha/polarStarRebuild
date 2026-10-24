@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Scenario } from './types';
+import { StarIcon } from './StarIcon';
 
 /** Visible "第 n 題" text plus a progressbar with the same numbers, so progress never relies on the segment colors. */
 export function ScenarioProgress({ current, total }: { current: number; total: number }) {
@@ -12,22 +13,21 @@ export function ScenarioProgress({ current, total }: { current: number; total: n
   </div>;
 }
 
-/** The setup is long, so it reads as body text; a closing question, when there is one, sits apart under a dashed rule. */
-function splitSetup(setup: string) {
-  const text = setup.replace(/^假設/, '').replace(/回覆只能保留一段。/g, '你會怎麼回覆？');
-  const match = /^(.*[。！？])([^。！？]+？)$/.exec(text);
-  return match ? { body: match[1], question: match[2] } : { body: text, question: undefined };
+/** Splits the author's setup, unchanged, into its body and the closing question (when it ends with one), so the question can sit apart under a dashed rule. */
+function splitClosingQuestion(setup: string) {
+  const match = /^(.*[。！？])([^。！？]+？)$/.exec(setup);
+  return match ? { body: match[1], question: match[2] } : { body: setup, question: undefined };
 }
 
 /** Shared layout for every mechanic: a paper card with the situation, the mechanic's control, then back / confirm / return-to-result. */
 export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack, onReview, children }: {
   scenario: Scenario; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
 }) {
-  const { body, question } = splitSetup(scenario.setup);
+  const { body, question } = splitClosingQuestion(scenario.setup);
   return <section className="scenario-page">
     <div className="paper-card scenario-card">
-      <svg className="star-sticker" aria-hidden="true" viewBox="0 0 24 24"><path d="m12 2 2.8 6.4 7 .7-5.3 4.6 1.6 6.8-6.1-3.6-6.1 3.6 1.6-6.8L2.2 9.1l7-.7Z" /></svg>
-      <p className="scenario-tag">情境 {scenario.slotId.replace('slot', '')} · {scenario.domain}</p>
+      <StarIcon className="star-sticker" />
+      <p className="scenario-tag">{scenario.domain}</p>
       <h1>{scenario.title}</h1>
       <p className="setup">{body}</p>
       {question && <p className="setup-question">{question}</p>}

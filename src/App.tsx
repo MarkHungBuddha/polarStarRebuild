@@ -10,6 +10,7 @@ import { evidenceId } from './ResultEvidence';
 import { ResultReport } from './ResultReport';
 import { HomeIntro } from './HomeIntro';
 import { ThemeControl } from './ThemeControl';
+import { StarIcon } from './StarIcon';
 import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
@@ -83,7 +84,7 @@ export function App() {
   const complete = session.scenarios.every(item => session.answers[item.id]);
   const shareLink = questionShareLink(session.scenarios, window.location);
   return <main className={`app-shell screen-${session.screen}`}>
-    <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 2 2.8 6.4 7 .7-5.3 4.6 1.6 6.8-6.1-3.6-6.1 3.6 1.6-6.8L2.2 9.1l7-.7Z" /></svg>北極星</a><span className="notebook-stamp">反思筆記 · 01</span></header>
+    <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
     <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>使用目前版本重新開始</button></section>}
