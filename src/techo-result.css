@@ -1,0 +1,75 @@
+/*
+ * Result cover and detailed report in the notebook look. Tokens and shared motifs (paper card, marker, sticky note) come from techo.css.
+ * Phones get one column; desktop keeps room for the two top-three lists side by side.
+ */
+.screen-result { max-width: 1000px; }
+.result-page { overflow-wrap: anywhere; }
+.result-page .section-header { margin-bottom: 28px; }
+.result-page .section-header .eyebrow { margin: 0 0 10px; color: var(--text-2); font: 15px/1.7 var(--font-hand); letter-spacing: 0; }
+.result-page h1 { max-width: none; font-size: clamp(28px, 4.4vw, 40px); line-height: 1.35; }
+.result-page .section-header > p:last-child { margin-top: 14px; color: var(--text-2); font-size: 15px; line-height: 1.85; }
+.result-page h2 { font-size: 26px; line-height: 1.4; }
+.result-page .caption { color: var(--text-2); font-size: 14px; line-height: 1.8; }
+
+/* Two top-three lists. One main paper card per screen: this one. */
+.result-page .conclusion { margin: 16px 0 32px; padding-top: 32px; border: 0; }
+.result-page .conclusion > h2 { margin-bottom: 16px; }
+.result-page .conclusion h3 { margin: 24px 0 8px; color: var(--text); font-size: 18px; }
+.conclusion-columns { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 0 40px; }
+.conclusion-columns > div { min-width: 0; }
+.conclusion-columns h3 { padding-bottom: 6px; border-bottom: 1.5px solid var(--accent); }
+.conclusion-columns > div > .caption { margin: 8px 0 0; font-size: 13px; }
+.conclusion-columns ol { margin: 8px 0 12px; }
+.conclusion-columns li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 2px 12px; align-items: baseline; min-height: 42px; padding: 8px 0; border-bottom: 1.5px dashed var(--rule); }
+.conclusion-columns span { min-width: 0; color: var(--accent); font: 700 17px/1.6 var(--font-hand); }
+.conclusion-columns strong { color: var(--text); font: 500 17px/1.6 var(--font-sans); }
+.conclusion-columns small { grid-column: 2; color: var(--text-2); font-size: 13px; line-height: 1.6; }
+.conclusion-columns .caption .text-button { margin-left: 4px; padding-block: 0; font-size: 14px; }
+.conclusion-checks, .conclusion-questions { margin: 0; padding-left: 1.4em; line-height: 1.8; }
+.conclusion-checks li, .conclusion-questions li { margin: 8px 0; }
+.conclusion-checks strong { color: var(--text); }
+.conclusion-questions > li { padding-top: 8px; border-top: 1.5px dashed var(--rule); }
+.conclusion-questions > li:first-child { border-top: 0; }
+.conclusion-differing { padding-left: 1.2em; }
+.conclusion-differing a, .evidence-contents a { color: var(--accent); }
+.conclusion-differing a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Cover. */
+.result-cover .summary-takeaway { margin: 24px 0 8px; color: var(--text); font: 700 22px/1.7 var(--font-hand); max-width: 26em; }
+.result-cover > p { max-width: 40em; }
+.result-page .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1.5px dashed var(--rule); }
+.result-page .actions button { flex: 1 1 200px; max-width: 320px; padding-inline: 20px; }
+
+/* Detail sections. */
+.result-detail .report-back { margin-bottom: 16px; }
+.result-values, .custom-results, .result-evidence { margin: 40px 0; padding-top: 20px; border-top: 1.5px dashed var(--rule); }
+.result-values > h2, .custom-results h2 { margin-bottom: 12px; font-size: 26px; }
+.result-category { padding: 12px 0; border-bottom: 1.5px dashed var(--rule); }
+.result-category h3 { margin-bottom: 6px; color: var(--text-2); font-size: 16px; }
+.result-category p { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; margin: 4px 0; line-height: 1.7; }
+.result-category span { min-width: 0; color: var(--text-2); font-size: 13px; }
+.result-category strong { color: var(--text); font: 500 17px/1.6 var(--font-sans); }
+.custom-results > p { color: var(--text-2); font-size: 14px; line-height: 1.8; }
+.custom-results ul { list-style: none; margin: 0; padding: 0; }
+.custom-results li { padding: 8px 0; border-bottom: 1.5px dashed var(--rule); color: var(--text-2); font-size: 14px; }
+.custom-results strong { color: var(--text); font-size: 17px; font-weight: 500; }
+
+.evidence-contents { margin: 16px 0 8px; border-block: 1.5px dashed var(--rule); }
+.evidence-contents ol { columns: 2 260px; }
+.evidence-contents a { font-size: 15px; }
+.evidence { padding: 28px 0; border-top: 1.5px dashed var(--rule); }
+.evidence .eyebrow { margin: 0 0 8px; color: var(--text-2); font: 14px/1.7 var(--font-hand); letter-spacing: 0; }
+.evidence h3 { font-size: 22px; line-height: 1.45; }
+.evidence-setup { color: var(--text-2); font: 15px/1.85 var(--font-hand); }
+.evidence-label { display: inline-block; padding: 3px 12px; border: 1.5px solid var(--stamp); border-radius: 99px; color: var(--text-2); font: 14px/1.7 var(--font-hand); transform: rotate(-2deg); }
+.evidence-quote { padding-left: 14px; border-left: 3px solid var(--tape); color: var(--text); font: 700 19px/1.75 var(--font-hand); }
+.kept-reply { margin: 12px 0; padding: 12px 16px; border: 1.5px dashed var(--rule); border-radius: var(--radius-paper); color: var(--text); }
+.evidence p { max-width: 46em; line-height: 1.8; }
+.kept-reply { max-width: 46em; }
+.evidence .text-button { margin-top: 8px; }
+
+@media (max-width: 640px) {
+  .conclusion-columns li { grid-template-columns: 76px minmax(0, 1fr); }
+  .result-category p { grid-template-columns: 88px minmax(0, 1fr); }
+  .result-page .actions button { max-width: none; }
+}
