@@ -3,6 +3,7 @@
  * 1. Tokens: the only place colors, fonts, radii and shadows are written. Components use var(--…).
  * 2. Shared controls and motifs: buttons, focus, paper card, tape, marker, stamp, theme control.
  * 3. Home page layout.
+ * Result pages live in techo-result.css.
  * The theme is chosen by data-theme on <html>, set by the inline script in index.html before first paint.
  */
 
@@ -106,6 +107,9 @@ select { border-radius: var(--radius-control); background-color: var(--paper); c
 .paper-card::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--radius-paper); background: var(--paper); box-shadow: var(--shadow-paper); transform: rotate(var(--tilt-paper)); }
 .paper-card::after { content: ''; position: absolute; top: -11px; left: calc(50% - 48px); width: 96px; height: 25px; background: var(--tape); opacity: var(--tape-opacity); transform: rotate(-3deg); pointer-events: none; }
 .marker { background: linear-gradient(transparent 58%, var(--marker) 58%); }
+/* Sticky note for result remarks; like the paper card, only the background tilts. */
+.sticky-note { position: relative; isolation: isolate; margin: 24px 0; padding: 14px 16px; color: var(--text); font: 16px/1.7 var(--font-hand); }
+.sticky-note::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: var(--radius-sticky); background: var(--sticky); box-shadow: 0 2px 6px rgba(60, 40, 10, .08); transform: rotate(1deg); }
 
 .app-shell { padding: 24px 24px 0; }
 .masthead { border: 0; margin-bottom: 12px; padding: 0; align-items: center; gap: 12px; }
@@ -117,6 +121,17 @@ select { border-radius: var(--radius-control); background-color: var(--paper); c
 .theme-control select { width: auto; min-width: 122px; min-height: 44px; padding-block: 8px; font-size: 14px; }
 .theme-control p { margin: 6px 0 0; font-size: 13px; line-height: 1.7; color: var(--text-2); }
 .storage-notice { color: var(--text); border-color: var(--rule); }
+/* Footer on every screen: question-only share link and clearing local records. */
+footer { border-top: 1.5px dashed var(--rule); color: var(--text-2); font-size: 13px; letter-spacing: 0; }
+footer .footer-tagline { margin: 0; font: 15px/1.7 var(--font-hand); color: var(--text-2); }
+footer .text-button { font-size: 14px; }
+footer .text-button + p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--text-3); }
+.share-questions { margin: 12px 0; padding: 4px 0 4px 16px; border: 0; border-left: 1.5px dashed var(--rule); color: var(--text-body); font-size: 14px; }
+.share-questions p { margin: 8px 0; line-height: 1.7; }
+.share-questions label { color: var(--text-2); font-size: 13px; }
+.share-questions input { margin-bottom: 12px; border: 1.5px solid var(--opt-border); border-radius: var(--radius-control); background: var(--paper); color: var(--text); font-size: 14px; }
+.share-questions .secondary { width: 100%; max-width: 320px; }
+.share-questions [role='status'] { color: var(--text); }
 
 /* 3. Home ------------------------------------------------------------------ */
 .screen-intro { max-width: 488px; }
@@ -146,7 +161,7 @@ select { border-radius: var(--radius-control); background-color: var(--paper); c
 .resume-panel p { color: var(--text-body); }
 .resume-panel .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 0; padding: 0; border: 0; }
 .resume-panel .actions button { flex: 1 1 160px; }
-.screen-intro footer { margin-top: 32px; border-color: var(--rule); color: var(--text-2); letter-spacing: 0; }
+.screen-intro footer { margin-top: 32px; }
 
 @media (max-width: 360px) {
   .app-shell { padding-inline: 16px; }
