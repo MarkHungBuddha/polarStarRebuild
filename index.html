@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Theme preference is separate from answers. Apply it before styles and React load so the first paint uses the right theme.
+      (function () {
+        var preference = 'system';
+        try {
+          var saved = localStorage.getItem('northstar-theme');
+          if (saved === 'light' || saved === 'dark') preference = saved;
+        } catch (error) { /* Storage may be unavailable; following the system stays usable. */ }
+        var root = document.documentElement;
+        root.dataset.themePreference = preference;
+        root.dataset.theme = preference === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+      })();
+    </script>
+    <style>
+      :root { color-scheme: light; }
+      :root[data-theme='dark'] { color-scheme: dark; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts load without blocking the first paint; the fallback fonts in the token stack stay readable meanwhile. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" media="print" onload="this.media='all'" />
     <meta name="description" content="整理你重視的事物，透過具體情境中的取捨，回顧這一次的選擇。北極星是一份自編價值反思工具。" />
     <title>尋找你的北極星</title>
   </head>
