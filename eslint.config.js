@@ -17,6 +17,8 @@ export default tseslint.config(
         { selector: `Literal[value=${mainlandPattern}]`, message: mainlandMessage },
         { selector: `TemplateElement[value.raw=${mainlandPattern}]`, message: mainlandMessage },
         { selector: `JSXText[value=${mainlandPattern}]`, message: mainlandMessage },
+        // The notebook look uses Chinese labels only; uppercase English words (MY SCHEDULE, NORTH STAR) were decoration the spec rules out.
+        { selector: 'JSXText[value=/[A-Z]{2,}/]', message: 'Visible text is Chinese; uppercase English decoration is out of the techo spec (docs/techo-restyle-spec.md).' },
       ],
     },
   },

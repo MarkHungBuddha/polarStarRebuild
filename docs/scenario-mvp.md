@@ -1,5 +1,7 @@
 # 北極星：情境互動化 MVP 訪談收斂版
 
+> 結果解讀、保存與測試規則以 [CODING_STANDARDS.md](../CODING_STANDARDS.md) 和 [ADR](../docs/adr/) 為準；本文件寫的是當時的需求，兩邊不一致時照它們做，改規則也只改那裡。
+
 日期：2026-10-22。依 Q1–Q23 已確認決策整理；使用者後續已明確指示依 implement-spec 開始實作。
 
 本文件為現行設計依據，優先於根目錄 handoff 原第 1–13 節的舊提案。工作定義見 [GLOSSARY.md](../GLOSSARY.md)，共同價值集合的取捨見 [ADR 0001](adr/0001-shared-core-values.md)。未另行列為變更的編輯雜誌風規則，沿用原 handoff 第 9 節；其倒數、第三選項、終幕與診斷式結果文案例外，已被本文件取代。

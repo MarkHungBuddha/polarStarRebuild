@@ -5,6 +5,7 @@ import { PageHeader } from './PageHeader';
 import { evidenceId, ResultEvidence } from './ResultEvidence';
 import { TopThreeColumns, ValueConclusion } from './ValueConclusion';
 import type { Scenario, Session } from './types';
+import './techo-result.css';
 
 /** The result page: the top-three conclusion, first-act categories and positions, custom values, and the evidence for each confirmed answer. */
 export function ResultReport({ session, onEdit, onRevisitFirstAct, onRestart, initialDetail = false }: { initialDetail?: boolean; session: Session; onEdit: (scenario: Scenario, index: number) => void; onRevisitFirstAct: () => void; onRestart: () => void }) {

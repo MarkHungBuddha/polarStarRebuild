@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScenarioFrame } from './ScenarioFrame';
 import { DragClock, PiggyBank } from './PhysicalControls';
 import type { SliderAnswer, SliderScenario } from './types';
+import './techo-sliders.css';
 
 export function SliderQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
   scenario: SliderScenario; answer?: SliderAnswer; onConfirm: (answer: SliderAnswer) => void; onBack: () => void; onReview?: () => void;
