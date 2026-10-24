@@ -68,7 +68,8 @@ export async function classifyAndRankValues(page: Page) {
   await rankValuesInListedOrder(page);
 }
 
-async function confirmCurrentScenario(page: Page) {
+/** Gives the current question any valid answer with its own control, then confirms it. */
+export async function confirmCurrentScenario(page: Page) {
   const confirm = page.getByRole('button', { name: '確認答案', exact: true });
   if (await confirm.isDisabled()) {
     // Planner slots, then the slider scenes (piggy bank, clock, calendar), then a choice or strike scene.
@@ -115,6 +116,17 @@ export async function completeRemainingScenarios(page: Page) {
 
 export async function expectNoHorizontalScroll(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+/** Every visible control inside `scope` is at least 44 × 44px. */
+export async function expectTargetsAtLeast44(scope: Locator) {
+  for (const control of await scope.getByRole('button').or(scope.getByRole('slider')).or(scope.getByRole('combobox')).or(scope.getByRole('link')).all()) {
+    if (!await control.isVisible()) continue;
+    const box = await control.boundingBox();
+    const name = await control.getAttribute('aria-label') ?? await control.textContent() ?? '';
+    expect(box?.width, name).toBeGreaterThanOrEqual(44);
+    expect(box?.height, name).toBeGreaterThanOrEqual(44);
+  }
 }
 
 /** Every visible button, select and text field in the page body is at least 44 × 44px. */

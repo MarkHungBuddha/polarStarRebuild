@@ -5,6 +5,7 @@ import { withCategory } from './firstAct';
 import { ClassifyScreen, RankScreen } from './FirstActScreens';
 import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
 import { ScenarioQuestion } from './ScenarioQuestion';
+import { ScenarioProgress } from './ScenarioFrame';
 import { evidenceId } from './ResultEvidence';
 import { ResultReport } from './ResultReport';
 import { HomeIntro } from './HomeIntro';
@@ -89,7 +90,7 @@ export function App() {
     {session.screen === 'intro' && <HomeIntro actions={resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>} />}
     {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
     {session.screen === 'rank' && <RankScreen values={session.values} onRank={(id, rank) => updateValue(id, { rank })} onBack={() => go('classify')} onNext={() => go('scenario')} />}
-    {session.screen === 'scenario' && scenario && <p className="scenario-progress"><span>第 {session.scenarioIndex + 1} 題，共 {session.scenarios.length} 題</span><span className="progress-track" aria-hidden="true"><span style={{ width: `${(session.scenarioIndex + 1) / session.scenarios.length * 100}%` }} /></span></p>}
+    {session.screen === 'scenario' && scenario && <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />}
     {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={complete ? () => go('result') : undefined} onConfirm={answer => { setSession(current => {
       const answers = { ...current.answers, [scenario.id]: answer };
       // Once every question has a confirmed answer, a confirmation returns to the result instead of walking the remaining questions again.
