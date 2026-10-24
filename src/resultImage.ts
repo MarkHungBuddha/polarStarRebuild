@@ -115,6 +115,9 @@ export async function createResultImage(result: SharedResult, theme: ImageTheme)
   wrap(imageText.limits, 64, 1196, 952, 28, colors.muted);
   rect(64, 1260, 952, 2, colors.line);
   text(imageText.tagline, 64, 1310, 28); text(imageText.site, 730, 1310, 28, colors.accent);
-  const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('PNG export failed')), 'image/png'));
-  return new File([blob], 'northstar-result.png', { type: 'image/png' });
+  // Encode synchronously: on Linux Chromium (CI) canvas.toBlob sometimes never called back, leaving the image preparing forever.
+  const png = canvas.toDataURL('image/png');
+  if (!png.startsWith('data:image/png;base64,')) throw new Error('PNG export failed');
+  const bytes = Uint8Array.from(atob(png.slice(png.indexOf(',') + 1)), char => char.charCodeAt(0));
+  return new File([bytes], 'northstar-result.png', { type: 'image/png' });
 }
