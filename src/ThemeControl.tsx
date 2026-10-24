@@ -2,17 +2,22 @@ import { useEffect, useState } from 'react';
 
 type Theme = 'system' | 'light' | 'dark';
 
+// The inline script in index.html repeats the storage key and both rules below, because it must run before
+// any module loads to avoid a flash of the wrong theme. Change them together.
+const themeStorageKey = 'northstar-theme';
+/** A saved preference other than light or dark means following the system. */
+const parseTheme = (saved: string | null | undefined): Theme => saved === 'light' || saved === 'dark' ? saved : 'system';
+const resolveTheme = (theme: Theme, systemDark: boolean) => theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+
 export function ThemeControl() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = document.documentElement.dataset.themePreference;
-    return saved === 'light' || saved === 'dark' ? saved : 'system';
-  });
+  // The inline script already read storage and left the preference on <html>.
+  const [theme, setTheme] = useState<Theme>(() => parseTheme(document.documentElement.dataset.themePreference));
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
     const system = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      document.documentElement.dataset.theme = theme === 'system' ? (system.matches ? 'dark' : 'light') : theme;
+      document.documentElement.dataset.theme = resolveTheme(theme, system.matches);
     };
     apply();
     system.addEventListener('change', apply);
@@ -21,7 +26,7 @@ export function ThemeControl() {
 
   const choose = (preference: Theme) => {
     try {
-      localStorage.setItem('northstar-theme', preference);
+      localStorage.setItem(themeStorageKey, preference);
       setTheme(preference);
       setNotice('');
     } catch {
