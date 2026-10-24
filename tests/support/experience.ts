@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { categoryLabels } from '../../src/data';
 import type { Category } from '../../src/types';
 
@@ -115,4 +115,29 @@ export async function completeRemainingScenarios(page: Page) {
 
 export async function expectNoHorizontalScroll(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+/** Every visible button, select and text field in the page body is at least 44 × 44px. */
+export async function expectTouchTargets(page: Page) {
+  for (const control of await page.locator('main').getByRole('button').or(page.locator('main').getByRole('combobox')).or(page.locator('main').getByRole('textbox')).all()) {
+    if (!await control.isVisible()) continue;
+    const box = await control.boundingBox();
+    const name = await control.getAttribute('aria-label') ?? await control.textContent() ?? '';
+    expect(box?.width, name).toBeGreaterThanOrEqual(44);
+    expect(box?.height, name).toBeGreaterThanOrEqual(44);
+  }
+}
+
+/** The whole text is shown: nothing clipped by its own box or pushed past the viewport. */
+export async function expectFullyShown(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const fits = await locator.evaluate(element => element.scrollWidth <= element.clientWidth + 1 && element.getBoundingClientRect().right <= window.innerWidth);
+  expect(fits).toBe(true);
+}
+
+/** Keyboard focus shows the shared 2px solid outline. */
+export async function expectFocusRing(locator: Locator) {
+  const outline = await locator.evaluate(element => ({ style: getComputedStyle(element).outlineStyle, width: parseFloat(getComputedStyle(element).outlineWidth) }));
+  expect(outline.style).toBe('solid');
+  expect(outline.width).toBeGreaterThanOrEqual(2);
 }
