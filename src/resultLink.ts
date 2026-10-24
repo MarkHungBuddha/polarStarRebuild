@@ -16,7 +16,8 @@ export interface SharedResult {
 
 export type ResultLinkOutcome =
   | { kind: 'result'; result: SharedResult; questions?: Scenario[] }
-  | { kind: 'corrupt' };
+  | { kind: 'corrupt' }
+  | { kind: 'unsupported' };
 
 const coreIds = new Set(baseValues.map(value => value.id));
 const base36 = /^[1-9a-z][0-9a-z]*$/;
@@ -39,21 +40,38 @@ export function resultLink(result: SharedResult, location: Pick<Location, 'origi
   return `${new URL(location.pathname, location.origin).href}#r=1.${stated}.${chosen}..${result.catalog}.${result.plan.join('-')}`;
 }
 
+/** Rows of one column hold a top three: every row starts at position 3 or better (1, 1, 3…), and no value appears twice. */
+function placesTopThree(rows: readonly string[][]) {
+  if (rows.length === 0) return true;
+  const ids = rows.flat();
+  return new Set(ids).size === ids.length && ids.length - rows[rows.length - 1].length < 3;
+}
+
 /** Reads a result link from the address fragment; anything that is not `#r=…` is not a result link. Every field is checked before any of it is shown. */
 export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   if (!hash.startsWith('#r=')) return undefined;
+  // The longest valid link is about 1,200 characters; anything past 2,000 is not decoded at all.
+  if (hash.length - 1 > 2000) return { kind: 'corrupt' };
   const fields = hash.slice(3).split('.');
-  if (fields.length !== 6 || fields[0] !== '1') return { kind: 'corrupt' };
+  if (!/^(0|[1-9][0-9]*)$/.test(fields[0])) return { kind: 'corrupt' };
+  if (fields[0] !== '1') return { kind: 'unsupported' };
+  if (fields.length !== 6) return { kind: 'corrupt' };
   const [, statedField, chosenField, customField, catalog, planField] = fields;
+  const plan = planField.split('-');
+  if (customField !== '' || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => /^[0-9a-z]+$/.test(selector))) return { kind: 'corrupt' };
   const ids = (text: string[]) => text.length > 0 && text.every(id => coreIds.has(id)) ? text : undefined;
   const stated = statedField.split('~').map(row => ids(row.split('-')));
   const chosen = chosenField === '' ? [] : chosenField.split('~').map(row => {
     const [chosenCount, directional, ...rowIds] = row.split('-');
-    return base36.test(chosenCount) && base36.test(directional) && ids(rowIds) ? { ids: rowIds, chosen: parseInt(chosenCount, 36), directional: parseInt(directional, 36) } : undefined;
+    if (!base36.test(chosenCount) || !base36.test(directional) || !ids(rowIds)) return undefined;
+    const counts = { chosen: parseInt(chosenCount, 36), directional: parseInt(directional, 36) };
+    return counts.chosen <= counts.directional && counts.directional <= plan.length ? { ids: rowIds, ...counts } : undefined;
   });
-  const plan = planField.split('-');
-  if (stated.some(row => !row) || chosen.some(row => !row) || customField !== '' || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => /^[0-9a-z]+$/.test(selector))) return { kind: 'corrupt' };
+  if (stated.some(row => !row) || chosen.some(row => !row)) return { kind: 'corrupt' };
   const result: SharedResult = { stated: stated as string[][], chosen: chosen as SharedChosenRow[], catalog, plan };
+  if (!placesTopThree(result.stated) || result.stated.flat().length < 3 || !placesTopThree(result.chosen.map(row => row.ids))) return { kind: 'corrupt' };
+  // Second-act rows are strictly ordered: more leans first, then fewer leaning appearances; equal counts would have been one tied row.
+  if (result.chosen.some((row, index) => index > 0 && !(row.chosen < result.chosen[index - 1].chosen || (row.chosen === result.chosen[index - 1].chosen && row.directional > result.chosen[index - 1].directional)))) return { kind: 'corrupt' };
   if (catalog !== catalogVersion) return { kind: 'result', result };
   try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`) }; }
   catch { return { kind: 'corrupt' }; }
