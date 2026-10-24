@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { answerRemainingScenarios, classifyAll, expectNoClippedText, expectNoHorizontalScroll, expectTouchTargets, openDetailedReport } from './support/experience';
+import { answerRemainingScenarios, classifyAll, expectHorizontalText, expectLongParagraphsInSans, expectNoClippedText, expectNoHorizontalScroll, expectTouchTargets, openDetailedReport } from './support/experience';
 
 const longCustomValue = 'Supercalifragilisticexpi';
 
@@ -40,11 +40,15 @@ for (const width of [320, 390, 1280]) {
       await expectNoHorizontalScroll(page);
       await expectNoClippedText(page.locator('main'));
       await expectTouchTargets(page.locator('main'));
+      await expectHorizontalText(page.locator('body'));
+      await expectLongParagraphsInSans(page.locator('main'));
       await openDetailedReport(page);
       await expect(page.getByText(longCustomValue)).toBeVisible();
       await expectNoHorizontalScroll(page);
       await expectNoClippedText(page.locator('main'));
       await expectTouchTargets(page.locator('main'));
+      await expectHorizontalText(page.locator('body'));
+      await expectLongParagraphsInSans(page.locator('main'));
     });
   }
 }
