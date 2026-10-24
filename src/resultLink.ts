@@ -15,6 +15,19 @@ export interface SharedResult {
   plan: string[];
 }
 
+/** At most this many custom values go into one result link (docs/result-share-spec.md). */
+export const maxSharedCustomValues = 10;
+
+/** Positions follow row order and row sizes (1, 1, 3…): each row's position is one past the values in the rows before it. */
+export function withPositions<T extends { ids: readonly string[] }>(rows: readonly T[]): (T & { position: number })[] {
+  let position = 1;
+  return rows.map(row => {
+    const placed = { ...row, position };
+    position += row.ids.length;
+    return placed;
+  });
+}
+
 export type ResultLinkOutcome =
   | { kind: 'result'; result: SharedResult; questions?: Scenario[] }
   | { kind: 'corrupt' }
@@ -25,14 +38,15 @@ const coreIds = new Set(baseValues.map(value => value.id));
 const positiveBase36 = /^[1-9a-z][0-9a-z]*$/;
 const base36 = /^(0|[1-9a-z][0-9a-z]*)$/;
 
-export function sharedResultOf(session: Session): SharedResult | undefined {
+/** The session's public conclusion, with the custom values the sharer chose to include (already in first-act order). */
+export function sharedResultOf(session: Session, custom: readonly string[]): SharedResult | undefined {
   const plan = questionPlan(session.scenarios);
   if (!plan) return undefined;
   return {
     stated: byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id)),
     chosen: byPosition(scenarioTopThree(scenarioTallies(session))).map(row => ({ ids: row.items.map(tally => tally.value.id), chosen: row.items[0].chosen, directional: row.items[0].directional })),
     catalog: catalogVersion,
-    custom: [],
+    custom: [...custom],
     plan,
   };
 }
@@ -51,7 +65,7 @@ function encodeCustom(word: string): string {
 function readCustom(field: string): string[] | undefined {
   if (field === '') return [];
   const encodedValues = field.split('~');
-  if (encodedValues.length > 10 || encodedValues.some(value => !/^[A-Za-z0-9_-]+$/.test(value))) return undefined;
+  if (encodedValues.length > maxSharedCustomValues || encodedValues.some(value => !/^[A-Za-z0-9_-]+$/.test(value))) return undefined;
   try {
     const words = encodedValues.map(encoded => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Uint8Array.from(atob(encoded.replace(/-/g, '+').replace(/_/g, '/')), char => char.charCodeAt(0))));
     // Re-encoding rejects alternate base64 spellings, including nonzero unused bits.

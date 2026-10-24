@@ -14,3 +14,6 @@ export const baseValues: ValueItem[] = [
   { id: 'care', word: '照顧身邊的人', description: '關心親近的人，也願意照顧他們的需要。', rank: 1 },
   { id: 'fairness', word: '普遍關懷', description: '關心不同群體能否受到公平對待，也在意自然環境。', rank: 1 },
 ];
+
+/** The word shown for a core value id; callers pass only ids already checked against `baseValues`. */
+export const coreValueWord = (id: string) => baseValues.find(value => value.id === id)!.word;

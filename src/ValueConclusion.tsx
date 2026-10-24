@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { evidenceId } from './ResultEvidence';
-import { act1TopThree, byPosition, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
+import { act1TopThree, byPosition, chosenCountText, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
 import type { Session } from './types';
 
-const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => `${row.items.length > 1 ? '各' : ''}選了 ${row.items[0].chosen} 次／共 ${row.items[0].directional} 題`;
+const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => chosenCountText(row.items[0], row.items.length > 1);
 
 /** One position in a top-three column: the words sharing it and, in the second act, how often they were chosen. */
 export interface ColumnRow { position: number; words: string[]; count?: string }

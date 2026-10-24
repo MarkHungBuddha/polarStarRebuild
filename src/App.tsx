@@ -97,7 +97,7 @@ export function App() {
       return current.scenarios.every(item => answers[item.id]) ? { ...current, answers, screen: 'result' } : { ...current, answers, scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) };
     }); window.scrollTo({ top: 0 }); }} />}
     {session.screen === 'result' && complete && <ResultReport initialDetail={Boolean(editedEvidence)} session={session} onRevisitFirstAct={() => go('rank')} onRestart={restart} onEdit={(item, index) => { setEditedEvidence(evidenceId(item)); setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
-    <ShareFooter key={shareLink ?? 'unavailable'} shareLink={shareLink} shareDisabled={Boolean(request.notice)} onClearRecords={clearLocalRecords} />
+    <ShareFooter key={shareLink ?? 'unavailable'} questionShare={{ link: shareLink, disabled: Boolean(request.notice) }} onClearRecords={clearLocalRecords} />
   </main>;
 }
 export default App;
