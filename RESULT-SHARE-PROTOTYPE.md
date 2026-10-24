@@ -1,6 +1,6 @@
 # 結果連結公開範圍原型
 
-討論票：[結果連結要公開多少](https://github.com/MarkHungBuddha/polarStarRebuild/issues/28)。目前等待專案負責人選擇，尚無決策。
+討論票：[結果連結要公開多少](https://github.com/MarkHungBuddha/polarStarRebuild/issues/28)。2026-10-24，專案負責人看過原型後選定 A：只公開兩份前三名，不公開完整分類排序或逐題答案。自訂價值仍預設不公開、明確勾選才加入。四個方案保留作為決策來源，正式實作另案處理。
 
 以 `origin/master` 的 `1271a7e` 為基準，放在 `prototype/result-share-scope` 分支。
 
