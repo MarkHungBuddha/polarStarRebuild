@@ -34,12 +34,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
   });
 }
 
-test('時鐘說明不再提紅色時針，只說拖動時針', async ({ page }) => {
+test('時鐘說明不再提紅色時針，只說拖曳時針', async ({ page }) => {
   await openScenario(page, '八週的進修，留多少空白？');
   const board = page.locator('.game-board');
   await expect(board).not.toContainText('紅色');
-  await expect(board.locator('.game-instruction')).toContainText('拖動時針');
-  await expect(board.locator('.real-clock')).toContainText('拖動時針');
+  await expect(board.locator('.game-instruction')).toContainText('拖曳時針');
+  await expect(board.locator('.real-clock')).toContainText('拖曳時針');
 });
 
 /** Text color against both the page and the paper color, so it reads wherever the semi-transparent board sits. */
@@ -117,8 +117,8 @@ for (const scenarioRandom of [0, .999]) {
                 }
                 if (form === 'piggy') await expect(page.getByRole('button', { name: boundary === 'min' ? '取回一份' : '放入一個月生活費', exact: true })).toBeDisabled();
                 if (width === 1280) {
-                  // Complex controls keep room on desktop: planner slots in two columns, scenes at least 360px wide.
-                  if (form === 'planner') expect(await page.locator('[data-planner-slot]').evaluateAll(slots => new Set(slots.map(slot => Math.round(slot.getBoundingClientRect().left))).size)).toBe(2);
+                  // Complex controls keep room on desktop: planner slots in at least three columns, scenes at least 360px wide.
+                  if (form === 'planner') expect(await page.locator('[data-planner-slot]').evaluateAll(slots => new Set(slots.map(slot => Math.round(slot.getBoundingClientRect().left))).size)).toBeGreaterThanOrEqual(3);
                   else expect((await page.locator('.piggy-scene, .real-clock, .desk-calendar').boundingBox())!.width).toBeGreaterThanOrEqual(360);
                 }
                 if (shots) await mechanic.screenshot({ path: `${shots}/t21-${scenarioRandom ? 'b' : 'a'}-${form}-q${question + 1}-${width}-${colorScheme}-${boundary}.png` });
