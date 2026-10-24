@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
 import { strikeScenarios } from '../src/scenarios/strike';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOptions } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOptions, tieValues } from './support/experience';
 
 function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, string]) {
   const variants = strikeScenarios.filter(scenario => scenario.slotId === slotId);
@@ -20,10 +20,10 @@ function expectCompleteStrikeVariants(slotId: string, pair: readonly [string, st
   }
 }
 
-async function openScenario(page: Page, title: string, tie?: { value: string; position: string }) {
+async function openScenario(page: Page, title: string, tie?: { value: string; with: string }) {
   await page.goto('/');
   await classifyAndRankValues(page);
-  if (tie) await page.getByRole('combobox', { name: `${tie.value}的位置` }).selectOption(tie.position);
+  if (tie) await tieValues(page, tie.value, tie.with);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, title);
 }
@@ -85,7 +85,7 @@ test('自主與遵守規範補至兩個變體，刪稿共六題且識別全域�
 });
 
 test('第一幕並列享受生活與遵守規範時，聚會題只描述保留的回覆', async ({ page }) => {
-  await openScenario(page, '聚會的散場時間', { value: '遵守規範', position: '3' });
+  await openScenario(page, '聚會的散場時間', { value: '遵守規範', with: '享受生活' });
   await sceneOptions(page).nth(1).click();
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await completeRemainingScenarios(page);

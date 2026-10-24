@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { baseValues } from '../src/data';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOption, sceneOptions } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOption, sceneOptions, tieValues } from './support/experience';
 
 const binarySlots = {
   slot05: ['stimulation', 'tradition'],
@@ -77,7 +77,7 @@ test.describe('抽到第二個變體', () => {
   test('第一幕並列時，新二選一題只描述本次選擇', async ({ page }) => {
     await page.goto('/');
     await classifyAndRankValues(page);
-    await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('8');
+    await tieValues(page, '遵守規範', '傳承');
     await page.getByRole('button', { name: '進入情境中的取捨' }).click();
     await goToScenario(page, '節慶聚會用哪一套餐具？');
     await sceneOption(page, /沿用各自帶器皿的慣例/).click();

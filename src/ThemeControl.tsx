@@ -9,22 +9,25 @@ const themeStorageKey = 'northstar-theme';
 const parseTheme = (saved: string | null | undefined): Theme => saved === 'light' || saved === 'dark' ? saved : 'system';
 const resolveTheme = (theme: Theme, systemDark: boolean) => theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 
+const systemQuery = () => window.matchMedia('(prefers-color-scheme: dark)');
+
+/** Sun / moon switch. Until the reader picks one, it follows the system and shows the system's theme. */
 export function ThemeControl() {
   // The inline script already read storage and left the preference on <html>.
   const [theme, setTheme] = useState<Theme>(() => parseTheme(document.documentElement.dataset.themePreference));
+  const [systemDark, setSystemDark] = useState(() => systemQuery().matches);
   const [notice, setNotice] = useState('');
+  const shown = resolveTheme(theme, systemDark);
 
   useEffect(() => {
-    const system = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      document.documentElement.dataset.theme = resolveTheme(theme, system.matches);
-    };
-    apply();
-    system.addEventListener('change', apply);
-    return () => system.removeEventListener('change', apply);
-  }, [theme]);
+    const system = systemQuery();
+    const update = () => setSystemDark(system.matches);
+    system.addEventListener('change', update);
+    return () => system.removeEventListener('change', update);
+  }, []);
+  useEffect(() => { document.documentElement.dataset.theme = shown; }, [shown]);
 
-  const choose = (preference: Theme) => {
+  const choose = (preference: 'light' | 'dark') => {
     try {
       localStorage.setItem(themeStorageKey, preference);
       setTheme(preference);
@@ -36,9 +39,14 @@ export function ThemeControl() {
   };
 
   return <div className="theme-control">
-    <label>顯示主題<select value={theme} onChange={event => choose(event.target.value as Theme)}>
-      <option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option>
-    </select></label>
+    <div className="theme-switch" role="group" aria-label="顯示主題">
+      <button type="button" aria-label="淺色" aria-pressed={shown === 'light'} onClick={() => choose('light')}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" /></svg>
+      </button>
+      <button type="button" aria-label="深色" aria-pressed={shown === 'dark'} onClick={() => choose('dark')}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></svg>
+      </button>
+    </div>
     {notice && <p role="status">{notice}</p>}
   </div>;
 }

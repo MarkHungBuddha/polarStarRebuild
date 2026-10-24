@@ -58,9 +58,51 @@ export async function classifyValues(page: Page) {
 
 const coreValueWords = ['自主', '探索刺激', '享受生活', '成就', '主導權', '安全穩定', '遵守規範', '傳承', '照顧身邊的人', '普遍關懷'];
 
+/** A value's row on the ranking page; its accessible name is the value's word. */
+export const rankRow = (page: Page, word: string) => page.getByRole('listitem', { name: word, exact: true });
+
+/** The drag handle, which also moves the value with ArrowUp / ArrowDown / Home / End. */
+export const rankHandle = (page: Page, word: string) => page.getByRole('button', { name: `${word}的順序`, exact: true });
+
+/** The 並列 toggle that ties a value with the one above it. */
+export const tieButton = (page: Page, word: string) => page.getByRole('button', { name: `${word}和上一個並列`, exact: true });
+
+/** The position number shown on a value's row. */
+export async function positionOf(page: Page, word: string) {
+  return Number(await rankRow(page, word).locator('[data-position]').textContent());
+}
+
+export async function expectPosition(page: Page, word: string, position: number) {
+  await expect(rankRow(page, word).locator('[data-position]')).toHaveText(String(position));
+}
+
+/** Moves a value with the keyboard on its handle. */
+export async function pressOnHandle(page: Page, word: string, key: 'ArrowUp' | 'ArrowDown' | 'Home' | 'End', times = 1) {
+  await rankHandle(page, word).focus();
+  for (let step = 0; step < times; step += 1) await page.keyboard.press(key);
+}
+
+/** Sends each value to the bottom in turn, so the listed words end up in that order, each on its own position. */
+export async function arrangeInOrder(page: Page, words: readonly string[]) {
+  for (const word of words) await pressOnHandle(page, word, 'End');
+}
+
+/** Moves `word` just below `target` with the keyboard, then ties the two with the 並列 toggle. Both must start on positions of their own. */
+export async function tieValues(page: Page, word: string, target: string) {
+  await rankHandle(page, word).focus();
+  for (let step = 0; ; step += 1) {
+    const [mine, theirs] = [await positionOf(page, word), await positionOf(page, target)];
+    if (mine === theirs + 1) break;
+    expect(step, `${word} did not reach the position below ${target}`).toBeLessThan(20);
+    await page.keyboard.press(mine > theirs ? 'ArrowUp' : 'ArrowDown');
+  }
+  await tieButton(page, word).click();
+  await expect(tieButton(page, word)).toHaveAttribute('aria-pressed', 'true');
+}
+
 // Values start tied; this gives the core values an explicit strict order 1–10 on the ranking page.
 export async function rankValuesInListedOrder(page: Page) {
-  for (const [index, word] of coreValueWords.entries()) await page.getByRole('combobox', { name: `${word}的位置` }).selectOption(String(index + 1));
+  await arrangeInOrder(page, coreValueWords);
 }
 
 export async function classifyAndRankValues(page: Page) {

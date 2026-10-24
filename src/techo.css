@@ -29,6 +29,8 @@
   --opt-bg: rgba(255, 253, 248, .7);
   --opt-bg-selected: #fffdf8;
   --opt-border: #dcd2c0;
+  --switch-track: #ece4d4;
+  --switch-knob: #fffdf8;
   --badge-bg: #efe8db;
   --disabled-bg: #d9d0c1;
   --disabled-fg: #5e584d;
@@ -70,6 +72,8 @@
   --opt-bg: rgba(42, 39, 35, .85);
   --opt-bg-selected: #2a2723;
   --opt-border: #4a443c;
+  --switch-track: #161512;
+  --switch-knob: #4a443c;
   --badge-bg: #3a362f;
   --disabled-bg: #34302a;
   --disabled-fg: #8f8778;
@@ -121,8 +125,12 @@ select { border-radius: var(--radius-control); background-color: var(--paper); c
 .masthead .notebook-stamp { position: relative; isolation: isolate; display: inline-block; font: 13px/1.7 var(--font-hand); color: var(--text-2); letter-spacing: 0; padding: 3px 12px; white-space: nowrap; }
 .masthead .notebook-stamp::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1.5px solid var(--stamp); border-radius: 99px; transform: rotate(-3deg); }
 .theme-control { display: flex; flex-direction: column; align-items: flex-end; margin: 0 0 24px; }
-.theme-control label { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; }
-.theme-control select { width: auto; min-width: 122px; min-height: 44px; padding-block: 8px; font-size: 14px; }
+/* Sun / moon pill: the pressed side gets a filled knob, so the state does not rely on icon color alone. */
+.theme-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1.5px solid var(--opt-border); border-radius: 99px; background: var(--switch-track); }
+.theme-switch button { display: grid; place-items: center; width: 52px; height: 44px; padding: 0; border: 0; border-radius: 99px; background: transparent; color: var(--text-2); cursor: pointer; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.theme-switch button[aria-pressed='true'] { background: var(--switch-knob); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, .18); }
+.theme-switch svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .theme-control p { margin: 6px 0 0; font-size: 13px; line-height: 1.7; color: var(--text-2); }
 .storage-notice { color: var(--text); border-color: var(--rule); }
 /* Footer on every screen: question-only share link and clearing local records. */

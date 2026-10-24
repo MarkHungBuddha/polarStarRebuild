@@ -1,25 +1,30 @@
 import { expect, test } from './support/fixtures';
+import type { Page } from '@playwright/test';
 import { amountFeedback, classifyAndRankValues, setAmount } from './support/experience';
 
-test('主題跟隨系統，手動選擇可保存，恢復跟隨後回應系統變更', async ({ page }) => {
+const themeButton = (page: Page, name: '淺色' | '深色') => page.getByRole('group', { name: '顯示主題' }).getByRole('button', { name, exact: true });
+
+test('主題預設跟隨系統並隨系統變更，點太陽或月亮後保存選擇', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
-  const theme = page.getByRole('combobox', { name: '顯示主題' });
-  await expect(theme).toHaveValue('system');
-  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
-  await theme.selectOption('light');
-  await expect(page.locator('html')).toHaveCSS('color-scheme', 'light');
-  await page.reload();
-  await expect(theme).toHaveValue('light');
-  await theme.selectOption('system');
+  const light = themeButton(page, '淺色');
+  const dark = themeButton(page, '深色');
+  await expect(dark).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });
+  await expect(light).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'light');
+  await dark.click();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await page.reload();
+  await expect(dark).toHaveAttribute('aria-pressed', 'true');
+  await expect(light).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
 });
 
 test('保存的深色在應用程式載入前就套用，不先閃出淺色', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('combobox', { name: '顯示主題' }).selectOption('dark');
+  await themeButton(page, '深色').click();
   await page.route('**/src/main.tsx', route => route.abort());
   await page.reload();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
@@ -32,12 +37,11 @@ test('無法使用本機儲存時跟隨系統，提示偏好無法保存，仍�
   });
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
-  const theme = page.getByRole('combobox', { name: '顯示主題' });
-  await expect(theme).toHaveValue('system');
+  await expect(themeButton(page, '深色')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
-  await theme.selectOption('light');
+  await themeButton(page, '淺色').click();
   await expect(page.getByText('無法儲存主題偏好', { exact: false })).toBeVisible();
-  await expect(theme).toHaveValue('system');
+  await expect(themeButton(page, '深色')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('heading', { name: '哪些事，對你重要？' })).toBeVisible();
@@ -50,7 +54,7 @@ test('作答中切換主題，不改變作答位置與已確認答案', async ({
   await setAmount(page, 3);
   await page.getByRole('button', { name: '確認答案', exact: true }).click();
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
-  await page.getByRole('combobox', { name: '顯示主題' }).selectOption('dark');
+  await themeButton(page, '深色').click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回上一頁' }).click();

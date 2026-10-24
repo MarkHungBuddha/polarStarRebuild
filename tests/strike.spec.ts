@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { classifyAll, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder, sceneOptions } from './support/experience';
+import { classifyAll, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, rankValuesInListedOrder, sceneOptions, tieValues } from './support/experience';
 
 async function openStrike(page: Page, tied = false) {
   await page.goto('/');
@@ -8,7 +8,7 @@ async function openStrike(page: Page, tied = false) {
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await rankValuesInListedOrder(page);
-  if (tied) await page.getByRole('combobox', { name: '遵守規範的位置' }).selectOption('1');
+  if (tied) await tieValues(page, '遵守規範', '自主');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '這份提案，用誰的方法？');
 }

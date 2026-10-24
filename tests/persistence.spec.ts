@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { amountFeedback, classifyAll, completeRemainingScenarios, goToScenario, openDetailedReport, rankValuesInListedOrder, sceneOption, setAmount } from './support/experience';
+import { amountFeedback, classifyAll, completeRemainingScenarios, goToScenario, openDetailedReport, rankValuesInListedOrder, sceneOption, positionOf, rankRow, setAmount, tieButton, tieValues } from './support/experience';
 
 async function beginAndClassify(page: Page) {
   await page.goto('/');
@@ -10,7 +10,7 @@ async function beginAndClassify(page: Page) {
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await rankValuesInListedOrder(page);
-  await page.getByRole('combobox', { name: '安全穩定的位置' }).selectOption('2');
+  await tieValues(page, '安全穩定', '探索刺激');
 }
 
 test('重新開啟後可續答，保留第一幕並列、自訂價值與相同題目', async ({ page }) => {
@@ -22,8 +22,9 @@ test('重新開啟後可續答，保留第一幕並列、自訂價值與相同�
   await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(title!);
   await page.getByRole('button', { name: '返回上一頁' }).click();
-  await expect(page.getByRole('combobox', { name: '安全穩定的位置' })).toHaveValue('2');
-  await expect(page.getByRole('combobox', { name: '創作的位置' })).toBeVisible();
+  await expect(tieButton(page, '安全穩定')).toHaveAttribute('aria-pressed', 'true');
+  expect(await positionOf(page, '安全穩定')).toBe(await positionOf(page, '探索刺激'));
+  await expect(rankRow(page, '創作')).toBeVisible();
 });
 
 // Stored blobs below are opaque stand-ins for a damaged record or one written by another app version; they do not mirror the session format.

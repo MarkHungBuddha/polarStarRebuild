@@ -1,5 +1,6 @@
 import { categoryLabels, categoryOrder } from './data';
-import { positionCount } from './firstAct';
+import { useRef, useState } from 'react';
+import { dropValue, moveValue, rankGroups, toggleTieWithAbove } from './firstAct';
 import { PageHeader } from './PageHeader';
 import type { Category, ValueItem } from './types';
 
@@ -32,27 +33,87 @@ export function ClassifyScreen({ values, customWord, notice, onCustomWordChange,
 
 interface RankProps {
   values: readonly ValueItem[];
-  onRank: (id: string, rank: number) => void;
+  /** Applies a ranking change to the latest values. */
+  onArrange: (arrange: (values: readonly ValueItem[]) => ValueItem[]) => void;
   onBack: () => void;
   onNext: () => void;
 }
 
-/** First act, step 2: positions are chosen within each category; values on the same position are tied. */
-export function RankScreen({ values, onRank, onBack, onNext }: RankProps) {
+/** First act, step 2: values are dragged into order within each category; values sharing a position are tied. */
+export function RankScreen({ values, onArrange, onBack, onNext }: RankProps) {
+  const [announcement, setAnnouncement] = useState('');
+  const arrange = (arrangeValues: (values: readonly ValueItem[]) => ValueItem[], id: string) => {
+    const next = arrangeValues(values);
+    const moved = next.find(value => value.id === id)!;
+    const tied = next.some(value => value !== moved && value.category === moved.category && value.rank === moved.rank);
+    setAnnouncement(`「${moved.word}」在第 ${moved.rank} 位${tied ? '，並列' : ''}`);
+    onArrange(arrangeValues);
+  };
   return <section className="first-act">
     <div className="paper-card first-act-card">
-      <PageHeader eyebrow="第一幕 · 02" title="排個順序，也可以並列。" description="在各類別裡排出順序，數字越小越重要。一樣重要的，就選相同的位置。" />
+      <PageHeader eyebrow="第一幕 · 02" title="排個順序，也可以並列。" description="在各類別裡拖曳排出順序，越上面越重要。一樣重要的，按「並列」和上一個排在一起。" />
+      <p className="rank-hint" id="rank-hint">拖曳左邊的把手移動；用鍵盤時，選到把手後按上下鍵移動。</p>
     </div>
-    {categoryOrder.map(category => {
-      const members = values.filter(value => value.category === category).sort((a, b) => a.rank - b.rank);
-      return <section className="rank-section" key={category}><h2><span className="marker">{categoryLabels[category]}</span></h2>{members.map(value => {
-        const tied = members.some(other => other !== value && other.rank === value.rank);
-        return <article className="rank-row" key={value.id}>
-          <div className="rank-name"><strong>{value.word}</strong>{(value.custom || tied) && <span className="rank-tags">{value.custom && <small className="value-tag">自訂</small>}{tied && <small className="value-tag">並列</small>}</span>}</div>
-          <label className="select-label">位置<select aria-label={`${value.word}的位置`} value={value.rank} onChange={event => onRank(value.id, Number(event.target.value))}>{Array.from({ length: positionCount(values, category) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>
-        </article>;
-      })}</section>;
-    })}
+    {categoryOrder.map(category => <RankList key={category} category={category} values={values} onArrange={arrange} />)}
+    <p className="visually-hidden" aria-live="polite">{announcement}</p>
     <nav className="actions"><button className="secondary" onClick={onBack}>返回分類</button><button className="primary" onClick={onNext}>進入情境中的取捨</button></nav>
+  </section>;
+}
+
+interface Drag {
+  id: string;
+  startY: number;
+  dy: number;
+  /** Where the value would land among the other values: 0 is above the first. */
+  gap: number;
+}
+
+const moveKeys: Record<string, 'up' | 'down' | 'first' | 'last'> = { ArrowUp: 'up', ArrowDown: 'down', Home: 'first', End: 'last' };
+
+function RankList({ category, values, onArrange }: { category: Category; values: readonly ValueItem[]; onArrange: (arrange: (values: readonly ValueItem[]) => ValueItem[], id: string) => void }) {
+  const [drag, setDrag] = useState<Drag>();
+  const rows = useRef(new Map<string, HTMLLIElement>());
+  const groups = rankGroups(values, category);
+  const members = groups.flat();
+  if (members.length === 0) return null;
+
+  const gapAt = (id: string, clientY: number) => members.filter(value => value.id !== id).filter(value => {
+    const box = rows.current.get(value.id)?.getBoundingClientRect();
+    return box !== undefined && box.top + box.height / 2 < clientY;
+  }).length;
+  const others = drag ? members.filter(value => value.id !== drag.id) : [];
+  const dropBefore = drag ? others[drag.gap]?.id : undefined;
+  const dropAfter = drag && drag.gap === others.length ? others[others.length - 1]?.id : undefined;
+
+  return <section className="rank-section" aria-labelledby={`rank-${category}`}>
+    <h2 id={`rank-${category}`}><span className="marker">{categoryLabels[category]}</span></h2>
+    {/* One flat list keyed by value, so a row keeps its DOM node (and keyboard focus) when it moves between groups. */}
+    <ol className="rank-list">{groups.flatMap(group => group.map((value, indexInGroup) => ({ value, group, indexInGroup }))).map(({ value, group, indexInGroup }, index) => {
+      const tied = group.length > 1;
+      const first = index === 0;
+      const dragging = drag?.id === value.id;
+      const className = ['rank-row', tied && 'tied', tied && indexInGroup === 0 && 'tied-first', tied && indexInGroup === group.length - 1 && 'tied-last', dragging && 'dragging', dropBefore === value.id && 'drop-before', dropAfter === value.id && 'drop-after'].filter(Boolean).join(' ');
+      return <li key={value.id} ref={element => { if (element) rows.current.set(value.id, element); else rows.current.delete(value.id); }} className={className} aria-labelledby={`rank-word-${value.id}`} style={dragging ? { transform: `translateY(${drag.dy}px)` } : undefined}>
+        <button type="button" className="rank-handle" aria-label={`${value.word}的順序`} aria-describedby="rank-hint"
+          onKeyDown={event => { const move = moveKeys[event.key]; if (!move) return; event.preventDefault(); onArrange(current => moveValue(current, category, value.id, move), value.id); }}
+          onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); setDrag({ id: value.id, startY: event.clientY, dy: 0, gap: gapAt(value.id, event.clientY) }); }}
+          onPointerMove={event => { if (drag?.id === value.id) setDrag({ ...drag, dy: event.clientY - drag.startY, gap: gapAt(value.id, event.clientY) }); }}
+          onPointerUp={event => {
+            // Read the drop point from this event: the last pointermove may not have re-rendered yet.
+            // A press without movement is not a drop, so clicking the handle never changes the order.
+            if (drag?.id === value.id && Math.abs(event.clientY - drag.startY) > 4) {
+              const gap = gapAt(value.id, event.clientY);
+              onArrange(current => dropValue(current, category, value.id, gap), value.id);
+            }
+            setDrag(undefined);
+          }}
+          onPointerCancel={() => setDrag(undefined)}>
+          <svg viewBox="0 0 12 20" aria-hidden="true"><circle cx="3" cy="4" r="1.6" /><circle cx="9" cy="4" r="1.6" /><circle cx="3" cy="10" r="1.6" /><circle cx="9" cy="10" r="1.6" /><circle cx="3" cy="16" r="1.6" /><circle cx="9" cy="16" r="1.6" /></svg>
+        </button>
+        <span className="rank-position" data-position={value.rank}>{value.rank}</span>
+        <div className="rank-name"><strong id={`rank-word-${value.id}`}>{value.word}</strong>{value.custom && <span className="rank-tags"><small className="value-tag">自訂</small></span>}</div>
+        {!first && <button type="button" className="rank-tie" aria-pressed={tied && indexInGroup > 0} aria-label={`${value.word}和上一個並列`} onClick={() => onArrange(current => toggleTieWithAbove(current, category, value.id), value.id)}>並列</button>}
+      </li>;
+    })}</ol>
   </section>;
 }

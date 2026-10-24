@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { allocate, classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario } from './support/experience';
+import { allocate, classifyAndRankValues, completeRemainingScenarios, expectNoHorizontalScroll, goToScenario, tieValues } from './support/experience';
 import { allocationScenarios } from '../src/scenarios/allocation';
 
 test('分配題庫覆蓋三個既定槽位，每槽兩個完整變體', () => {
@@ -88,7 +88,7 @@ test('分配不超出總量，均分只描述，回改採最後確認版本', as
 test('第一幕並列時，分配較多也不補出相符或不同', async ({ page }) => {
   await page.goto('/');
   await classifyAndRankValues(page);
-  await page.getByRole('combobox', { name: '照顧身邊的人的位置' }).selectOption('1');
+  await tieValues(page, '照顧身邊的人', '自主');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '六個晚上，留給哪些事？');
   await allocate(page, 1);
