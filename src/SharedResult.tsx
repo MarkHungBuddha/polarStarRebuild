@@ -31,14 +31,24 @@ function SharedResultPage({ result, questionLink }: { result: SharedResult; ques
       stated={positioned(result.stated.map(ids => ({ ids })))}
       chosen={positioned(result.chosen, row => `${row.ids.length > 1 ? '各' : ''}選了 ${row.chosen} 次／共 ${row.directional} 題`)} /></section>
     <p className="sticky-note" role="note">這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值只出現在約三題，改一題就可能換名次。</p>
-    {questionLink && <nav className="actions"><button className="primary" onClick={() => window.location.assign(questionLink)}>用同一份題目作答</button></nav>}
+    {/* The original question set is offered only while today's catalog can still reproduce it; never swap in today's questions under its name. */}
+    {questionLink
+      ? <nav className="actions"><button className="primary" onClick={() => window.location.assign(questionLink)}>用同一份題目作答</button></nav>
+      : <><p>這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。</p>
+        <nav className="actions"><button className="primary" onClick={() => window.location.assign(window.location.pathname)}>用目前題目開始</button></nav></>}
   </section>;
 }
 
-function UnreadableResult() {
+/** A corrupt link asks for a new one; a format this copy of the site does not know yet asks for a reload. Neither shows any part of the result. */
+function UnreadableResult({ unsupported }: { unsupported: boolean }) {
   return <section className="result-page">
-    <header className="section-header"><h1>這條結果連結不完整</h1><p>連結可能在複製或轉貼時被截斷或改動，所以整份結果都不顯示。請向分享者要一條新的結果連結。</p></header>
-    <nav className="actions"><button className="primary" onClick={() => window.location.assign(window.location.pathname)}>開始這次反思</button></nav>
+    {unsupported
+      ? <header className="section-header"><h1>這條結果連結目前無法顯示</h1><p>這條連結用的是較新的格式，你的瀏覽器可能還在使用舊版網站。請重新整理頁面再試一次。</p></header>
+      : <header className="section-header"><h1>這條結果連結不完整</h1><p>連結可能在複製或轉貼時被截斷或改動，所以整份結果都不顯示。請向分享者要一條新的結果連結。</p></header>}
+    <nav className="actions">
+      {unsupported && <button className="primary" onClick={() => window.location.reload()}>重新整理</button>}
+      <button className={unsupported ? 'secondary' : 'primary'} onClick={() => window.location.assign(window.location.pathname)}>開始這次反思</button>
+    </nav>
   </section>;
 }
 
@@ -51,7 +61,7 @@ export function SharedResultApp({ outcome }: { outcome: ResultLinkOutcome }) {
     <header className="masthead"><a href="./"><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
     <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
-    {outcome.kind === 'result' ? <SharedResultPage result={outcome.result} questionLink={questionLink} /> : <UnreadableResult />}
+    {outcome.kind === 'result' ? <SharedResultPage result={outcome.result} questionLink={questionLink} /> : <UnreadableResult unsupported={outcome.kind === 'unsupported'} />}
     <ShareFooter questionShare={false} shareDisabled onClearRecords={clearLocalRecords} />
   </main>;
 }
