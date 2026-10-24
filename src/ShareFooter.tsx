@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-/** Page footer with the question-only share link and the clear-local-records action. Remount it (key) when the link changes. */
-export function ShareFooter({ shareLink, shareDisabled, onClearRecords }: { shareLink?: string; shareDisabled: boolean; onClearRecords: () => void }) {
+/** Page footer with the question-only share link and the clear-local-records action. Remount it (key) when the link changes. A result link's page leaves the question link out (`questionShare={false}`). */
+export function ShareFooter({ shareLink, shareDisabled, onClearRecords, questionShare = true }: { shareLink?: string; shareDisabled: boolean; onClearRecords: () => void; questionShare?: boolean }) {
   const [sharing, setSharing] = useState(false);
   const [copyNotice, setCopyNotice] = useState('');
   const copy = async (link: string) => {
@@ -9,8 +9,8 @@ export function ShareFooter({ shareLink, shareDisabled, onClearRecords }: { shar
     catch { setCopyNotice('無法自動複製，請選取上方連結並手動複製。'); }
   };
   return <footer><p className="footer-tagline">北極星 · 把答案留給自己，把選擇看清楚。</p>
-    <button className="text-button" disabled={shareDisabled} onClick={() => setSharing(current => !current)}>分享這份題目</button>
-    {sharing && <section className="share-questions">{shareLink ? <>
+    {questionShare && <button className="text-button" disabled={shareDisabled} onClick={() => setSharing(current => !current)}>分享這份題目</button>}
+    {questionShare && sharing &&<section className="share-questions">{shareLink ? <>
       <p>只分享題目，不包含你的答案、排序或自訂價值。</p>
       <label>題目分享連結<input readOnly value={shareLink} onFocus={event => event.currentTarget.select()} /></label>
       <button className="secondary" onClick={() => copy(shareLink)}>複製題目連結</button>

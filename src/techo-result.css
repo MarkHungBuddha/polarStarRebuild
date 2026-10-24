@@ -76,3 +76,7 @@
   .result-category p { grid-template-columns: 88px minmax(0, 1fr); }
   .result-page .actions button { max-width: none; }
 }
+.result-share { margin-top: 24px; }
+.result-share label { display: grid; gap: 8px; font-size: 14px; }
+.result-share input { width: 100%; min-height: 48px; padding: 10px; border: 1px solid var(--rule); border-radius: 0; background: transparent; color: var(--ink); }
+.result-share [role="status"]:empty { margin: 0; }
