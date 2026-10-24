@@ -29,3 +29,37 @@ export const resultLinksV1 = {
     chosen: ['並列第 1自主、探索刺激、享受生活、成就、主導權、安全穩定、遵守規範、傳承、照顧身邊的人、普遍關懷各選了 1 次／共 3 題'],
   },
 } satisfies Record<string, PublishedResultLink>;
+
+// Additional published examples: ten values and a near-maximum link, including 24 Unicode characters with an emoji.
+export const customResultLinksV1 = [
+  {
+    "fragment": "#r=1.autonomy-stimulation-hedonism-achievement-influence-security-rules-tradition-care-fairness.1-3-autonomy-stimulation-hedonism-achievement-influence-security-rules-tradition-care-fairness.5L-d5pyJ542o6JmV55qE5pmC6ZaT~6YCZ5bCx5piv5oiR~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Ym15L2c~5pWj5q2l~6Zax6K6A~6Zmq5Ly0~5LyR5oGv~5a2457-S~6Ieq55Sx.c18hay5z.0-0-0-0-0-0-0-0-0-0-0-0-0-0-0",
+    "custom": [
+      "保有獨處的時間",
+      "這就是我",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "創作",
+      "散步",
+      "閱讀",
+      "陪伴",
+      "休息",
+      "學習",
+      "自由"
+    ]
+  },
+  {
+    "fragment": "#r=1.autonomy-stimulation-hedonism-achievement-influence-security-rules-tradition-care-fairness.1-3-autonomy-stimulation-hedonism-achievement-influence-security-rules-tradition-care-fairness.5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw~5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit5Lit8J-Mnw.c18hay5z.0-0-0-0-0-0-0-0-0-0-0-0-0-0-0",
+    "custom": [
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟",
+      "中中中中中中中中中中中中中中中中中中中中中中中🌟"
+    ]
+  }
+];

@@ -30,6 +30,7 @@ function SharedResultPage({ result, questionLink }: { result: SharedResult; ques
     <section className="conclusion paper-card"><ConclusionColumns titles={['分享者最重視的', '分享者在情境中最常選的']}
       stated={positioned(result.stated.map(ids => ({ ids })))}
       chosen={positioned(result.chosen, row => `${row.ids.length > 1 ? '各' : ''}選了 ${row.chosen} 次／共 ${row.directional} 題`)} /></section>
+    {result.custom.length > 0 && <section className="custom-results"><h2>分享者的自訂價值</h2><p>由分享者自行加入，沒有納入兩份前三名。</p><ul>{result.custom.map((word, index) => <li key={index}>{word}</li>)}</ul></section>}
     <p className="sticky-note" role="note">這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值只出現在約三題，改一題就可能換名次。</p>
     {/* The original question set is offered only while today's catalog can still reproduce it; never swap in today's questions under its name. */}
     {questionLink
