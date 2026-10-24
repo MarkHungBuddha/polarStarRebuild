@@ -1,21 +1,33 @@
+import type { ReactNode } from 'react';
 import { evidenceId } from './ResultEvidence';
-import { act1TopThree, byPosition, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
+import { act1TopThree, byPosition, chosenCountText, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
 import type { Session } from './types';
 
-const positionLabel = (row: { position: number; items: readonly unknown[] }) => (row.items.length > 1 ? '並列第 ' : '第 ') + row.position;
-const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => `${row.items.length > 1 ? '各' : ''}選了 ${row.items[0].chosen} 次／共 ${row.items[0].directional} 題`;
+const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => chosenCountText(row.items[0], row.items.length > 1);
+
+/** One position in a top-three column: the words sharing it and, in the second act, how often they were chosen. */
+export interface ColumnRow { position: number; words: string[]; count?: string }
+
+/** The two top-three columns as shown, whoever's they are; `statedNote` sits under the first column. */
+export function ConclusionColumns({ titles, stated, chosen, statedNote }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; statedNote?: ReactNode }) {
+  const label = (row: ColumnRow) => (row.words.length > 1 ? '並列第 ' : '第 ') + row.position;
+  return <div className="conclusion-columns">
+    <div><h3>{titles[0]}</h3><p className="caption">第一幕的分類與排序</p>
+      <ol>{stated.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong></li>)}</ol>
+      {statedNote}</div>
+    <div><h3>{titles[1]}</h3><p className="caption">第二幕有偏向一邊的答案</p>
+      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>這次沒有偏向一邊的答案，所以沒有排名。</p>}</div>
+  </div>;
+}
 
 /** The two top-three columns, one row per position; shared by the result cover and the detailed conclusion. */
 export function TopThreeColumns({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
   const statedRows = byPosition(act1TopThree(session.values));
   const chosenRows = byPosition(scenarioTopThree(scenarioTallies(session)));
-  return <div className="conclusion-columns">
-    <div><h3>你最重視的</h3><p className="caption">第一幕的分類與排序</p>
-      <ol>{statedRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(value => value.word).join('、')}</strong></li>)}</ol>
-      {statedRows.some(row => row.items.length > 1) && <p className="caption">有些價值你沒有排出先後。<button className="text-button" onClick={onRevisitFirstAct}>回第一幕調整</button></p>}</div>
-    <div><h3>你在情境中最常選的</h3><p className="caption">第二幕有偏向一邊的答案</p>
-      {chosenRows.length ? <ol>{chosenRows.map(row => <li key={row.position}><span>{positionLabel(row)}</span><strong>{row.items.map(tally => tally.value.word).join('、')}</strong><small>{counted(row)}</small></li>)}</ol> : <p>這次沒有偏向一邊的答案。</p>}</div>
-  </div>;
+  return <ConclusionColumns titles={['你最重視的', '你在情境中最常選的']}
+    stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
+    chosen={chosenRows.map(row => ({ position: row.position, words: row.items.map(tally => tally.value.word), count: counted(row) }))}
+    statedNote={statedRows.some(row => row.items.length > 1) && <p className="caption">有些價值你沒有排出先後。<button className="text-button" onClick={onRevisitFirstAct}>回第一幕調整</button></p>} />;
 }
 
 /** The conclusion: the first act's top three beside the values chosen most in the scenarios, one row per position, with what to take away. */
