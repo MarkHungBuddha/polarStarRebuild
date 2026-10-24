@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { dropValue, moveValue, rankedMembers } from './firstAct';
 import { PageHeader } from './PageHeader';
 import type { Category, ValueItem } from './types';
+import './techo-first-act.css';
 
 interface ClassifyProps {
   values: readonly ValueItem[];

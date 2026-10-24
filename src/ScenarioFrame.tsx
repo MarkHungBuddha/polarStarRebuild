@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Scenario } from './types';
 import { StarIcon } from './StarIcon';
+import './techo-scenario.css';
 
 /** Visible "第 n 題" text plus a progressbar with the same numbers, so progress never relies on the segment colors. */
 export function ScenarioProgress({ current, total }: { current: number; total: number }) {

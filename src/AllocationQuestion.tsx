@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { ScenarioFrame } from './ScenarioFrame';
 import type { AllocationAnswer, AllocationScenario } from './types';
+import './techo-sliders.css';
 
 export function AllocationQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
   scenario: AllocationScenario; answer?: AllocationAnswer; onConfirm: (answer: AllocationAnswer) => void; onBack: () => void; onReview?: () => void;
