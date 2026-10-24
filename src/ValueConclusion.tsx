@@ -31,7 +31,7 @@ export function ValueConclusion({ session, onRevisitFirstAct }: { session: Sessi
   // Only the differing scenarios that touch the stated top three are linked; the rest stay in the evidence below.
   const differing = allDiffering.filter(({ scenario }) => scenario.pair.some(id => statedIds.has(id)));
   const otherDiffering = allDiffering.length - differing.length;
-  return <section className="conclusion" aria-labelledby="conclusion-title">
+  return <section className="conclusion paper-card" aria-labelledby="conclusion-title">
     <h2 id="conclusion-title">你的前三名</h2>
     <TopThreeColumns session={session} onRevisitFirstAct={onRevisitFirstAct} />
     <h3>對照你最重視的前三名</h3>
@@ -49,6 +49,6 @@ export function ValueConclusion({ session, onRevisitFirstAct }: { session: Sessi
         <ul className="conclusion-differing">{differing.map(({ scenario, position }) => <li key={scenario.id}><a href={`#${evidenceId(scenario)}`}>第 {position} 題 · {scenario.title}</a></li>)}</ul></> : allDiffering.length ? '與你最重視的前三名有關的題目，都與第一幕相符。挑一題回頭看：在什麼條件下，你會選另一邊？' : '這次沒有與第一幕不同的題目。挑一題回頭看：在什麼條件下，你會選另一邊？'}
         {otherDiffering > 0 && <p className="caption">其餘 {otherDiffering} 題與第一幕不同的題目，可以在下方逐題查看。</p>}</li>
     </ol>
-    <p className="disclaimer">每個價值這次只出現在約三題，改一題就可能換名次。接受條件落在中間範圍，或時間平均分配的答案，都不計入次數。這些排名可以幫你回顧答案，不能當作測驗分數或人格判定。</p>
+    <p className="sticky-note" role="note">每個價值這次只出現在約三題，改一題就可能換名次。接受條件落在中間範圍，或時間平均分配的答案，都不計入次數。這些排名可以幫你回顧答案，不能當作測驗分數或人格判定。</p>
   </section>;
 }
