@@ -9,7 +9,8 @@
     "check": "tsc -b && eslint .",
     "preview": "vite preview",
     "test": "playwright test",
-    "prototype:share": "vite --host 127.0.0.1 --port 5189 --strictPort --open /?prototype=share&variant=A"
+    "prototype:share": "vite --host 127.0.0.1 --port 5189 --strictPort --open /?prototype=share&variant=A",
+    "prototype:image": "vite --host 127.0.0.1 --port 5189 --strictPort --open /?prototype=image&variant=A"
   },
   "dependencies": {
     "react": "^19.2.7",

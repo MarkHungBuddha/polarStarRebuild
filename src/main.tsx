@@ -5,8 +5,9 @@ import './App.css';
 import './techo.css';
 import App from './App';
 
-const Root = import.meta.env.DEV && new URLSearchParams(location.search).has('prototype')
-  ? (await import('./ResultSharePrototype')).ResultSharePrototype : App;
+const prototype = import.meta.env.DEV ? new URLSearchParams(location.search).get('prototype') : null;
+const Root = prototype === 'image' ? (await import('./ResultImagePrototype')).ResultImagePrototype
+  : prototype ? (await import('./ResultSharePrototype')).ResultSharePrototype : App;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
