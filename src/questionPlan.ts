@@ -47,7 +47,8 @@ export function requestedQuestions(search: string): { questions?: Scenario[]; no
   } catch { return { specified: true, notice: '這份分享連結的題目資料無法使用。你可以改用目前的版本重新開始。' }; }
 }
 
-export function questionShareLink(questions: readonly Scenario[], location: Pick<Location, 'origin' | 'pathname'>): string | undefined {
+/** The variant chosen in each slot, in slot order and base36; a question link's seed is `p.` followed by these joined with dots. */
+export function questionPlan(questions: readonly Scenario[]): string[] | undefined {
   const slots = groups();
   if (questions.length !== slots.length) return undefined;
   const selectors: string[] = [];
@@ -59,6 +60,12 @@ export function questionShareLink(questions: readonly Scenario[], location: Pick
     if (index < 0) return undefined;
     selectors.push(index.toString(36));
   }
+  return selectors;
+}
+
+export function questionShareLink(questions: readonly Scenario[], location: Pick<Location, 'origin' | 'pathname'>): string | undefined {
+  const selectors = questionPlan(questions);
+  if (!selectors) return undefined;
   const url = new URL(location.pathname, location.origin);
   url.searchParams.set('seed', `p.${selectors.join('.')}`);
   url.searchParams.set('v', catalogVersion);
