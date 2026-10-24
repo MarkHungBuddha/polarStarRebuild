@@ -1,21 +1,13 @@
 import { expect, test } from './support/fixtures';
-import { answerRemainingScenarios, classifyAll, expectFocusRing, expectNoHorizontalScroll, pressOnHandle, setCategory } from './support/experience';
+import { expectFocusRing, expectNoHorizontalScroll, pressOnHandle, setCategory } from './support/experience';
 import { customResultLinksV1 } from './support/result-links-v1';
+import { expectUnreadable, reachShareWithCustomValues } from './support/result-share';
 
 test('自訂價值預設不分享，勾選後依第一幕順序送到收件者，取消後移除', async ({ page, browser }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: '開始這次反思' }).click();
-  for (const word of ['保有獨處的時間', '這就是我', '不公開']) {
-    await page.getByRole('textbox', { name: '自訂價值' }).fill(word);
-    await page.getByRole('button', { name: '新增價值' }).click();
-  }
-  await classifyAll(page, 'core');
-  await setCategory(page, '保有獨處的時間', 'good');
-  await page.getByRole('button', { name: '下一步：排出順序' }).click();
-  await pressOnHandle(page, '這就是我', 'Home');
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
-  const share = page.getByRole('region', { name: '分享結果' });
+  const share = await reachShareWithCustomValues(page, ['保有獨處的時間', '這就是我', '不公開'], {
+    classified: () => setCategory(page, '保有獨處的時間', 'good'),
+    ranked: () => pressOnHandle(page, '這就是我', 'Home'),
+  });
   const group = share.getByRole('group', { name: '也分享自訂價值' });
   await expect(group).toBeVisible();
   await expect(group.getByRole('checkbox')).toHaveCount(3);
@@ -66,25 +58,14 @@ test('自訂價值欄位不合法時整份結果都不顯示', async ({ page }) 
     '~YQ', 'YQ~', 'YQ~~Yg', // Empty values.
   ];
   for (const custom of invalid) {
-    await page.goto(`/#r=1.autonomy~care~security..${custom}.c18hay5z.0-0-0-0-0-0-0-0-0-0-0-0-0-0-0`);
-    await expect(page.getByRole('heading', { name: '這條結果連結不完整' }), custom).toBeVisible();
-    await expect(page.getByRole('listitem')).toHaveCount(0);
+    await expectUnreadable(page, `#r=1.autonomy~care~security..${custom}.c18hay5z.0-0-0-0-0-0-0-0-0-0-0-0-0-0-0`);
   }
 });
 
 test('最多分享十個自訂價值，取消一項後可以改勾其他項目', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto('/');
-  await page.getByRole('button', { name: '開始這次反思' }).click();
-  for (let index = 1; index <= 11; index += 1) {
-    await page.getByRole('textbox', { name: '自訂價值' }).fill(`自訂價值${index}`);
-    await page.getByRole('button', { name: '新增價值' }).click();
-  }
-  await classifyAll(page, 'core');
-  await page.getByRole('button', { name: '下一步：排出順序' }).click();
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
-  const group = page.getByRole('group', { name: '也分享自訂價值' });
+  const share = await reachShareWithCustomValues(page, Array.from({ length: 11 }, (_, index) => `自訂價值${index + 1}`));
+  const group = share.getByRole('group', { name: '也分享自訂價值' });
   await expect(group).toHaveAccessibleDescription('預設不分享。勾選的項目會放進結果連結；結果圖最多放 3 個，其餘寫成「另有 N 個自訂價值」。');
   const checkboxes = group.getByRole('checkbox');
   for (let index = 0; index < 10; index += 1) await checkboxes.nth(index).check();
@@ -100,5 +81,5 @@ test('最多分享十個自訂價值，取消一項後可以改勾其他項目',
   await expectFocusRing(checkboxes.nth(10));
   for (const label of await group.locator('label').all()) expect((await label.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await expectNoHorizontalScroll(page);
-  await expect(page.getByRole('region', { name: '分享結果' }).getByRole('status')).toBeEmpty();
+  await expect(share.getByRole('status')).toBeEmpty();
 });
