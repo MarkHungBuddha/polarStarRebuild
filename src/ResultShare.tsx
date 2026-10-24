@@ -3,6 +3,7 @@ import { categoryOrder } from './data';
 import { rankedMembers } from './firstAct';
 import { resultLink, sharedResultOf } from './resultLink';
 import type { Session } from './types';
+import { imagePreparing, resultImageAlt, useResultImage } from './useResultImage';
 
 /** The sharer's「分享結果」block: what a result link makes public, the link itself, and one status line for its feedback. */
 export function ResultShare({ session }: { session: Session }) {
@@ -11,13 +12,20 @@ export function ResultShare({ session }: { session: Session }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [status, setStatus] = useState('');
   const result = sharedResultOf(session);
-  if (!result) return null;
+
   const custom = categoryOrder.flatMap(category => rankedMembers(session.values, category)).filter(value => value.custom);
-  result.custom = custom.filter(value => selected.includes(value.id)).map(value => value.word);
+  if (result) result.custom = custom.filter(value => selected.includes(value.id)).map(value => value.word);
+  const { image, failed, retry } = useResultImage(result, setStatus);
+  if (!result) return null;
   const link = resultLink(result, window.location);
   const copy = async () => {
     try { await navigator.clipboard.writeText(link); setStatus('已複製結果連結。'); }
     catch { setStatus('無法自動複製，請選取上方連結並手動複製。'); }
+  };
+  const download = () => {
+    if (!image) { setStatus(imagePreparing); if (failed) retry(); return; }
+    const anchor = document.createElement('a');
+    anchor.href = image.url; anchor.download = image.file.name; anchor.click();
   };
   return <section className="result-share paper-card" aria-labelledby={titleId}>
     <h2 id={titleId}>分享結果</h2>
@@ -30,8 +38,10 @@ export function ResultShare({ session }: { session: Session }) {
         <span>{value.word}</span>
       </label>)}
     </fieldset>}
-    <nav className="actions"><button className="secondary" onClick={copy}>複製結果連結</button></nav>
+    {image ? <img className="result-image-preview" src={image.url} alt={resultImageAlt(result.custom)} /> : !failed && <div className="result-image-placeholder" aria-hidden="true" />}
+    <nav className="actions"><button className="secondary" aria-disabled={!image} onClick={download}>下載結果圖</button><button className="secondary" onClick={copy}>複製結果連結</button></nav>
     <label>結果連結<input readOnly value={link} onFocus={event => event.currentTarget.select()} /></label>
     <p role="status">{status}</p>
   </section>;
 }
+

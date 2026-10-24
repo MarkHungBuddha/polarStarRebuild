@@ -83,3 +83,7 @@
 .result-share .share-custom-value { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
 .share-custom-value input { flex: 0 0 auto; width: 20px; height: 20px; accent-color: var(--ink); }
 .result-share [role="status"]:empty { margin: 0; }
+
+.result-image-preview, .result-image-placeholder { display: block; width: 100%; max-width: 540px; aspect-ratio: 4 / 5; height: auto; margin: 24px auto; border: 1px solid var(--rule); }
+.result-image-placeholder { background: var(--paper); }
+.result-share button[aria-disabled='true'] { opacity: .65; }
