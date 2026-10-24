@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { baseValues } from '../src/data';
-import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOption, sceneOptions, tieValues } from './support/experience';
+import { classifyAndRankValues, completeRemainingScenarios, goToScenario, sceneOption, sceneOptions } from './support/experience';
 
 const binarySlots = {
   slot05: ['stimulation', 'tradition'],
@@ -74,10 +74,9 @@ test('新二選一題需明確確認，可回改並依第一幕先後標示相�
 
 test.describe('抽到第二個變體', () => {
   test.use({ scenarioRandom: 0.99 });
-  test('第一幕並列時，新二選一題只描述本次選擇', async ({ page }) => {
+  test('第二個變體的新二選一題，依第一幕先後描述本次選擇', async ({ page }) => {
     await page.goto('/');
     await classifyAndRankValues(page);
-    await tieValues(page, '遵守規範', '傳承');
     await page.getByRole('button', { name: '進入情境中的取捨' }).click();
     await goToScenario(page, '節慶聚會用哪一套餐具？');
     await sceneOption(page, /沿用各自帶器皿的慣例/).click();
@@ -85,10 +84,8 @@ test.describe('抽到第二個變體', () => {
     await completeRemainingScenarios(page);
     await expect(page.getByRole('heading', { name: '新約定遇上紀念聚會。', exact: true })).toHaveCount(0);
     const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '節慶聚會用哪一套餐具？', exact: true }) });
-    await expect(evidence.getByText('第一幕並列 · 只描述本次選擇', { exact: true })).toBeVisible();
-    await expect(evidence.getByText('你將遵守規範與傳承並列；在這題，你選擇了「沿用各自帶器皿的慣例」。', { exact: true })).toBeVisible();
-    await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
-    await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
+    await expect(evidence.getByText(/^與第一幕(相符|不同)$/)).toBeVisible();
+    await expect(evidence.getByText('你把遵守規範放在傳承之前；在這題，你選擇了「沿用各自帶器皿的慣例」。', { exact: true })).toBeVisible();
     for (const title of ['這次連假，怎麼過？', '只有半天的空檔。', '一場公開分享會的名額與主題。', '工藝展的安排權。']) {
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     }

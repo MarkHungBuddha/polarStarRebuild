@@ -10,7 +10,7 @@ export function HomeIntro({ actions }: { actions: ReactNode }) {
       <h1>你重視什麼，<br />會怎麼選？</h1>
       <p className="lead">先排出你在意的事，再試著安排時間、做幾個日常決定。當兩件事不能兼顧，你會<span className="marker">先顧哪一件</span>？</p>
       <ol className="intro-steps">
-        <li><div><b>第一幕 · 你重視的</b><p>把十個價值分類、排序，一樣重要的可以並列。</p></div></li>
+        <li><div><b>第一幕 · 你重視的</b><p>把十個價值分類，再排出先後。</p></div></li>
         <li><div><b>第二幕 · 情境中的取捨</b><p>試著做出選擇，再和剛才的排序對照。</p></div></li>
       </ol>
       <p className="intro-meta">

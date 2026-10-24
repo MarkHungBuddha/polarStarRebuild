@@ -1,13 +1,13 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { arrangeInOrder, classifyAll, expectFocusRing, expectFullyShown, expectNoHorizontalScroll, expectPosition, expectTouchTargets, pressOnHandle, rankHandle, rankRow, setCategory, tieButton } from './support/experience';
+import { classifyAll, expectFocusRing, expectFullyShown, expectNoHorizontalScroll, expectPosition, expectTouchTargets, pressOnHandle, rankHandle, rankRow, setCategory } from './support/experience';
 
 // Near the 24-character limit for custom values; one unbroken word is the hardest case to fit at 320px.
 const longCustom = '在忙碌生活裡仍留給自己安靜讀書和慢慢散步的時間';
 
 for (const width of [320, 390, 1280]) {
   for (const colorScheme of ['light', 'dark'] as const) {
-    test(`第一幕在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下完整顯示長自訂價值與並列，不橫向捲動，可點擊區至少 44 × 44px`, async ({ page }) => {
+    test(`第一幕在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下完整顯示長自訂價值，不橫向捲動，可點擊區至少 44 × 44px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ colorScheme });
       await page.goto('/');
@@ -20,8 +20,7 @@ for (const width of [320, 390, 1280]) {
       await classifyAll(page, 'core');
       await page.getByRole('button', { name: '下一步：排出順序' }).click();
       await expectPosition(page, '自主', 1);
-      await expectPosition(page, '成就', 1);
-      await expect(tieButton(page, '成就')).toHaveAttribute('aria-pressed', 'true');
+      await expectPosition(page, '成就', 4);
       await expectFullyShown(page.getByText(longCustom, { exact: true }));
       await expectNoHorizontalScroll(page);
       await expectTouchTargets(page.locator('main'));
@@ -29,7 +28,7 @@ for (const width of [320, 390, 1280]) {
   }
 }
 
-test('只用鍵盤就能分類、排序與並列，焦點清楚可見', async ({ page }) => {
+test('只用鍵盤就能分類與排序，焦點清楚可見', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).focus();
   await page.keyboard.press('Enter');
@@ -58,24 +57,18 @@ test('只用鍵盤就能分類、排序與並列，焦點清楚可見', async ({
   const handle = rankHandle(page, '創作');
   await handle.focus();
   await expectFocusRing(handle);
-  await page.keyboard.press('End');
-  await expectPosition(page, '創作', 2);
-  await expect(page.getByText('「創作」在第 2 位', { exact: true })).toBeAttached();
-  await expect(handle).toBeFocused();
-  // A tied value steps out of its group first, landing just below it.
-  await pressOnHandle(page, '安全穩定', 'ArrowDown');
-  await expectPosition(page, '安全穩定', 2);
-  await expectPosition(page, '創作', 3);
-  await expect(tieButton(page, '安全穩定')).toHaveAttribute('aria-pressed', 'false');
-  await page.keyboard.press('Tab');
-  await expect(tieButton(page, '安全穩定')).toBeFocused();
-  await page.keyboard.press('Space');
-  await expect(tieButton(page, '安全穩定')).toHaveAttribute('aria-pressed', 'true');
-  await expectPosition(page, '安全穩定', 1);
-  await expectPosition(page, '創作', 2);
-  await pressOnHandle(page, '創作', 'Home');
+  await page.keyboard.press('Home');
   await expectPosition(page, '創作', 1);
-  await expectPosition(page, '自主', 2);
+  await expect(page.getByText('「創作」在第 1 位', { exact: true })).toBeAttached();
+  await expect(handle).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expectPosition(page, '創作', 2);
+  await expectPosition(page, '自主', 1);
+  await page.keyboard.press('End');
+  await expectPosition(page, '創作', 11);
+  await pressOnHandle(page, '安全穩定', 'ArrowUp', 2);
+  await expectPosition(page, '安全穩定', 4);
+  await expectPosition(page, '成就', 5);
 });
 
 test('進入第二幕、返回調整與重新開啟後，都保留分類、名次與自訂價值', async ({ page }) => {
@@ -87,13 +80,14 @@ test('進入第二幕、返回調整與重新開啟後，都保留分類、名�
   for (const word of ['自主', '成就', '創作']) await setCategory(page, word, 'core');
   await setCategory(page, '傳承', 'low');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
-  await arrangeInOrder(page, ['成就', '創作']);
+  // Values join a category at the bottom, in the order they were sorted: 自主, 成就, 創作.
+  await pressOnHandle(page, '創作', 'Home');
   await pressOnHandle(page, '安全穩定', 'End');
   const expectFirstAct = async () => {
-    await expectPosition(page, '自主', 1);
-    await expectPosition(page, '成就', 2);
-    await expectPosition(page, '創作', 3);
-    await expectPosition(page, '安全穩定', 2);
+    await expectPosition(page, '創作', 1);
+    await expectPosition(page, '自主', 2);
+    await expectPosition(page, '成就', 3);
+    await expectPosition(page, '安全穩定', 7);
     await expectPosition(page, '探索刺激', 1);
     await expect(page.getByRole('region', { name: '不太在乎' }).getByRole('listitem')).toHaveCount(1);
     await expectPosition(page, '傳承', 1);
@@ -123,23 +117,21 @@ async function dragValue(page: Page, word: string, target: string, offsetY: numb
   await page.mouse.up();
 }
 
-test('拖曳把手可排序；放在兩個並列的價值之間就加入並列，單純點把手不改順序', async ({ page }) => {
+test('拖曳把手可排序，單純點把手不改順序', async ({ page }) => {
   // Tall enough that the whole ranking list is on screen, since the mouse drags in viewport coordinates.
   await page.setViewportSize({ width: 1280, height: 2000 });
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
-  await arrangeInOrder(page, ['自主', '探索刺激', '享受生活']);
-  // Order now: the other seven tied on 1, then 自主 2, 探索刺激 3, 享受生活 4.
-  await dragValue(page, '享受生活', '自主', -20);
-  await expectPosition(page, '享受生活', 2);
-  await expectPosition(page, '自主', 3);
-  await expectPosition(page, '探索刺激', 4);
-  await dragValue(page, '探索刺激', '成就', 20);
-  await expectPosition(page, '探索刺激', 1);
-  await expect(tieButton(page, '探索刺激')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.rank-row').nth(1)).toHaveAccessibleName('探索刺激');
-  await rankHandle(page, '自主').click();
-  await expectPosition(page, '自主', 3);
+  // Starts in list order: 自主, 探索刺激, 享受生活, 成就, …
+  await dragValue(page, '成就', '自主', -20);
+  await expectPosition(page, '成就', 1);
+  await expectPosition(page, '自主', 2);
+  await expectPosition(page, '享受生活', 4);
+  await dragValue(page, '自主', '安全穩定', 20);
+  await expectPosition(page, '自主', 6);
+  await expectPosition(page, '安全穩定', 5);
+  await rankHandle(page, '探索刺激').click();
+  await expectPosition(page, '探索刺激', 2);
 });

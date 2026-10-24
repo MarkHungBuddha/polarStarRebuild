@@ -33,13 +33,8 @@
 .first-act .rank-section h2 { margin-bottom: 4px; font-size: 22px; }
 .first-act .rank-hint { margin: 12px 0 0; color: var(--text-2); font: 14px/1.7 var(--font-sans); }
 .rank-list { margin: 0; padding: 0; list-style: none; }
-.first-act .rank-row { position: relative; display: grid; grid-template-columns: 44px 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1.5px dashed var(--rule); background: var(--opt-bg); }
+.first-act .rank-row { position: relative; display: grid; grid-template-columns: 44px 28px minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1.5px dashed var(--rule); background: var(--opt-bg); }
 .first-act .rank-row:last-child { border-bottom: 0; }
-/* Tied values share a position: a solid ink bar on the left joins them, alongside the shared number and the pressed 並列 button. */
-.first-act .rank-row.tied { border-bottom-style: dotted; }
-.first-act .rank-row.tied::before { content: ''; position: absolute; left: -10px; top: 0; bottom: 0; width: 3px; background: var(--accent); }
-.first-act .rank-row.tied-first::before { top: 12px; }
-.first-act .rank-row.tied-last::before { bottom: 12px; }
 .first-act .rank-row.dragging { z-index: 2; border-radius: var(--radius-control); box-shadow: var(--shadow-paper); opacity: .95; }
 .first-act .rank-row.drop-before { box-shadow: inset 0 3px 0 var(--accent); }
 .first-act .rank-row.drop-after { box-shadow: inset 0 -3px 0 var(--accent); }
@@ -50,8 +45,6 @@
 .rank-name { min-width: 0; }
 .rank-name strong { display: block; color: var(--text); font: 700 19px/1.5 var(--font-hand); overflow-wrap: anywhere; }
 .rank-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.rank-tie { min-width: 64px; min-height: 44px; padding: 6px 12px; border: 1.5px dashed var(--opt-border); border-radius: var(--radius-control); background: transparent; color: var(--text-2); font-size: 14px; }
-.rank-tie[aria-pressed='true'] { border: 1.5px solid var(--accent); background: var(--accent); color: var(--on-accent); }
 
 .first-act .actions { margin: 32px 0 16px; padding-top: 20px; border-top: 1.5px dashed var(--rule); }
 

@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { amountFeedback, classifyAll, completeRemainingScenarios, goToScenario, openDetailedReport, rankValuesInListedOrder, sceneOption, positionOf, rankRow, setAmount, tieButton, tieValues } from './support/experience';
+import { amountFeedback, classifyAll, completeRemainingScenarios, goToScenario, openDetailedReport, rankValuesInListedOrder, sceneOption, expectPosition, pressOnHandle, rankRow, setAmount } from './support/experience';
 
 async function beginAndClassify(page: Page) {
   await page.goto('/');
@@ -10,10 +10,10 @@ async function beginAndClassify(page: Page) {
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await rankValuesInListedOrder(page);
-  await tieValues(page, '安全穩定', '探索刺激');
+  await pressOnHandle(page, '安全穩定', 'Home');
 }
 
-test('重新開啟後可續答，保留第一幕並列、自訂價值與相同題目', async ({ page }) => {
+test('重新開啟後可續答，保留第一幕順序、自訂價值與相同題目', async ({ page }) => {
   await beginAndClassify(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   const title = await page.getByRole('heading', { level: 1 }).textContent();
@@ -22,8 +22,8 @@ test('重新開啟後可續答，保留第一幕並列、自訂價值與相同�
   await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(title!);
   await page.getByRole('button', { name: '返回上一頁' }).click();
-  await expect(tieButton(page, '安全穩定')).toHaveAttribute('aria-pressed', 'true');
-  expect(await positionOf(page, '安全穩定')).toBe(await positionOf(page, '探索刺激'));
+  await expectPosition(page, '安全穩定', 1);
+  await expectPosition(page, '創作', 2);
   await expect(rankRow(page, '創作')).toBeVisible();
 });
 
@@ -52,7 +52,7 @@ test('未確認的修改不會覆寫重新開啟後的已確認答案', async ({
   await expect(sceneOption(page, /留在原團隊/)).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await openDetailedReport(page);
-  await expect(page.getByText('你將探索刺激與安全穩定並列；在這題，你選擇了「留在原團隊」。')).toBeVisible();
+  await expect(page.getByText('你把安全穩定放在探索刺激之前；在這題，你選擇了「留在原團隊」。')).toBeVisible();
 });
 
 test('清除紀錄後可重新開始，重新開啟不會沿用舊分類', async ({ page }) => {

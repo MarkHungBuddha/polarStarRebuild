@@ -80,7 +80,7 @@ test('新槽位的休閒與準備時間可確認回改，結果保留各自單�
 
 test.describe('抽到第二個變體', () => {
 test.use({ scenarioRandom: 0.99 });
-test('新的居住滑桿變體可作答；第一幕並列時，門檻外的條件只說明偏向，不標相符或不同', async ({ page }) => {
+test('新的居住滑桿變體可作答；沒有調整排序時照清單順序比對，門檻外的條件標出與第一幕不同', async ({ page }) => {
   await page.goto('/');
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
@@ -92,10 +92,8 @@ test('新的居住滑桿變體可作答；第一幕並列時，門檻外的條�
   await expect(page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true })).toHaveCount(0);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '搬家之前，想先確定什麼？', exact: true }) });
   await expect(evidence.getByText('你希望先有 12 個月不調租保障，再考慮搬家。', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('第一幕並列 · 只描述本次答案', { exact: true })).toBeVisible();
   await expect(evidence.getByText('這個條件算偏向安全穩定：3 以下算偏向自主，12 以上算偏向安全穩定。', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('與第一幕相符', { exact: true })).toHaveCount(0);
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toHaveCount(0);
+  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
   await expect(page.getByText('你希望每個週末至少保留 1 小時純休閒，再考慮加入六週作品集共學。', { exact: true })).toBeVisible();
   await expect(page.getByText('你希望至少多 1 週準備時間，再考慮延後分享、一起整理公開資料。', { exact: true })).toBeVisible();
 });

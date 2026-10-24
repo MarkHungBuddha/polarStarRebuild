@@ -5,7 +5,7 @@ import { answerRemainingScenarios, classifyAll, expectHorizontalText, expectLong
 const longCustomValue = 'Supercalifragilisticexpi';
 
 /** First act with a 24-character custom value and every value tied, then all scenarios; stops on the result cover. */
-async function reachResultWithLongNamesAndTies(page: Page) {
+async function reachResultWithLongNames(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await page.getByRole('textbox', { name: '自訂價值' }).fill(longCustomValue);
@@ -17,7 +17,7 @@ async function reachResultWithLongNamesAndTies(page: Page) {
 }
 
 test('結果摘要把解讀限制寫在註記裡，沒有圖片匯出', async ({ page }) => {
-  await reachResultWithLongNamesAndTies(page);
+  await reachResultWithLongNames(page);
   await expect(page.getByRole('note').filter({ hasText: '不是人格判定' })).toBeVisible();
   await expect(page.getByRole('button', { name: /圖片/ })).toHaveCount(0);
   await openDetailedReport(page);
@@ -28,10 +28,10 @@ test('結果摘要把解讀限制寫在註記裡，沒有圖片匯出', async ({
 
 for (const width of [320, 390, 1280]) {
   for (const colorScheme of ['light', 'dark'] as const) {
-    test(`結果摘要、詳細回顧與分享區在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下長名稱與並列皆可讀，不橫向溢出，點擊區至少 44 × 44px`, async ({ page }) => {
+    test(`結果摘要、詳細回顧與分享區在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下長名稱皆可讀，不橫向溢出，點擊區至少 44 × 44px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ colorScheme });
-      await reachResultWithLongNamesAndTies(page);
+      await reachResultWithLongNames(page);
       const columns = page.getByRole('region', { name: '你的前三名' }).getByRole('heading', { level: 3 });
       const [stated, chosen] = [await columns.nth(0).boundingBox(), await columns.nth(1).boundingBox()];
       if (width >= 1280) expect(Math.abs(stated!.y - chosen!.y), '桌面兩份前三名並排比較').toBeLessThan(2);

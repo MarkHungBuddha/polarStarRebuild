@@ -64,9 +64,6 @@ export const rankRow = (page: Page, word: string) => page.getByRole('listitem', 
 /** The drag handle, which also moves the value with ArrowUp / ArrowDown / Home / End. */
 export const rankHandle = (page: Page, word: string) => page.getByRole('button', { name: `${word}的順序`, exact: true });
 
-/** The 並列 toggle that ties a value with the one above it. */
-export const tieButton = (page: Page, word: string) => page.getByRole('button', { name: `${word}和上一個並列`, exact: true });
-
 /** The position number shown on a value's row. */
 export async function positionOf(page: Page, word: string) {
   return Number(await rankRow(page, word).locator('[data-position]').textContent());
@@ -87,20 +84,7 @@ export async function arrangeInOrder(page: Page, words: readonly string[]) {
   for (const word of words) await pressOnHandle(page, word, 'End');
 }
 
-/** Moves `word` just below `target` with the keyboard, then ties the two with the 並列 toggle. Both must start on positions of their own. */
-export async function tieValues(page: Page, word: string, target: string) {
-  await rankHandle(page, word).focus();
-  for (let step = 0; ; step += 1) {
-    const [mine, theirs] = [await positionOf(page, word), await positionOf(page, target)];
-    if (mine === theirs + 1) break;
-    expect(step, `${word} did not reach the position below ${target}`).toBeLessThan(20);
-    await page.keyboard.press(mine > theirs ? 'ArrowUp' : 'ArrowDown');
-  }
-  await tieButton(page, word).click();
-  await expect(tieButton(page, word)).toHaveAttribute('aria-pressed', 'true');
-}
-
-// Values start tied; this gives the core values an explicit strict order 1–10 on the ranking page.
+// Gives the core values the strict order 1–10 in the listed order on the ranking page.
 export async function rankValuesInListedOrder(page: Page) {
   await arrangeInOrder(page, coreValueWords);
 }

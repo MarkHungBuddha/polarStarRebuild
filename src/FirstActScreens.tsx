@@ -1,6 +1,6 @@
 import { categoryLabels, categoryOrder } from './data';
 import { useRef, useState } from 'react';
-import { dropValue, moveValue, rankGroups, toggleTieWithAbove } from './firstAct';
+import { dropValue, moveValue, rankedMembers } from './firstAct';
 import { PageHeader } from './PageHeader';
 import type { Category, ValueItem } from './types';
 
@@ -39,19 +39,17 @@ interface RankProps {
   onNext: () => void;
 }
 
-/** First act, step 2: values are dragged into order within each category; values sharing a position are tied. */
+/** First act, step 2: values are dragged into a strict order within each category. */
 export function RankScreen({ values, onArrange, onBack, onNext }: RankProps) {
   const [announcement, setAnnouncement] = useState('');
   const arrange = (arrangeValues: (values: readonly ValueItem[]) => ValueItem[], id: string) => {
-    const next = arrangeValues(values);
-    const moved = next.find(value => value.id === id)!;
-    const tied = next.some(value => value !== moved && value.category === moved.category && value.rank === moved.rank);
-    setAnnouncement(`「${moved.word}」在第 ${moved.rank} 位${tied ? '，並列' : ''}`);
+    const moved = arrangeValues(values).find(value => value.id === id)!;
+    setAnnouncement(`「${moved.word}」在第 ${moved.rank} 位`);
     onArrange(arrangeValues);
   };
   return <section className="first-act">
     <div className="paper-card first-act-card">
-      <PageHeader eyebrow="第一幕 · 02" title="排個順序，也可以並列。" description="在各類別裡拖曳排出順序，越上面越重要。一樣重要的，按「並列」和上一個排在一起。" />
+      <PageHeader eyebrow="第一幕 · 02" title="排出先後。" description="在各類別裡拖曳排序，越上面越重要。就算很難分，也請排出先後。" />
       <p className="rank-hint" id="rank-hint">拖曳左邊的把手移動；用鍵盤時，選到把手後按上下鍵移動。</p>
     </div>
     {categoryOrder.map(category => <RankList key={category} category={category} values={values} onArrange={arrange} />)}
@@ -73,8 +71,7 @@ const moveKeys: Record<string, 'up' | 'down' | 'first' | 'last'> = { ArrowUp: 'u
 function RankList({ category, values, onArrange }: { category: Category; values: readonly ValueItem[]; onArrange: (arrange: (values: readonly ValueItem[]) => ValueItem[], id: string) => void }) {
   const [drag, setDrag] = useState<Drag>();
   const rows = useRef(new Map<string, HTMLLIElement>());
-  const groups = rankGroups(values, category);
-  const members = groups.flat();
+  const members = rankedMembers(values, category);
   if (members.length === 0) return null;
 
   const gapAt = (id: string, clientY: number) => members.filter(value => value.id !== id).filter(value => {
@@ -87,12 +84,9 @@ function RankList({ category, values, onArrange }: { category: Category; values:
 
   return <section className="rank-section" aria-labelledby={`rank-${category}`}>
     <h2 id={`rank-${category}`}><span className="marker">{categoryLabels[category]}</span></h2>
-    {/* One flat list keyed by value, so a row keeps its DOM node (and keyboard focus) when it moves between groups. */}
-    <ol className="rank-list">{groups.flatMap(group => group.map((value, indexInGroup) => ({ value, group, indexInGroup }))).map(({ value, group, indexInGroup }, index) => {
-      const tied = group.length > 1;
-      const first = index === 0;
+    <ol className="rank-list">{members.map((value, index) => {
       const dragging = drag?.id === value.id;
-      const className = ['rank-row', tied && 'tied', tied && indexInGroup === 0 && 'tied-first', tied && indexInGroup === group.length - 1 && 'tied-last', dragging && 'dragging', dropBefore === value.id && 'drop-before', dropAfter === value.id && 'drop-after'].filter(Boolean).join(' ');
+      const className = ['rank-row', dragging && 'dragging', dropBefore === value.id && 'drop-before', dropAfter === value.id && 'drop-after'].filter(Boolean).join(' ');
       return <li key={value.id} ref={element => { if (element) rows.current.set(value.id, element); else rows.current.delete(value.id); }} className={className} aria-labelledby={`rank-word-${value.id}`} style={dragging ? { transform: `translateY(${drag.dy}px)` } : undefined}>
         <button type="button" className="rank-handle" aria-label={`${value.word}的順序`} aria-describedby="rank-hint"
           onKeyDown={event => { const move = moveKeys[event.key]; if (!move) return; event.preventDefault(); onArrange(current => moveValue(current, category, value.id, move), value.id); }}
@@ -110,9 +104,8 @@ function RankList({ category, values, onArrange }: { category: Category; values:
           onPointerCancel={() => setDrag(undefined)}>
           <svg viewBox="0 0 12 20" aria-hidden="true"><circle cx="3" cy="4" r="1.6" /><circle cx="9" cy="4" r="1.6" /><circle cx="3" cy="10" r="1.6" /><circle cx="9" cy="10" r="1.6" /><circle cx="3" cy="16" r="1.6" /><circle cx="9" cy="16" r="1.6" /></svg>
         </button>
-        <span className="rank-position" data-position={value.rank}>{value.rank}</span>
+        <span className="rank-position" data-position={index + 1}>{index + 1}</span>
         <div className="rank-name"><strong id={`rank-word-${value.id}`}>{value.word}</strong>{value.custom && <span className="rank-tags"><small className="value-tag">自訂</small></span>}</div>
-        {!first && <button type="button" className="rank-tie" aria-pressed={tied && indexInGroup > 0} aria-label={`${value.word}和上一個並列`} onClick={() => onArrange(current => toggleTieWithAbove(current, category, value.id), value.id)}>並列</button>}
       </li>;
     })}</ol>
   </section>;

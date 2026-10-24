@@ -1,21 +1,54 @@
 import { categoryOrder } from './data';
 import type { Category, ValueItem } from './types';
 
-/** Positions are chosen within a category, so a category of n values offers positions 1..n. */
-export function positionCount(values: readonly ValueItem[], category: Category): number {
-  return values.filter(value => value.category === category).length;
+/** A category's values in ranking order. Saved sessions from before ties were removed may share a position; those keep their list order. */
+export function rankedMembers(values: readonly ValueItem[], category: Category): ValueItem[] {
+  return values.filter(value => value.category === category).sort((a, b) => a.rank - b.rank);
 }
 
-/** Moving a value to another category puts it back to tied position 1 there and keeps the old category's positions in range. */
+/** Gives the category's values positions 1..n in the given order. */
+function withOrder(values: readonly ValueItem[], ordered: readonly ValueItem[]): ValueItem[] {
+  const rankById = new Map(ordered.map((value, index) => [value.id, index + 1]));
+  return values.map(value => rankById.has(value.id) ? { ...value, rank: rankById.get(value.id)! } : value);
+}
+
+/** Every category numbered 1..n in its shown order, so ties kept by sessions saved before they were removed become the order the page showed. */
+export function withStrictOrder(values: readonly ValueItem[]): ValueItem[] {
+  return categoryOrder.reduce((current, category) => withOrder(current, rankedMembers(current, category)), [...values]);
+}
+
+/** A value moved to another category goes to the bottom of it; both categories close up to positions 1..n. Choosing the current category changes nothing. */
 export function withCategory(values: readonly ValueItem[], id: string, category: Category): ValueItem[] {
-  const moved = values.map(value => value.id === id ? { ...value, category, rank: 1 } : value);
-  return moved.map(value => value.category ? { ...value, rank: Math.min(value.rank, positionCount(moved, value.category)) } : value);
+  const value = values.find(item => item.id === id);
+  if (!value || value.category === category) return [...values];
+  const moved = values.map(item => item.id === id ? { ...item, category } : item);
+  return withStrictOrder(withOrder(moved, [...rankedMembers(values, category), value]));
+}
+
+/** Puts a value at `index` among the other values of its category (0 = top), then renumbers every category. */
+function placeAt(values: readonly ValueItem[], category: Category, id: string, index: (others: readonly ValueItem[], from: number) => number): ValueItem[] {
+  const ordered = rankedMembers(values, category);
+  const from = ordered.findIndex(value => value.id === id);
+  if (from < 0) return [...values];
+  const others = ordered.filter(value => value.id !== id);
+  others.splice(index(others, from), 0, ordered[from]);
+  return withStrictOrder(withOrder(values, others));
+}
+
+/** Keyboard move: one step up or down, or to the top or bottom of the category. */
+export function moveValue(values: readonly ValueItem[], category: Category, id: string, move: 'up' | 'down' | 'first' | 'last'): ValueItem[] {
+  return placeAt(values, category, id, (others, from) => ({ up: Math.max(0, from - 1), down: Math.min(others.length, from + 1), first: 0, last: others.length })[move]);
+}
+
+/** Drops a dragged value at `gap` among the other values of its category (0 = above the first). */
+export function dropValue(values: readonly ValueItem[], category: Category, id: string, gap: number): ValueItem[] {
+  return placeAt(values, category, id, () => gap);
 }
 
 export interface Act1Pair {
   first: ValueItem;
   second: ValueItem;
-  /** The value the user placed ahead in the first act; undefined when the two are tied. */
+  /** The value the user placed ahead in the first act; undefined when the two are tied, which only sessions saved before ties were removed can hold. */
   ahead?: ValueItem;
   behind?: ValueItem;
 }
@@ -30,79 +63,3 @@ export function act1Precedence(values: readonly ValueItem[], pair: readonly [str
   return precedence < 0 ? { first, second, ahead: first, behind: second } : { first, second, ahead: second, behind: first };
 }
 
-/** A category's values in ranking order, as groups of tied values (same rank). Within a group, values keep their list order. */
-export function rankGroups(values: readonly ValueItem[], category: Category): ValueItem[][] {
-  const groups: ValueItem[][] = [];
-  for (const value of values.filter(item => item.category === category).sort((a, b) => a.rank - b.rank)) {
-    const last = groups[groups.length - 1];
-    if (last && last[0].rank === value.rank) last.push(value);
-    else groups.push([value]);
-  }
-  return groups;
-}
-
-/**
- * Writes the groups back as positions 1..n, one position per group. The category's values are also put in
- * group order within the slots they hold in the list, so tied values stay in the order they were arranged.
- */
-function withGroups(values: readonly ValueItem[], groups: readonly (readonly ValueItem[])[]): ValueItem[] {
-  const ordered = groups.flatMap((group, index) => group.map(value => ({ ...value, rank: index + 1 })));
-  const ids = new Set(ordered.map(value => value.id));
-  let next = 0;
-  return values.map(value => ids.has(value.id) ? ordered[next++] : value);
-}
-
-/** The groups with `id` taken out; groups left empty disappear. */
-function withoutValue(groups: readonly ValueItem[][], id: string): ValueItem[][] {
-  return groups.map(group => group.filter(value => value.id !== id)).filter(group => group.length > 0);
-}
-
-/**
- * Keyboard move. Up/down: a tied value first leaves its group on that side; a value on its own moves past the
- * neighbouring group. First/last give it a position of its own at the top or bottom.
- */
-export function moveValue(values: readonly ValueItem[], category: Category, id: string, move: 'up' | 'down' | 'first' | 'last'): ValueItem[] {
-  const groups = rankGroups(values, category);
-  const index = groups.findIndex(group => group.some(value => value.id === id));
-  if (index < 0) return [...values];
-  const value = groups[index].find(item => item.id === id)!;
-  const alone = groups[index].length === 1;
-  const rest = withoutValue(groups, id);
-  // In `rest`, the value's old group (or, when it was alone, the group after it) sits at `index`.
-  const target = move === 'first' ? 0
-    : move === 'last' ? rest.length
-    : move === 'up' ? Math.max(0, alone ? index - 1 : index)
-    : Math.min(rest.length, index + 1);
-  rest.splice(target, 0, [value]);
-  return withGroups(values, rest);
-}
-
-/**
- * Drops a dragged value at `gap` (0 = above the first of the other values). Dropping between two values
- * that are tied joins their group; anywhere else the value gets a position of its own.
- */
-export function dropValue(values: readonly ValueItem[], category: Category, id: string, gap: number): ValueItem[] {
-  const groups = rankGroups(values, category);
-  const value = groups.flat().find(item => item.id === id);
-  if (!value) return [...values];
-  const rest = withoutValue(groups, id);
-  let seen = 0;
-  for (const [index, group] of rest.entries()) {
-    if (gap === seen) { rest.splice(index, 0, [value]); return withGroups(values, rest); }
-    if (gap < seen + group.length) { group.splice(gap - seen, 0, value); return withGroups(values, rest); }
-    seen += group.length;
-  }
-  rest.push([value]);
-  return withGroups(values, rest);
-}
-
-/** Ties a value with the one above it, or, when already tied, splits the group so it and those below it move down one position. */
-export function toggleTieWithAbove(values: readonly ValueItem[], category: Category, id: string): ValueItem[] {
-  const groups = rankGroups(values, category);
-  const index = groups.findIndex(group => group.some(value => value.id === id));
-  if (index < 0) return [...values];
-  const at = groups[index].findIndex(value => value.id === id);
-  if (at > 0) groups.splice(index, 1, groups[index].slice(0, at), groups[index].slice(at));
-  else if (index > 0) groups.splice(index - 1, 2, [...groups[index - 1], ...groups[index]]);
-  return withGroups(values, groups);
-}
