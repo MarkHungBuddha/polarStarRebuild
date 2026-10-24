@@ -8,7 +8,7 @@ export function ShareFooter({ shareLink, shareDisabled, onClearRecords }: { shar
     try { await navigator.clipboard.writeText(link); setCopyNotice('已複製題目連結。'); }
     catch { setCopyNotice('無法自動複製，請選取上方連結並手動複製。'); }
   };
-  return <footer>北極星 · 把答案留給自己，把選擇看清楚。
+  return <footer><p className="footer-tagline">北極星 · 把答案留給自己，把選擇看清楚。</p>
     <button className="text-button" disabled={shareDisabled} onClick={() => setSharing(current => !current)}>分享這份題目</button>
     {sharing && <section className="share-questions">{shareLink ? <>
       <p>只分享題目，不包含你的答案、排序或自訂價值。</p>
