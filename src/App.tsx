@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { baseValues, categoryLabels, categoryOrder } from './data';
+import { baseValues } from './data';
 import { questionShareLink, requestedQuestions, selectQuestions } from './questionPlan';
-import { positionCount, withCategory } from './firstAct';
+import { withCategory } from './firstAct';
+import { ClassifyScreen, RankScreen } from './FirstActScreens';
 import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
 import { ScenarioQuestion } from './ScenarioQuestion';
 import { ScenarioProgress } from './ScenarioFrame';
 import { evidenceId } from './ResultEvidence';
 import { ResultReport } from './ResultReport';
 import { HomeIntro } from './HomeIntro';
-import { PageHeader } from './PageHeader';
 import { ThemeControl } from './ThemeControl';
 import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
@@ -88,18 +88,8 @@ export function App() {
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>使用目前版本重新開始</button></section>}
     {session.screen === 'intro' && <HomeIntro actions={resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>} />}
-    {session.screen === 'classify' && <section>
-      <PageHeader eyebrow="第一幕 · 01" title="哪些事，對你重要？" description="照你現在的想法，把每個價值放進適合的類別。沒有標準答案。" />
-      <form className="custom-row" onSubmit={event => { event.preventDefault(); addCustom(); }}><label htmlFor="custom-value">自訂價值</label><input id="custom-value" value={customWord} onChange={event => setCustomWord(event.target.value)} maxLength={24} placeholder="也可以加入自己的詞" /><button className="secondary">新增價值</button></form>
-      {notice && <p role="status">{notice}</p>}
-      <div className="value-list">{session.values.map(value => <article className="value-row" key={value.id}><div><h2>{value.word}</h2><p>{value.description}</p>{value.custom && <small>自訂價值 · 獨立呈現</small>}</div><fieldset className="value-segments"><legend>{value.word}的重要性</legend><div>{categoryOrder.map(category => <button type="button" key={category} aria-pressed={value.category === category} onClick={() => setSession(current => ({ ...current, values: withCategory(current.values, value.id, category) }))}>{categoryLabels[category]}</button>)}</div></fieldset></article>)}</div>
-      <nav className="actions"><button className="secondary" onClick={() => go('intro')}>返回說明</button><button className="primary" disabled={session.values.some(value => !value.category)} onClick={() => go('rank')}>下一步：排出順序</button></nav>
-    </section>}
-    {session.screen === 'rank' && <section>
-      <PageHeader eyebrow="第一幕 · 02" title="排個順序，也可以並列。" description="在各類別裡排出順序，數字越小越重要。一樣重要的，就選相同的位置。" />
-      {categoryOrder.map(category => <section className="rank-section" key={category}><h2>{categoryLabels[category]}</h2>{session.values.filter(value => value.category === category).sort((a,b) => a.rank - b.rank).map(value => <article className="rank-row" key={value.id}><span>{value.word}{value.custom && <small>（自訂）</small>}</span><label className="select-label">{value.word}的位置<select value={value.rank} onChange={event => updateValue(value.id, { rank: Number(event.target.value) })}>{Array.from({ length: positionCount(session.values, category) }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label></article>)}</section>)}
-      <nav className="actions"><button className="secondary" onClick={() => go('classify')}>返回分類</button><button className="primary" onClick={() => go('scenario')}>進入情境中的取捨</button></nav>
-    </section>}
+    {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
+    {session.screen === 'rank' && <RankScreen values={session.values} onRank={(id, rank) => updateValue(id, { rank })} onBack={() => go('classify')} onNext={() => go('scenario')} />}
     {session.screen === 'scenario' && scenario && <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />}
     {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={complete ? () => go('result') : undefined} onConfirm={answer => { setSession(current => {
       const answers = { ...current.answers, [scenario.id]: answer };
