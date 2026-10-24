@@ -2,29 +2,7 @@ import { readFileSync } from 'node:fs';
 import type { Download, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { answerRemainingScenarios, classifyAll, classifyAndRankValues } from './support/experience';
-
-/**
- * Gates the native `document.fonts.load` the image waits on, so a test decides when generation finishes or fails.
- * Unheld, it behaves as the browser does.
- */
-async function controlImageFonts(page: Page) {
-  await page.addInitScript(() => {
-    const load = document.fonts.load.bind(document.fonts);
-    let gate: Promise<void> | undefined; let release = () => {}; let fail = false;
-    Object.assign(window, {
-      holdImageFonts: () => { gate = new Promise<void>(resolve => { release = resolve; }); },
-      releaseImageFonts: () => { gate = undefined; release(); },
-      failImageFonts: (value: boolean) => { fail = value; },
-    });
-    document.fonts.load = async (...args) => {
-      if (gate) await gate;
-      if (fail) throw new Error('font unavailable');
-      return load(...args);
-    };
-  });
-}
-const callPage = (page: Page, name: 'holdImageFonts' | 'releaseImageFonts' | 'failImageFonts', value?: boolean) =>
-  page.evaluate(([name, value]) => (window as unknown as Record<string, (value?: boolean) => void>)[name as string](value as boolean | undefined), [name, value] as const);
+import { callPage, controlImageFonts } from './support/result-image';
 
 /** Width, height and top-left pixel of a downloaded file, read from the PNG bytes themselves. */
 async function downloadedImage(page: Page, download: Download) {
