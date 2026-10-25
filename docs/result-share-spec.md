@@ -1,5 +1,7 @@
 # 北極星：結果分享（結果圖與結果連結）
 
+> 新版偏向分數與新舊結果連結的相容方式已確認、尚未實作；此次改版以 [新版規格](preference-strength-spec.md) 為準。
+
 > 結果解讀、保存與測試規則以 [CODING_STANDARDS.md](../CODING_STANDARDS.md) 和 [ADR](adr/) 為準；本文件寫的是當時的需求，兩邊不一致時照它們做，改規則也只改那裡。推翻「不分享答案／結果」的理由見 [ADR 0005](adr/0005-share-results.md)。
 
 ## Problem Statement

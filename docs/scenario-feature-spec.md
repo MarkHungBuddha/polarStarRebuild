@@ -1,5 +1,7 @@
 # 北極星：兩幕價值反思與情境取捨 MVP
 
+> 五段偏向作答與三變體題庫改版已確認、尚未實作；此次改版以 [新版規格](preference-strength-spec.md) 為準。
+
 > 結果解讀、保存與測試規則以 [CODING_STANDARDS.md](../CODING_STANDARDS.md) 和 [ADR](../docs/adr/) 為準；本文件寫的是當時的需求，兩邊不一致時照它們做，改規則也只改那裡。
 
 ## Problem Statement
