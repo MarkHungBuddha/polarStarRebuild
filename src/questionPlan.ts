@@ -7,16 +7,18 @@ function hash(text: string): number {
   return value >>> 0;
 }
 
-export const catalogVersion = `c${hash(JSON.stringify(scenarios)).toString(36)}`;
+/** A catalog's version: a hash of its full registry JSON, so any change to text, order or variants changes it. */
+export const catalogVersionOf = (catalog: readonly Scenario[]) => `c${hash(JSON.stringify(catalog)).toString(36)}`;
+export const catalogVersion = catalogVersionOf(scenarios);
 
-function groups(): Scenario[][] {
+function groups(catalog: readonly Scenario[] = scenarios): Scenario[][] {
   const slots = new Map<string, Scenario[]>();
-  for (const scenario of scenarios) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
+  for (const scenario of catalog) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
   return [...slots.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([, variants]) => variants);
 }
 
-export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: string): Scenario[] {
-  const slots = groups();
+export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: string, catalog: readonly Scenario[] = scenarios): Scenario[] {
+  const slots = groups(catalog);
   if (seed?.startsWith('p.')) {
     const selectors = seed.slice(2).split('.');
     if (selectors.length !== slots.length) throw new Error('Unknown question plan');
@@ -36,20 +38,21 @@ export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: st
   });
 }
 
-export function requestedQuestions(search: string): { questions?: Scenario[]; notice?: string; specified: boolean } {
+/** The question set a question link asks for, read against `catalog` (the published one unless given). */
+export function requestedQuestions(search: string, catalog: readonly Scenario[] = scenarios): { questions?: Scenario[]; notice?: string; specified: boolean } {
   const params = new URLSearchParams(search);
   const seed = params.get('seed');
   if (seed === null) return { specified: false };
-  if (params.get('v') !== catalogVersion) return { specified: true, notice: '這份分享題目的版本目前無法使用。你可以改用目前的版本重新開始。' };
+  if (params.get('v') !== (catalog === scenarios ? catalogVersion : catalogVersionOf(catalog))) return { specified: true, notice: '這份分享題目的版本目前無法使用。你可以改用目前的版本重新開始。' };
   try {
     if (!seed || seed.length > 1024) throw new Error('Invalid seed');
-    return { specified: true, questions: selectQuestions(new Set(), seed) };
+    return { specified: true, questions: selectQuestions(new Set(), seed, catalog) };
   } catch { return { specified: true, notice: '這份分享連結的題目資料無法使用。你可以改用目前的版本重新開始。' }; }
 }
 
 /** The variant chosen in each slot, in slot order and base36; a question link's seed is `p.` followed by these joined with dots. */
-export function questionPlan(questions: readonly Scenario[]): string[] | undefined {
-  const slots = groups();
+export function questionPlan(questions: readonly Scenario[], catalog: readonly Scenario[] = scenarios): string[] | undefined {
+  const slots = groups(catalog);
   if (questions.length !== slots.length) return undefined;
   const selectors: string[] = [];
   for (const variants of slots) {

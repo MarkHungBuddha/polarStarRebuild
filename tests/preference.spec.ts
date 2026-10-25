@@ -58,15 +58,13 @@ test('五段可點選也可用鍵盤，初始未選，兩者相當也要主動�
   for (const option of await options.all()) await expect(option).not.toBeChecked();
 });
 
-test('全部兩者相當時沒有排名，也不算相符或不同；新版結果不提供舊版分享入口', async ({ page }) => {
+test('全部兩者相當時沒有排名，也不算相符或不同；預覽不提供題目連結', async ({ page }) => {
   await startPreview(page);
   await answer(page, {});
   await expect(page.getByText('這次作答沒有明確偏向', { exact: true })).toBeVisible();
   await expect(page.getByText('強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。', { exact: false }).first()).toBeVisible();
   await expect(page.getByText('這次沒有明確偏向原先排序較後的價值。')).toBeVisible();
-  await expect(page.getByRole('button', { name: /結果連結|結果圖|分享結果/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '分享這份題目' })).toHaveCount(0);
-  await expect(page.getByText('新版結果暫時不能產生結果連結或結果圖。')).toBeVisible();
   await openDetailedReport(page);
   await expect(page.locator('.evidence-label').first()).toBeVisible();
   await expect(page.locator('.evidence-label').filter({ hasNotText: '無明確偏向' })).toHaveCount(0);

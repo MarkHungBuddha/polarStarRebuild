@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { evidenceId } from './ResultEvidence';
 import { act1TopThree, byPosition, chosenCountText, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
 import type { Session } from './types';
-import { isPreferenceSession, preferenceScores, preferenceTopThree } from './preferenceRanking';
+import { isPreferenceSession, preferenceScores, preferenceScoreText, preferenceTopThree } from './preferenceRanking';
 
 const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => chosenCountText(row.items[0], row.items.length > 1);
 
@@ -26,7 +26,7 @@ export function TopThreeColumns({ session, onRevisitFirstAct }: { session: Sessi
   const statedRows = byPosition(act1TopThree(session.values));
   if (isPreferenceSession(session)) return <ConclusionColumns preference titles={['你最重視的', '情境中的偏向分數']}
     stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
-    chosen={byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ position: row.position, words: row.items.map(item => item.value.word), count: `${row.items.length > 1 ? '各 ' : ''}${row.items[0].score} 分` }))} />;
+    chosen={byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ position: row.position, words: row.items.map(item => item.value.word), count: preferenceScoreText(row.items[0].score, row.items.length > 1) }))} />;
   const chosenRows = byPosition(scenarioTopThree(scenarioTallies(session)));
   return <ConclusionColumns titles={['你最重視的', '你在情境中最常選的']}
     stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}

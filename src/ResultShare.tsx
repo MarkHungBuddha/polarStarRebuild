@@ -7,6 +7,8 @@ import type { Session } from './types';
 import { imagePreparing, resultImageAlt, useResultImage } from './useResultImage';
 
 const shareUnavailable = '這個瀏覽器無法直接分享圖片。請先下載結果圖，再複製結果連結一起貼出。';
+// Until #55 draws preference scores, a preference result offers only its link; the image buttons stay unavailable.
+export const preferenceImageUnavailable = '新版結果暫時不能產生結果圖，可以先複製結果連結。';
 
 /** The sharer's「分享結果」block: what a result link makes public, the link itself, and one status line for its feedback. */
 export function ResultShare({ session }: { session: Session }) {
@@ -18,11 +20,15 @@ export function ResultShare({ session }: { session: Session }) {
   const custom = categoryOrder.flatMap(category => rankedMembers(session.values, category)).filter(value => value.custom);
   const result = sharedResultOf(session, custom.filter(value => selected.includes(value.id)).map(value => value.word));
   const atLimit = selected.length >= maxSharedCustomValues;
-  const { image, failed, retry } = useResultImage(result, setStatus);
+  const { image, failed, retry } = useResultImage(result?.scoring === 'legacy-count' ? result : undefined, setStatus);
   if (!result) return null;
+  const imageless = result.scoring === 'preference-score';
   const link = resultLink(result, window.location);
   // Before the image is ready, share and download only report it (and retry after a failure); a click never waits for the image.
-  const reportPreparing = () => { setStatus(imagePreparing); if (failed) retry(); };
+  const reportPreparing = () => {
+    if (imageless) { setStatus(preferenceImageUnavailable); return; }
+    setStatus(imagePreparing); if (failed) retry();
+  };
   const shareResult = () => {
     if (!image) { reportPreparing(); return; }
     const data = { files: [image.file], title: '北極星 · 我的選擇', text: '這是我在北極星的兩份前三名。', url: link };
@@ -52,7 +58,7 @@ export function ResultShare({ session }: { session: Session }) {
         <span>{value.word}</span>
       </label>)}
     </fieldset>}
-    {image ? <img className="result-image-preview" src={image.url} alt={resultImageAlt(result.custom)} /> : !failed && <div className="result-image-placeholder" aria-hidden="true" />}
+    {image ? <img className="result-image-preview" src={image.url} alt={resultImageAlt(result.custom)} /> : !failed && !imageless && <div className="result-image-placeholder" aria-hidden="true" />}
     <nav className="actions"><button className="primary" aria-disabled={!image} onClick={shareResult}>分享結果</button><button className="secondary" aria-disabled={!image} onClick={download}>下載結果圖</button><button className="secondary" onClick={() => copyLink(link, '已複製結果連結。', setStatus)}>複製結果連結</button></nav>
     <label>結果連結<input readOnly value={link} onFocus={event => event.currentTarget.select()} /></label>
     <p role="status">{status}</p>

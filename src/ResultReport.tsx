@@ -21,8 +21,8 @@ export function ResultReport({ session, onEdit, onRevisitFirstAct, onRestart, in
     <p className="summary-takeaway"><span className="marker">{differing ? '有些情境裡，你先顧了原本排在後面的事。' : preference ? '這次沒有明確偏向原先排序較後的價值。' : '這次沒有明確選擇原先排序較後的價值。'}</span></p>
     <p>{differing ? `在 ${differing} 個情境裡，你${preference ? '偏向' : '選了'}原先排序較後的價值。可以從其中一題開始，看看當時有哪些條件影響你的選擇。` : '挑一個最猶豫的場景想想：如果條件改變，你還會做同樣的安排嗎？'}</p>
     <p className="sticky-note" role="note">這裡只整理本次答案，不是人格判定。沒有偏向任何一邊的答案，不算在差異裡。</p>
-    {/* PREVIEW ONLY until #54/#55: the new scores have no result-link format or result image yet, so neither is offered. */}
-    {preference ? <><p className="sticky-note">{preferenceScoringNote}</p><p className="caption">新版結果暫時不能產生結果連結或結果圖。</p></> : <ResultShare session={session} />}
+    {preference && <p className="sticky-note">{preferenceScoringNote}</p>}
+    <ResultShare session={session} />
     <nav className="actions"><button className="primary" onClick={() => changePage(true)}>閱讀詳細報告 →</button><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;
   const coreValues = session.values.filter(value => !value.custom);
