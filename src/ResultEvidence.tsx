@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { act1Precedence, type Act1Pair } from './firstAct';
 import { sliderLeans } from './scenarios/slider-leans';
 import { leaningValue } from './valueRanking';
+import { preferenceLabels } from './PreferenceQuestion';
 import type { AllocationAnswer, AllocationScenario, Answer, ChoiceScenario, Scenario, SliderAnswer, SliderScenario, StrikeScenario, ValueItem } from './types';
 
 export const evidenceId = (scenario: Scenario) => `evidence-${scenario.id}`;
@@ -9,6 +10,17 @@ export const evidenceId = (scenario: Scenario) => `evidence-${scenario.id}`;
 interface EvidenceProps { values: ValueItem[]; position: number; onEdit: () => void }
 
 export function ResultEvidence({ scenario, answer, ...props }: EvidenceProps & { scenario: Scenario; answer: Answer }) {
+  if (scenario.kind === 'preference') {
+    if (answer.kind !== 'preference') return null;
+    const pair = act1Precedence(props.values, scenario.pair);
+    const leaning = leaningValue(scenario, answer);
+    const label = !leaning ? '無明確偏向' : pair?.ahead ? comparisonLabel(pair, leaning) : '第一幕並列 · 只描述本次答案';
+    return <EvidenceArticle scenario={scenario} position={props.position} topic="偏向程度" label={label} onEdit={props.onEdit}>
+      {scenario.options.map((option, index) => <p key={option.id}>{index === 0 ? 'A' : 'B'} · {option.label}：{option.consequence}</p>)}
+      <p className="evidence-quote">已確認答案：{preferenceLabels[answer.strength]}。{leaning && pair ? `${leanWord(pair, leaning)}加 ${Math.abs(answer.strength)} 分。` : '兩側都不加分。'}</p>
+      {pair && <p>{act1Statement(pair)}。兩幕比較只看偏向方向，不以程度推論差異大小。</p>}
+    </EvidenceArticle>;
+  }
   if (scenario.kind === 'slider') return answer.kind === 'slider' ? <SliderEvidence scenario={scenario} answer={answer} {...props} /> : null;
   if (scenario.kind === 'allocate') return answer.kind === 'allocate' ? <AllocationEvidence scenario={scenario} answer={answer} {...props} /> : null;
   if (answer.kind !== scenario.kind || (answer.kind !== 'choice' && answer.kind !== 'strike')) return null;

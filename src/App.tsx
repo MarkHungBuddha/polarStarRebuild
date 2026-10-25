@@ -15,6 +15,7 @@ import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
 import type { Scenario, Screen, Session } from './types';
+import { isPreferencePreview, preferencePreviewCatalog } from './preferencePreview';
 
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
@@ -22,25 +23,29 @@ export function createSession(questions: Scenario[] = selectQuestions()): Sessio
 const sameQuestions = (left: readonly Scenario[], right: readonly Scenario[]) => left.length === right.length && left.every((scenario, index) => scenario.id === right[index].id);
 
 export function App() {
-  const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
+  // PREVIEW ONLY (#49 until #56): the preference run keeps its own questions and record, ignores question links and leaves the seen history alone.
+  const [preview] = useState(() => isPreferencePreview(window.location.search));
+  const catalog = preview ? preferencePreviewCatalog : undefined;
+  const pick = (seen?: ReadonlySet<string>) => preview ? [...preferencePreviewCatalog.scenarios] : selectQuestions(seen);
+  const [request, setRequest] = useState(() => preview ? { specified: false } as ReturnType<typeof requestedQuestions> : requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
   // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.
-  const [initialSaved] = useState(loadSavedSession);
+  const [initialSaved] = useState(() => loadSavedSession(catalog));
   const [resumable, setResumable] = useState(initialSaved.session);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState(initialSaved.notice ?? initialHistory.notice ?? '');
-  const [session, setSession] = useState<Session>(() => createSession(request.questions ?? selectQuestions(initialHistory.ids)));
+  const [session, setSession] = useState<Session>(() => createSession(request.questions ?? pick(initialHistory.ids)));
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   const [editedEvidence, setEditedEvidence] = useState<string>();
   useEffect(() => {
-    if (saveEnabled && !resumable && !saveSession(session)) {
+    if (saveEnabled && !resumable && !saveSession(session, catalog)) {
       setStorageNotice(storageSaveFailedNotice);
     }
-  }, [session, saveEnabled, resumable]);
+  }, [session, saveEnabled, resumable, catalog]);
   useEffect(() => {
-    if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
-  }, [session.screen, session.scenarioIndex, session.scenarios]);
+    if (session.screen === 'scenario' && !preview && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
+  }, [session.screen, session.scenarioIndex, session.scenarios, preview]);
   useEffect(() => {
     if (session.screen !== 'result' || !editedEvidence) return;
     // Returning from an edit lands on the evidence that was edited, not the top of a long report.
@@ -52,11 +57,11 @@ export function App() {
   // The question set comes from the share link unless the user leaves it; leaving drops the link from the address bar.
   const leaveShareRequest = () => { window.history.replaceState(null, '', window.location.pathname); setRequest({ specified: false }); };
   const startOver = ({ clearHistory = false, useCurrentVersion = false }: { clearHistory?: boolean; useCurrentVersion?: boolean } = {}) => {
-    const cleared = clearSavedSession();
+    const cleared = clearSavedSession(catalog);
     const historyCleared = !clearHistory || clearSeenHistory();
     const history = loadSeenHistory();
     if (useCurrentVersion) leaveShareRequest();
-    setSaveEnabled(false); setResumable(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : selectQuestions(history.ids)));
+    setSaveEnabled(false); setResumable(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : pick(history.ids)));
     setCustomWord(''); setNotice('');
     setStorageNotice(cleared && historyCleared ? history.notice ?? '' : storageClearFailedNotice);
     window.scrollTo({ top: 0 });
@@ -97,7 +102,7 @@ export function App() {
       return current.scenarios.every(item => answers[item.id]) ? { ...current, answers, screen: 'result' } : { ...current, answers, scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) };
     }); window.scrollTo({ top: 0 }); }} />}
     {session.screen === 'result' && complete && <ResultReport initialDetail={Boolean(editedEvidence)} session={session} onRevisitFirstAct={() => go('rank')} onRestart={restart} onEdit={(item, index) => { setEditedEvidence(evidenceId(item)); setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
-    <ShareFooter key={shareLink ?? 'unavailable'} questionShare={{ link: shareLink, disabled: Boolean(request.notice) }} onClearRecords={clearLocalRecords} />
+    <ShareFooter key={shareLink ?? 'unavailable'} questionShare={preview ? undefined : { link: shareLink, disabled: Boolean(request.notice) }} onClearRecords={clearLocalRecords} />
   </main>;
 }
 export default App;

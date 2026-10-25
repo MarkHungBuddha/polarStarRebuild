@@ -23,6 +23,13 @@ export interface ChoiceScenario extends ScenarioBase {
   kind: 'choice';
   options: readonly [ChoiceOption, ChoiceOption];
 }
+export interface PreferenceScenario extends ScenarioBase {
+  kind: 'preference';
+  options: readonly [ChoiceOption, ChoiceOption];
+}
+/** Negative leans to A, positive to B; zero is an explicitly confirmed neutral answer. */
+export type PreferenceStrength = -2 | -1 | 0 | 1 | 2;
+export type PreferenceAnswer = { kind: 'preference'; variantId: string; strength: PreferenceStrength };
 export interface StrikeScenario extends ScenarioBase {
   kind: 'strike';
   options: readonly [ChoiceOption, ChoiceOption];
@@ -44,12 +51,12 @@ export interface AllocationScenario extends ScenarioBase {
   unit: string;
   options: readonly [ChoiceOption, ChoiceOption];
 }
-export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario | AllocationScenario;
+export type Scenario = ChoiceScenario | StrikeScenario | SliderScenario | AllocationScenario | PreferenceScenario;
 export type ChoiceAnswer = { kind: 'choice'; variantId: string; optionId: string };
 export type StrikeAnswer = { kind: 'strike'; variantId: string; optionId: string };
 export type SliderAnswer = { kind: 'slider'; variantId: string; value: number };
 export type AllocationAnswer = { kind: 'allocate'; variantId: string; allocations: readonly [number, number]; placements?: readonly number[] };
-export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer | AllocationAnswer;
+export type Answer = ChoiceAnswer | StrikeAnswer | SliderAnswer | AllocationAnswer | PreferenceAnswer;
 export interface Session {
   screen: Screen;
   values: ValueItem[];

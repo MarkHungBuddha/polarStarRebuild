@@ -5,6 +5,10 @@ import type { Answer, Scenario, ValueId, ValueItem } from './types';
 
 /** The value a confirmed answer leans to: a choice, the kept reply, the larger share of an allocation, or a slider condition beyond its authored cut-off. */
 export function leaningValue(scenario: Scenario, answer: Answer): ValueId | undefined {
+  if (scenario.kind === 'preference') {
+    if (answer.kind !== 'preference' || answer.strength === 0) return undefined;
+    return scenario.options[answer.strength < 0 ? 0 : 1].valueId;
+  }
   if (scenario.kind === 'slider') {
     const lean = sliderLeans[scenario.id];
     if (answer.kind !== 'slider' || !lean) return undefined;
