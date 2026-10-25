@@ -165,6 +165,6 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   // PREVIEW ONLY (until #56): a preference result from the preview is answered again through the preview entry, never under today's catalog.
   const preview = result.scoring === 'preference-score' && catalog === preferencePreviewVersion;
   if (!preview && catalog !== catalogVersion) return { kind: 'result', result };
-  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`, preview ? preferencePreviewCatalog.scenarios : undefined), ...(preview && { preview }) }; }
+  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`, preview ? preferencePreviewCatalog : undefined), ...(preview && { preview }) }; }
   catch { return { kind: 'corrupt' }; }
 }

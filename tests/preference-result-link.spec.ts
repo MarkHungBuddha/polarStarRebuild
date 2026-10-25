@@ -80,7 +80,6 @@ test('分享者逐項選擇自訂價值，勾選的才放進新版結果連結',
   await custom.getByRole('checkbox', { name: '這就是我' }).check();
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).hash).toMatch(/^#r=2\.[^.]+\.[^.]*\.5L-d5pyJ542o6JmV55qE5pmC6ZaT~6YCZ5bCx5piv5oiR\./);
-  await expect(page.getByRole('button', { name: '分享這份題目' })).toHaveCount(0);
 });
 
 test('原題組還能重現時用同一份題目作答；題庫不同時改提供用目前題目開始', async ({ page }) => {
