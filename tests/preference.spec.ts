@@ -2,10 +2,10 @@ import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues, expectNoHorizontalScroll, openDetailedReport } from './support/experience';
 
-// The preview run (#49, until #56 switches the entry) draws one variant per slot; with the fixed randomness it asks the
-// first variant of each, slots 1–5 then the reused binary slots 8, 11, 13 and 15 — nine questions. A is listed first.
+// The preview run (#49, until #56 switches the entry) asks one question per slot in slot order; with the fixed randomness
+// each slot draws its first variant. These are slots 1–5, 8, 11, 13 and 15 in run order; the others are answered 兩者相當. A is listed first.
 // First act below ranks the core values 自主, 探索刺激, 享受生活, 成就, 主導權, 安全穩定, 遵守規範, 傳承, 照顧身邊的人, 普遍關懷.
-const titles = ['固定薪水，還是自己接案？', '這份提案，用誰的方法？', '這三週的晚上，留給哪件事？', '下週，照原計畫嗎？', '同一天，兩場活動。', '原本留給自己的那一晚。', '這筆活動預算，誰來決定？'] as const;
+const titles = ['固定薪水，還是自己接案？', '這份提案，用誰的方法？', '這三週的晚上，留給哪件事？', '下週，照原計畫嗎？', '同一天，兩場活動。', '原本留給自己的那一晚。', '這筆活動預算，誰來決定？', '今年的活動，誰說了算？', '新約定遇上紀念聚會。'] as const;
 type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
 
 const confirm = (page: Page) => page.getByRole('button', { name: '確認答案', exact: true });
@@ -17,9 +17,16 @@ async function startPreview(page: Page) {
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
 }
 
-async function answer(page: Page, leans: readonly Lean[]) {
-  for (const name of leans) { await lean(page, name).click(); await confirm(page).click(); }
-  await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
+/** Answers the whole run: the listed questions with their lean, every other question with 兩者相當. */
+async function answer(page: Page, leans: Partial<Record<typeof titles[number], Lean>>) {
+  const result = page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
+  const heading = page.locator('.scenario-card h1');
+  while (!await result.isVisible()) {
+    const title = (await heading.textContent())!;
+    await lean(page, leans[title as typeof titles[number]] ?? '兩者相當').click();
+    await confirm(page).click();
+    await expect(page.getByRole('heading', { name: title, exact: true })).toHaveCount(0);
+  }
 }
 
 /** The second-act column's rows as「名次｜價值（不論順序）｜分數」. */
@@ -53,7 +60,7 @@ test('五段可點選也可用鍵盤，初始未選，兩者相當也要主動�
 
 test('全部兩者相當時沒有排名，也不算相符或不同；新版結果不提供舊版分享入口', async ({ page }) => {
   await startPreview(page);
-  await answer(page, Array<Lean>(9).fill('兩者相當'));
+  await answer(page, {});
   await expect(page.getByText('這次作答沒有明確偏向', { exact: true })).toBeVisible();
   await expect(page.getByText('強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。', { exact: false }).first()).toBeVisible();
   await expect(page.getByText('這次沒有明確偏向原先排序較後的價值。')).toBeVisible();
@@ -61,21 +68,22 @@ test('全部兩者相當時沒有排名，也不算相符或不同；新版結�
   await expect(page.getByRole('button', { name: '分享這份題目' })).toHaveCount(0);
   await expect(page.getByText('新版結果暫時不能產生結果連結或結果圖。')).toBeVisible();
   await openDetailedReport(page);
-  await expect(page.locator('.evidence-label')).toHaveText(Array(9).fill('無明確偏向'));
+  await expect(page.locator('.evidence-label').first()).toBeVisible();
+  await expect(page.locator('.evidence-label').filter({ hasNotText: '無明確偏向' })).toHaveCount(0);
   await expect(evidence(page, titles[0])).toContainText('已確認答案：兩者相當。兩側都不加分。');
 });
 
 test('同分並列可超過三個價值，零分不列名次；稍微偏向的分數會累加', async ({ page }) => {
   await startPreview(page);
-  // Slots 1–3 neutral; 安全穩定 2、探索刺激 2、照顧身邊的人 2、普遍關懷 2、傳承 1 + 1；主導權、遵守規範、享受生活都是 0。
-  await answer(page, ['兩者相當', '兩者相當', '兩者相當', '強烈偏向 B', '強烈偏向 A', '強烈偏向 B', '強烈偏向 B', '稍微偏向 B', '稍微偏向 B']);
+  // 安全穩定 2、探索刺激 2、照顧身邊的人 2、普遍關懷 2、傳承 1 + 1；主導權、遵守規範、享受生活都是 0。
+  await answer(page, { [titles[3]]: '強烈偏向 B', [titles[4]]: '強烈偏向 A', [titles[5]]: '強烈偏向 B', [titles[6]]: '強烈偏向 B', [titles[7]]: '稍微偏向 B', [titles[8]]: '稍微偏向 B' });
   expect(await scoreRows(page)).toEqual([row('並列第 1', ['探索刺激', '安全穩定', '照顧身邊的人', '普遍關懷', '傳承'], '各 2 分')]);
 });
 
 test('只依總分排競賽名次，逐題依據與排名跟著最新確認答案，兩幕比較只看方向', async ({ page }) => {
   await startPreview(page);
-  // Slots 1–3 neutral; 安全穩定 2、探索刺激 2、照顧身邊的人 1、普遍關懷 1，後兩題兩者相當。
-  await answer(page, ['兩者相當', '兩者相當', '兩者相當', '強烈偏向 B', '強烈偏向 A', '稍微偏向 B', '稍微偏向 B', '兩者相當', '兩者相當']);
+  // 安全穩定 2、探索刺激 2、照顧身邊的人 1、普遍關懷 1，其餘兩者相當。
+  await answer(page, { [titles[3]]: '強烈偏向 B', [titles[4]]: '強烈偏向 A', [titles[5]]: '稍微偏向 B', [titles[6]]: '稍微偏向 B' });
   expect(await scoreRows(page)).toEqual([
     row('並列第 1', ['探索刺激', '安全穩定'], '各 2 分'),
     row('並列第 3', ['照顧身邊的人', '普遍關懷'], '各 1 分'),

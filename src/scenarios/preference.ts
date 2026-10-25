@@ -1,5 +1,6 @@
 import type { PreferenceScenario } from '../types';
 import { preferenceSlots01To05 } from './preference-slots-01-05';
+import { preferenceSlots06To10 } from './preference-slots-06-10';
 
 /** New catalog, kept separate from the published catalog until all fifteen slots are ready. */
 export const preferenceScenarios: PreferenceScenario[] = [{
@@ -12,4 +13,5 @@ export const preferenceScenarios: PreferenceScenario[] = [{
   ],
 },
 ...preferenceSlots01To05,
+...preferenceSlots06To10,
 ];
