@@ -11,7 +11,7 @@ import { storageClearFailedNotice } from './storageNotices';
 import { ThemeControl } from './ThemeControl';
 import { ConclusionColumns, type ColumnRow } from './ValueConclusion';
 import { preferenceScoreText, preferenceScoringNote } from './preferenceRanking';
-import { preferencePreviewSearch } from './preferencePreview';
+import { preferencePreviewLink } from './preferencePreview';
 import { chosenCountText } from './valueRanking';
 import './techo-result.css';
 
@@ -54,10 +54,9 @@ function UnreadableResult({ unsupported }: { unsupported: boolean }) {
 export function SharedResultApp({ outcome }: { outcome: ResultLinkOutcome }) {
   const [storageNotice, setStorageNotice] = useState('');
   const clearLocalRecords = () => setStorageNotice(clearSavedSession() && clearSeenHistory() ? '' : storageClearFailedNotice);
-  // PREVIEW ONLY (until #56): a preview result is answered again through the preview entry, which always asks the same questions.
-  const questionLink = outcome.kind !== 'result' ? undefined
-    : outcome.preview ? window.location.pathname + preferencePreviewSearch
-      : outcome.questions && questionShareLink(outcome.questions, window.location);
+  // PREVIEW ONLY (until #56): a preview result is answered again through the preview entry with the same plan.
+  const questionLink = outcome.kind !== 'result' || !outcome.questions ? undefined
+    : outcome.preview ? preferencePreviewLink(outcome.result.plan, window.location) : questionShareLink(outcome.questions, window.location);
   return <main className="app-shell screen-result">
     <header className="masthead"><a href="./"><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
     <ThemeControl />

@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
+import { classifyAndRankValues } from './support/experience';
 import { answerPreferences, scoreColumn, startPreferencePreview } from './support/preference';
 import { chosenColumn, corruptHeading as corrupt, expectUnreadable, shareRegion, statedColumn, unsupportedHeading as unsupported } from './support/result-share';
 import { resultLinksV1 } from './support/result-links-v1';
@@ -10,7 +11,7 @@ const sharerScores = '情境中的偏向分數';
 const recipientScores = '分享者在情境中的偏向分數';
 const scoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這是產品計分約定，不表示偏好強度具有兩倍關係，也不是百分比。';
 const legacyScoring = '這份結果使用舊版計分：第二幕依偏向一邊的答案次數排名，不是偏向分數。';
-const fixedLeans = ['強烈偏向 B', '強烈偏向 A', '稍微偏向 B', '稍微偏向 B', '兩者相當', '兩者相當'] as const;
+const fixedLeans = ['強烈偏向 B', '強烈偏向 A', '稍微偏向 B', '稍微偏向 B', '兩者相當', '兩者相當', '稍微偏向 B', '兩者相當', '兩者相當'] as const;
 
 /** PREVIEW ONLY (until #56): a published version 2 link opened against today's preview questions, so its question set is still reproducible. */
 const currentPreview = (fragment: string) => fragment.replace(`.${resultLinksV2Catalog}.`, `.${preferencePreviewVersion}.`);
@@ -87,11 +88,16 @@ test('分享者逐項選擇自訂價值；新版結果暫時只提供結果連�
 });
 
 test('原題組還能重現時用同一份題目作答；題庫不同時改提供用目前題目開始', async ({ page }) => {
-  await page.goto('/' + currentPreview(resultLinksV2.fixedFlow.fragment));
+  // Slot 1's third variant and slot 2's second: the fixed randomness alone would draw the first of each.
+  await page.goto('/' + currentPreview(v2('3-security', resultLinksV2Catalog, '2-1-0-0-0-0-0-0-0')));
   await page.getByRole('button', { name: '用同一份題目作答' }).click();
-  await expect(page).toHaveURL('/?experience=preference');
-  await page.getByRole('button', { name: '開始這次反思' }).click();
-  await expect(page.getByRole('group', { name: /的重要性$/ }).first()).toBeVisible();
+  await expect(page).toHaveURL(`/?experience=preference&seed=p.2.1.0.0.0.0.0.0.0&v=${preferencePreviewVersion}`);
+  await classifyAndRankValues(page);
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '五天的旅程，誰來排？' })).toBeVisible();
+  await page.getByRole('radio', { name: '兩者相當', exact: true }).click();
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '週末的打掃，照誰的時間？' })).toBeVisible();
 
   await page.goto('/' + resultLinksV2.fixedFlow.fragment.replace(`.${resultLinksV2Catalog}.`, '.c0ld.'));
   await expect(scoreColumn(page, recipientScores).getByRole('listitem')).toHaveText(resultLinksV2.fixedFlow.scored);
@@ -118,14 +124,14 @@ test('打開新版結果連結不讀也不寫本機的作答紀錄', async ({ pa
 });
 
 // Each case breaks exactly one rule of the published fixed-flow link (docs/result-share-spec.md「格式版本 2」).
-const v2 = (scored: string, v = resultLinksV2Catalog, plan = '0-0-0-0-0-0') => `#r=2.autonomy~stimulation~hedonism.${scored}..${v}.${plan}`;
+const v2 = (scored: string, v = resultLinksV2Catalog, plan = '0-0-0-0-0-0-0-0-0') => `#r=2.autonomy~stimulation~hedonism.${scored}..${v}.${plan}`;
 
 test('新版格式的任何一條合法性規則不通過，整份結果都不顯示', async ({ page }) => {
   const cases: Record<string, string> = {
     '0 分列入名次': v2('0-care'),
     '分數補前導 0': v2('02-care'),
     '大寫的分數': v2('C-care'),
-    '分數超過題數的 2 倍': v2('d-care'),
+    '分數超過題數的 2 倍': v2('j-care'),
     '兩列分數相同': v2('2-care~2-fairness'),
     '分數由小到大': v2('1-care~2-fairness'),
     '多出第 4 名': v2('4-care~3-fairness~2-security~1-tradition'),
@@ -134,13 +140,15 @@ test('新版格式的任何一條合法性規則不通過，整份結果都不�
     '名次列沒有 id': v2('2'),
     '用舊版次數寫法': v2('3-3-care'),
     '欄位數不對': v2('2-care') + '.0',
-    '預覽題庫的題組對不到': currentPreview(v2('2-care', resultLinksV2Catalog, '1-0-0-0-0-0')),
+    '預覽題庫的題組對不到': currentPreview(v2('2-care', resultLinksV2Catalog, '3-0-0-0-0-0-0-0-0')),
+    '預覽題庫的題數不對': currentPreview(v2('2-care', resultLinksV2Catalog, '0-0-0-0-0-0')),
   };
   for (const [rule, fragment] of Object.entries(cases)) await expectUnreadable(page, fragment, corrupt).catch(error => { throw new Error(`${rule}：${error.message}`); });
   await expectUnreadable(page, '#r=3' + resultLinksV2.fixedFlow.fragment.slice('#r=2'.length), unsupported);
 });
 
 test('新版分數剛好等於題數的 2 倍，是合法的結果', async ({ page }) => {
-  await page.goto('/' + v2('c-care~1-fairness'));
-  await expect(scoreColumn(page, recipientScores).getByRole('listitem')).toHaveText(['第 1照顧身邊的人12 分', '第 2普遍關懷1 分']);
+  // Nine questions: 18 (i) passes, while「分數超過題數的 2 倍」above uses 19 (j).
+  await page.goto('/' + v2('i-care~1-fairness'));
+  await expect(scoreColumn(page, recipientScores).getByRole('listitem')).toHaveText(['第 1照顧身邊的人18 分', '第 2普遍關懷1 分']);
 });

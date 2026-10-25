@@ -2,7 +2,7 @@ import { binarySlotScenarios } from './scenarios/choice-slots';
 import { preferenceScenarios } from './scenarios/preference';
 import { catalogVersionOf, questionPlan } from './questionPlan';
 import type { SessionCatalog } from './sessionStorage';
-import type { PreferenceScenario } from './types';
+import type { PreferenceScenario, Scenario } from './types';
 
 /**
  * PREVIEW ONLY (#49, removed when #56 switches the production entry): `?experience=preference` opens a short
@@ -33,9 +33,15 @@ export const isPreferencePreview = (search: string) => new URLSearchParams(searc
 
 /**
  * PREVIEW ONLY (#54, consolidated into the published catalog by #56): a preview result link names the preview catalog
- * by its own version, and the preview always asks the same questions, so that version and plan can be answered again
- * through the preview entry.
+ * by its own version and its plan by the same slot selectors as a question link, so the recipient can answer the
+ * same questions through the preview entry with `seed` and `v`.
  */
 export const preferencePreviewVersion = catalogVersionOf(preferencePreviewCatalog.scenarios);
-export const preferencePreviewPlan = questionPlan(preferencePreviewCatalog.scenarios, preferencePreviewCatalog.scenarios)!;
 export const preferencePreviewSearch = '?experience=preference';
+export const preferencePreviewPlan = (questions: readonly Scenario[]) => questionPlan(questions, preferencePreviewCatalog.scenarios);
+export function preferencePreviewLink(plan: readonly string[], location: Pick<Location, 'origin' | 'pathname'>): string {
+  const url = new URL(location.pathname + preferencePreviewSearch, location.origin);
+  url.searchParams.set('seed', `p.${plan.join('.')}`);
+  url.searchParams.set('v', preferencePreviewVersion);
+  return url.href;
+}

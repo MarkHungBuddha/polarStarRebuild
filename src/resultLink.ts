@@ -38,8 +38,8 @@ export function withPositions<T extends { ids: readonly string[] }>(rows: readon
 }
 
 /**
- * A readable result may offer its original question set: `questions` from today's catalog, or `preview` when it was
- * shared from the preference preview, which always asks the same questions (PREVIEW ONLY until #56).
+ * A readable result offers its original question set when `questions` holds it: from today's catalog, or with `preview`
+ * from the preference preview's catalog (PREVIEW ONLY until #56).
  */
 export type ResultLinkOutcome =
   | { kind: 'result'; result: SharedResult; questions?: Scenario[]; preview?: boolean }
@@ -56,7 +56,7 @@ export function sharedResultOf(session: Session, custom: readonly string[]): Sha
   const stated = byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id));
   if (isPreferenceSession(session)) {
     // PREVIEW ONLY (until #56): every preference session is the preview run, so its plan is read against the preview catalog.
-    const plan = questionPlan(session.scenarios, preferencePreviewCatalog.scenarios);
+    const plan = preferencePreviewPlan(session.scenarios);
     if (!plan) return undefined;
     const scored = byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ ids: row.items.map(item => item.value.id), score: row.items[0].score }));
     return { scoring: 'preference-score', stated, scored, custom: [...custom], catalog: preferencePreviewVersion, plan };
@@ -163,8 +163,8 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   const result = version === '1' ? readChosen(secondField, conclusion) : readScored(secondField, conclusion);
   if (!result) return { kind: 'corrupt' };
   // PREVIEW ONLY (until #56): a preference result from the preview is answered again through the preview entry, never under today's catalog.
-  if (result.scoring === 'preference-score' && catalog === preferencePreviewVersion) return plan.join('-') === preferencePreviewPlan.join('-') ? { kind: 'result', result, preview: true } : { kind: 'corrupt' };
-  if (catalog !== catalogVersion) return { kind: 'result', result };
-  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`) }; }
+  const preview = result.scoring === 'preference-score' && catalog === preferencePreviewVersion;
+  if (!preview && catalog !== catalogVersion) return { kind: 'result', result };
+  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`, preview ? preferencePreviewCatalog.scenarios : undefined), ...(preview && { preview }) }; }
   catch { return { kind: 'corrupt' }; }
 }

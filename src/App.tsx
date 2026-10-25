@@ -15,7 +15,7 @@ import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
 import type { Scenario, Screen, Session } from './types';
-import { drawPreferencePreview, isPreferencePreview, preferencePreviewCatalog } from './preferencePreview';
+import { drawPreferencePreview, isPreferencePreview, preferencePreviewCatalog, preferencePreviewSearch } from './preferencePreview';
 
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
@@ -27,7 +27,8 @@ export function App() {
   const [preview] = useState(() => isPreferencePreview(window.location.search));
   const catalog = preview ? preferencePreviewCatalog : undefined;
   const pick = (seen?: ReadonlySet<string>) => preview ? drawPreferencePreview() : selectQuestions(seen);
-  const [request, setRequest] = useState(() => preview ? { specified: false } as ReturnType<typeof requestedQuestions> : requestedQuestions(window.location.search));
+  // A preview result link's「用同一份題目作答」carries `seed` and `v` for the preview catalog (#54).
+  const [request, setRequest] = useState(() => requestedQuestions(window.location.search, preview ? preferencePreviewCatalog.scenarios : undefined));
   const [initialHistory] = useState(loadSeenHistory);
   // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.
   const [initialSaved] = useState(() => loadSavedSession(catalog));
@@ -55,7 +56,7 @@ export function App() {
     setEditedEvidence(undefined);
   }, [session.screen, editedEvidence]);
   // The question set comes from the share link unless the user leaves it; leaving drops the link from the address bar.
-  const leaveShareRequest = () => { window.history.replaceState(null, '', window.location.pathname); setRequest({ specified: false }); };
+  const leaveShareRequest = () => { window.history.replaceState(null, '', window.location.pathname + (preview ? preferencePreviewSearch : '')); setRequest({ specified: false }); };
   const startOver = ({ clearHistory = false, useCurrentVersion = false }: { clearHistory?: boolean; useCurrentVersion?: boolean } = {}) => {
     const cleared = clearSavedSession(catalog);
     const historyCleared = !clearHistory || clearSeenHistory();
