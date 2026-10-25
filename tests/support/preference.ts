@@ -10,13 +10,17 @@ export async function startPreferencePreview(page: Page) {
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
 }
 
-/** Picks and confirms one lean per question, in order, until the result page shows. */
-export async function answerPreferences(page: Page, leans: readonly Lean[]) {
-  for (const name of leans) {
+/** Picks and confirms one lean per question in order, then `rest` for any remaining question, until the result page shows. */
+export async function answerPreferences(page: Page, leans: readonly Lean[], rest?: Lean) {
+  const result = page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
+  const pick = async (name: Lean) => {
     await page.getByRole('radio', { name, exact: true }).click();
     await page.getByRole('button', { name: '確認答案', exact: true }).click();
-  }
-  await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
+  };
+  for (const name of leans) await pick(name);
+  // The preview's question count grows as content tickets land (PREVIEW ONLY until #56).
+  while (rest && !await result.isVisible()) await pick(rest);
+  await expect(result).toBeVisible();
 }
 
 /** A preference column's rows as rendered text, found by the column heading (the sharer's or the recipient's). */
