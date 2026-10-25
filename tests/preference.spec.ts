@@ -2,10 +2,10 @@ import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues, expectNoHorizontalScroll, openDetailedReport } from './support/experience';
 
-// The preview run (#49, until #56 switches the entry) asks one question per slot in slot order and opens
-// with the first two below; with Math.random fixed at 0 each slot draws its first variant. A is listed first.
+// The preview run (#49, until #56 switches the entry) asks one question per slot in slot order; with the fixed randomness
+// each slot draws its first variant. These are slots 1–5, 8, 11, 13 and 15 in run order; the others are answered 兩者相當. A is listed first.
 // First act below ranks the core values 自主, 探索刺激, 享受生活, 成就, 主導權, 安全穩定, 遵守規範, 傳承, 照顧身邊的人, 普遍關懷.
-const titles = ['下週，照原計畫嗎？', '同一天，兩場活動。', '原本留給自己的那一晚。', '這筆活動預算，誰來決定？', '今年的活動，誰說了算？', '新約定遇上紀念聚會。'] as const;
+const titles = ['固定薪水，還是自己接案？', '這份提案，用誰的方法？', '這三週的晚上，留給哪件事？', '下週，照原計畫嗎？', '同一天，兩場活動。', '原本留給自己的那一晚。', '這筆活動預算，誰來決定？', '今年的活動，誰說了算？', '新約定遇上紀念聚會。'] as const;
 type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
 
 const confirm = (page: Page) => page.getByRole('button', { name: '確認答案', exact: true });
@@ -76,33 +76,33 @@ test('全部兩者相當時沒有排名，也不算相符或不同；新版結�
 test('同分並列可超過三個價值，零分不列名次；稍微偏向的分數會累加', async ({ page }) => {
   await startPreview(page);
   // 安全穩定 2、探索刺激 2、照顧身邊的人 2、普遍關懷 2、傳承 1 + 1；主導權、遵守規範、享受生活都是 0。
-  await answer(page, { [titles[0]]: '強烈偏向 B', [titles[1]]: '強烈偏向 A', [titles[2]]: '強烈偏向 B', [titles[3]]: '強烈偏向 B', [titles[4]]: '稍微偏向 B', [titles[5]]: '稍微偏向 B' });
+  await answer(page, { [titles[3]]: '強烈偏向 B', [titles[4]]: '強烈偏向 A', [titles[5]]: '強烈偏向 B', [titles[6]]: '強烈偏向 B', [titles[7]]: '稍微偏向 B', [titles[8]]: '稍微偏向 B' });
   expect(await scoreRows(page)).toEqual([row('並列第 1', ['探索刺激', '安全穩定', '照顧身邊的人', '普遍關懷', '傳承'], '各 2 分')]);
 });
 
 test('只依總分排競賽名次，逐題依據與排名跟著最新確認答案，兩幕比較只看方向', async ({ page }) => {
   await startPreview(page);
   // 安全穩定 2、探索刺激 2、照顧身邊的人 1、普遍關懷 1，其餘兩者相當。
-  await answer(page, { [titles[0]]: '強烈偏向 B', [titles[1]]: '強烈偏向 A', [titles[2]]: '稍微偏向 B', [titles[3]]: '稍微偏向 B' });
+  await answer(page, { [titles[3]]: '強烈偏向 B', [titles[4]]: '強烈偏向 A', [titles[5]]: '稍微偏向 B', [titles[6]]: '稍微偏向 B' });
   expect(await scoreRows(page)).toEqual([
     row('並列第 1', ['探索刺激', '安全穩定'], '各 2 分'),
     row('並列第 3', ['照顧身邊的人', '普遍關懷'], '各 1 分'),
   ]);
   await expect(page.getByText('在 3 個情境裡，你偏向原先排序較後的價值。', { exact: false })).toBeVisible();
   await openDetailedReport(page);
-  await expect(evidence(page, titles[0]).locator('.evidence-label')).toHaveText('與第一幕不同');
-  await expect(evidence(page, titles[0])).toContainText('已確認答案：強烈偏向 B。安全穩定加 2 分。');
-  await expect(evidence(page, titles[1]).locator('.evidence-label')).toHaveText('與第一幕相符');
-  await expect(evidence(page, titles[2]).locator('.evidence-label')).toHaveText('與第一幕不同');
-  await expect(evidence(page, titles[2])).toContainText('已確認答案：稍微偏向 B。照顧身邊的人加 1 分。');
+  await expect(evidence(page, titles[3]).locator('.evidence-label')).toHaveText('與第一幕不同');
+  await expect(evidence(page, titles[3])).toContainText('已確認答案：強烈偏向 B。安全穩定加 2 分。');
+  await expect(evidence(page, titles[4]).locator('.evidence-label')).toHaveText('與第一幕相符');
+  await expect(evidence(page, titles[5]).locator('.evidence-label')).toHaveText('與第一幕不同');
+  await expect(evidence(page, titles[5])).toContainText('已確認答案：稍微偏向 B。照顧身邊的人加 1 分。');
 
   // Strong and slight in the same direction compare the same way.
-  await evidence(page, titles[0]).getByRole('button', { name: '修改這題' }).click();
+  await evidence(page, titles[3]).getByRole('button', { name: '修改這題' }).click();
   await expect(lean(page, '強烈偏向 B')).toBeChecked();
   await lean(page, '稍微偏向 B').click();
   await confirm(page).click();
-  await expect(evidence(page, titles[0]).locator('.evidence-label')).toHaveText('與第一幕不同');
-  await expect(evidence(page, titles[0])).toContainText('已確認答案：稍微偏向 B。安全穩定加 1 分。');
+  await expect(evidence(page, titles[3]).locator('.evidence-label')).toHaveText('與第一幕不同');
+  await expect(evidence(page, titles[3])).toContainText('已確認答案：稍微偏向 B。安全穩定加 1 分。');
   // 探索刺激 2 alone; 安全穩定、照顧身邊的人、普遍關懷 1 share second place.
   await page.getByRole('button', { name: '← 返回簡短結論' }).click();
   expect(await scoreRows(page)).toEqual([

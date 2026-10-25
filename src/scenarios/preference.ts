@@ -1,4 +1,5 @@
 import type { PreferenceScenario } from '../types';
+import { preferenceSlots01To05 } from './preference-slots-01-05';
 import { preferenceSlots06To10 } from './preference-slots-06-10';
 
 /** New catalog, kept separate from the published catalog until all fifteen slots are ready. */
@@ -11,5 +12,6 @@ export const preferenceScenarios: PreferenceScenario[] = [{
     { id: 'stay', label: '留在原團隊', consequence: '照熟悉的步調工作，也放下這次換環境的機會。', valueId: 'security' },
   ],
 },
+...preferenceSlots01To05,
 ...preferenceSlots06To10,
 ];

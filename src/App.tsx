@@ -15,7 +15,7 @@ import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
 import type { Scenario, Screen, Session } from './types';
-import { isPreferencePreview, pickPreferencePreview, preferencePreviewCatalog } from './preferencePreview';
+import { drawPreferencePreview, isPreferencePreview, preferencePreviewCatalog } from './preferencePreview';
 
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
@@ -26,7 +26,7 @@ export function App() {
   // PREVIEW ONLY (#49 until #56): the preference run keeps its own questions and record, ignores question links and leaves the seen history alone.
   const [preview] = useState(() => isPreferencePreview(window.location.search));
   const catalog = preview ? preferencePreviewCatalog : undefined;
-  const pick = (seen?: ReadonlySet<string>) => preview ? pickPreferencePreview() : selectQuestions(seen);
+  const pick = (seen?: ReadonlySet<string>) => preview ? drawPreferencePreview() : selectQuestions(seen);
   const [request, setRequest] = useState(() => preview ? { specified: false } as ReturnType<typeof requestedQuestions> : requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
   // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.

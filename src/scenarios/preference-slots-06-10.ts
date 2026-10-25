@@ -2,22 +2,8 @@ import type { PreferenceScenario } from '../types';
 
 /**
  * Slots 6–10 (#51), three five-step preference variants each. Option order follows the slot pair, so A is the
- * pair's first value; valueId is the only source of direction. Draft content written by an AI agent from
- * docs/content-authoring-notes.md and the published variants it rewrites; reviewed against the trade-off
- * conditions in the ticket, not psychometrically validated.
- *
- * Draft review, per slot (the agent's own check, not an author's sign-off):
- * - slot06: the allocation and slider versions become one either-or plan, so the lean is stated, not inferred from
- *   amounts. Both sides need effort and cost the same; the new 'project' variant keeps uncertainty out of A so it
- *   does not drift into a security trade-off.
- * - slot07: the slider thresholds are dropped; A is plain leisure, B a self-chosen result with no job pressure.
- *   'bonus' keeps both uses affordable and unrequested.
- * - slot08: the two published choices carry over unchanged. 'housewarming' adds a family setting where the brother
- *   can manage alone, so B is closeness, not rescue.
- * - slot09: the strike replies are split into short labels and costs. A always departs from an agreement nobody
- *   is harmed by, never a law or a nuisance to others.
- * - slot10: A keeps a better own result, B reaches people outside the close circle; organisers and judges accept
- *   both, so neither side is a rule. 'contest' names who gains without claiming any measured effect.
+ * pair's first value; valueId is the only source of direction. AI-drafted and AI-reviewed, not psychometrically
+ * validated; the per-variant review is in docs/preference-content/slots-06-10.md.
  */
 export const preferenceSlots06To10: PreferenceScenario[] = [{
   id: 'preference-slot06-learning', slotId: 'slot06', pair: ['stimulation', 'achievement'], kind: 'preference', domain: '學習',
@@ -68,7 +54,7 @@ export const preferenceSlots06To10: PreferenceScenario[] = [{
     { id: 'certificate', label: '報名密集認證課程', consequence: '交出完整的實作、拿到認證，也少了這次放鬆的假期。', valueId: 'achievement' },
   ],
 }, {
-  // Keeps the published slot08-evening title and options (the preview tests open the run with it).
+  // Keeps the published slot08-evening title and options; tests/preference.spec.ts finds it by title.
   id: 'preference-slot08-evening', slotId: 'slot08', pair: ['hedonism', 'care'], kind: 'preference', domain: '人際',
   title: '原本留給自己的那一晚。',
   setup: '假設你訂好了今晚的電影票，這部電影期待很久，下週就不演了。一位熟朋友傳訊息，想聊聊最近考慮換工作的事。朋友沒有遇到危機，可以找別人或改天再聊，只是希望今晚能和你說說。',
