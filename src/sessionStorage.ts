@@ -1,13 +1,11 @@
 import type { Session } from './types';
 import { baseValues, categoryOrder } from './data';
-import { scenarios } from './scenarios';
+import { publishedCatalog, type QuestionCatalog } from './questionCatalog';
 import { storageReadFailedNotice } from './storageNotices';
 
-const sessionKey = 'polarstar.session.v1';
 const schemaVersion = 1;
-export interface SessionCatalog { key: string; scenarios: readonly Session['scenarios'][number][] }
-const publishedCatalog: SessionCatalog = { key: sessionKey, scenarios };
 const incompatibleNotice = '先前的本機紀錄無法讀取或版本不相容，請重新開始。';
+const legacySessionNotice = '上次的作答來自舊版題目，不能接著做，也不會換算成新版答案。請重新開始。';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -34,7 +32,7 @@ function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolea
   return false;
 }
 
-function validSession(value: unknown, catalog: SessionCatalog): value is Session {
+function validSession(value: unknown, catalog: QuestionCatalog): value is Session {
   if (!isRecord(value) || typeof value.screen !== 'string' || !['intro', 'classify', 'rank', 'scenario', 'result'].includes(value.screen)) return false;
   if (!Array.isArray(value.values) || value.values.length < baseValues.length || !Array.isArray(value.scenarios) || !value.scenarios.length || !isRecord(value.answers)) return false;
   const values = value.values;
@@ -70,10 +68,11 @@ function validSession(value: unknown, catalog: SessionCatalog): value is Session
   });
 }
 
-export function loadSavedSession(catalog = publishedCatalog): { session?: Session; notice?: string } {
+/** `legacy` is set when only an earlier bank's record exists: it is never resumed, and clearing the session removes it. */
+export function loadSavedSession(catalog = publishedCatalog): { session?: Session; notice?: string; legacy?: boolean } {
   try {
-    const raw = localStorage.getItem(catalog.key);
-    if (!raw) return {};
+    const raw = localStorage.getItem(catalog.sessionKey);
+    if (!raw) return catalog.legacySessionKeys.some(key => localStorage.getItem(key) !== null) ? { notice: legacySessionNotice, legacy: true } : {};
     let saved: unknown;
     try { saved = JSON.parse(raw); } catch { return { notice: incompatibleNotice }; }
     if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session, catalog)) return { notice: incompatibleNotice };
@@ -85,12 +84,15 @@ export function loadSavedSession(catalog = publishedCatalog): { session?: Sessio
 
 export function saveSession(session: Session, catalog = publishedCatalog): boolean {
   try {
-    localStorage.setItem(catalog.key, JSON.stringify({ schemaVersion, session }));
+    localStorage.setItem(catalog.sessionKey, JSON.stringify({ schemaVersion, session }));
     return true;
   } catch { return false; }
 }
 
 export function clearSavedSession(catalog = publishedCatalog): boolean {
-  try { localStorage.removeItem(catalog.key); return true; }
+  try {
+    for (const key of [catalog.sessionKey, ...catalog.legacySessionKeys]) localStorage.removeItem(key);
+    return true;
+  }
   catch { return false; }
 }
