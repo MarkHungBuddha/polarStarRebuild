@@ -1,5 +1,6 @@
 import { coreValueWord } from './data';
-import { withPositions, type LegacySharedResult } from './resultLink';
+import { preferenceScoreText } from './preferenceRanking';
+import { withPositions, type SharedResult } from './resultLink';
 import { chosenCountText } from './valueRanking';
 
 export const resultImageColors = {
@@ -22,48 +23,70 @@ const imageText = {
   chosenTitle: '我在情境中最常選的',
   chosenCaption: '第二幕有偏向一邊的答案',
   noChosen: '這次沒有偏向一邊的答案，所以沒有排名。',
+  scoredTitle: '我在情境中的偏向分數',
+  scoredCaption: '第二幕的偏向分數',
+  noScored: '這次作答沒有明確偏向',
+  scoringRule: '計分：強烈偏向 2 分，稍微偏向 1 分，兩者相當 0 分，不是百分比。',
   customTitle: '我的自訂價值 · 不納入前三名',
   limits: '這是我在假設情境下的自我回報，不是人格判定，也不代表實際行為。',
   tagline: '北極星 · 你重視什麼，會怎麼選？',
   site: 'northstarmetric.org',
 };
 
-/** One position as drawn: its label, the names shown (a long tie may be cut short), the chosen count, and whether the names use the smaller size. */
-interface DrawnRow { label: string; names: string; count?: string; compact: boolean }
+/**
+ * One position as drawn: its label, the names shown (a long legacy tie may be cut short), the chosen count under the names
+ * or the score beside the label, and whether the names use the smaller size.
+ */
+interface DrawnRow { label: string; names: string; count?: string; score?: string; compact: boolean }
 interface DrawnColumn { rows: DrawnRow[]; extra?: string }
 
 /**
  * Lays out one column: positions until `limit` names are shown, then「另有 N 個並列」for the rest.
  * With `compactTies`, a position shared by more than three values uses the smaller name size.
  */
-function layoutColumn(rows: readonly { ids: string[]; count?: string }[], limit: number, compactTies: boolean): DrawnColumn {
+function layoutColumn(rows: readonly { ids: string[]; count?: string; score?: string }[], limit: number, compactTies: boolean): DrawnColumn {
   const drawn: DrawnRow[] = [];
   let shown = 0;
   for (const row of withPositions(rows)) {
     if (shown >= limit) break;
     const ids = row.ids.slice(0, limit - shown);
     shown += ids.length;
-    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), count: row.count, compact: compactTies && row.ids.length > 3 });
+    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), count: row.count, score: row.score, compact: compactTies && row.ids.length > 3 });
   }
   const extra = rows.reduce((sum, row) => sum + row.ids.length, 0) - shown;
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
 /**
- * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
- * Only legacy counts are drawn; a preference result (`scoring: 'preference-score'`) has no image until #55.
+ * Where each part sits. A preference image moves the columns up to make room for the scoring rule above the limits;
+ * the legacy image keeps its published layout.
  */
-export async function createResultImage(result: LegacySharedResult, theme: ImageTheme): Promise<File> {
+const legacyLayout = { title: 170, box: 280, boxHeight: 610, heading: 350, caption: 400, rows: 460, custom: 920 };
+const preferenceLayout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154 };
+
+/**
+ * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
+ * `scoring` decides the second column: a legacy result shows its counts as shared (at most five names, then「另有 N 個並列」);
+ * a preference result shows every value at positions 1–3 with its score, plus the 2／1／0 scoring rule.
+ */
+export async function createResultImage(result: SharedResult, theme: ImageTheme): Promise<File> {
+  const preference = result.scoring === 'preference-score';
+  const layout = preference ? preferenceLayout : legacyLayout;
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
-  const chosenColumn = layoutColumn(result.chosen.map(row => ({ ids: row.ids, count: chosenCountText(row, row.ids.length > 1) })), 5, false);
+  const chosenColumn = preference
+    ? layoutColumn(result.scored.map(row => ({ ids: row.ids, score: preferenceScoreText(row.score, row.ids.length > 1) })), Infinity, true)
+    : layoutColumn(result.chosen.map(row => ({ ids: row.ids, count: chosenCountText(row, row.ids.length > 1) })), 5, false);
+  const second = preference
+    ? { title: imageText.scoredTitle, caption: imageText.scoredCaption, empty: imageText.noScored, rows: result.scored.length }
+    : { title: imageText.chosenTitle, caption: imageText.chosenCaption, empty: imageText.noChosen, rows: result.chosen.length };
   const customShown = result.custom.slice(0, imageCustomLimit);
   const customExtra = result.custom.length > imageCustomLimit ? `另有 ${result.custom.length - imageCustomLimit} 個自訂價值` : undefined;
 
   // Fonts are loaded for exactly the text drawn below.
   const drawnText = [
-    imageText.title, imageText.statedTitle, imageText.statedCaption, imageText.chosenTitle, imageText.chosenCaption,
-    ...[statedColumn, chosenColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.count ?? '']), column.extra ?? '']),
-    result.chosen.length ? '' : imageText.noChosen,
+    imageText.title, imageText.statedTitle, imageText.statedCaption, second.title, second.caption,
+    ...[statedColumn, chosenColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.count ?? '', row.score ?? '']), column.extra ?? '']),
+    second.rows ? '' : second.empty, preference ? imageText.scoringRule : '',
     result.custom.length ? imageText.customTitle : '', ...customShown, customExtra ?? '',
     imageText.limits, imageText.tagline, imageText.site,
   ].join('');
@@ -77,7 +100,7 @@ export async function createResultImage(result: LegacySharedResult, theme: Image
   if (!context) throw new Error('Canvas unavailable');
   const colors = resultImageColors[theme];
   const rect = (x: number, y: number, width: number, height: number, color: string) => { context.fillStyle = color; context.fillRect(x, y, width, height); };
-  const text = (value: string, x: number, y: number, size = 28, color = colors.ink, bold = false) => { context.font = `${bold ? 700 : 400} ${size}px ${family}`; context.fillStyle = color; context.fillText(value, x, y); };
+  const text = (value: string, x: number, y: number, size = 28, color = colors.ink, bold = false, align: CanvasTextAlign = 'left') => { context.font = `${bold ? 700 : 400} ${size}px ${family}`; context.fillStyle = color; context.textAlign = align; context.fillText(value, x, y); };
   const wrap = (value: string, x: number, y: number, width: number, size: number, color = colors.ink, bold = false) => {
     context.font = `${bold ? 700 : 400} ${size}px ${family}`;
     const chars = [...value]; let line = '';
@@ -90,10 +113,13 @@ export async function createResultImage(result: LegacySharedResult, theme: Image
     text(line, x, y, size, color, bold); return y;
   };
   const drawColumn = ({ rows, extra }: DrawnColumn, x: number) => {
-    let y = 460;
+    let y = layout.rows;
     for (const row of rows) {
       text(row.label, x, y, 28, colors.accent);
+      const labelY = y;
       y = wrap(row.names, x, y + 46, 410, row.compact ? 28 : 34, colors.ink, true);
+      // Drawn after the names but on the label's line, right-aligned, so even the tallest tie stays inside the column.
+      if (row.score) text(row.score, x + 410, labelY, 28, colors.muted, false, 'right');
       if (row.count) { text(row.count, x, y + 42, 28, colors.muted); y += 42; }
       y += 58;
     }
@@ -102,19 +128,20 @@ export async function createResultImage(result: LegacySharedResult, theme: Image
 
   rect(0, 0, 1080, 1350, colors.background);
   for (let x = 24; x < 1080; x += 24) for (let y = 24; y < 1350; y += 24) rect(x, y, 2, 2, colors.line);
-  text(imageText.title, 64, 170, 60, colors.ink, true);
-  rect(54, 280, 472, 610, colors.paper); rect(554, 280, 472, 610, colors.paper);
-  text(imageText.statedTitle, 84, 350, 38, colors.ink, true); text(imageText.statedCaption, 84, 400, 28, colors.muted);
-  text(imageText.chosenTitle, 584, 350, 34, colors.ink, true); text(imageText.chosenCaption, 584, 400, 28, colors.muted);
+  text(imageText.title, 64, layout.title, 60, colors.ink, true);
+  rect(54, layout.box, 472, layout.boxHeight, colors.paper); rect(554, layout.box, 472, layout.boxHeight, colors.paper);
+  text(imageText.statedTitle, 84, layout.heading, 38, colors.ink, true); text(imageText.statedCaption, 84, layout.caption, 28, colors.muted);
+  text(second.title, 584, layout.heading, 34, colors.ink, true); text(second.caption, 584, layout.caption, 28, colors.muted);
   drawColumn(statedColumn, 84); drawColumn(chosenColumn, 584);
-  if (!result.chosen.length) wrap(imageText.noChosen, 584, 480, 410, 32);
+  if (!second.rows) wrap(second.empty, 584, layout.rows + 20, 410, 32);
   if (result.custom.length) {
     const lines = customShown.length + (customExtra ? 1 : 0);
-    rect(64, 920, 952, 66 + lines * 42, colors.sticky);
-    text(imageText.customTitle, 88, 962, 28, colors.muted);
-    customShown.forEach((word, index) => text(word, 88, 1006 + index * 42, 28));
-    if (customExtra) text(customExtra, 88, 1006 + customShown.length * 42, 28, colors.accent);
+    rect(64, layout.custom, 952, 66 + lines * 42, colors.sticky);
+    text(imageText.customTitle, 88, layout.custom + 42, 28, colors.muted);
+    customShown.forEach((word, index) => text(word, 88, layout.custom + 86 + index * 42, 28));
+    if (customExtra) text(customExtra, 88, layout.custom + 86 + customShown.length * 42, 28, colors.accent);
   }
+  if (preference) text(imageText.scoringRule, 64, preferenceLayout.scoringRule, 28, colors.muted);
   wrap(imageText.limits, 64, 1196, 952, 28, colors.muted);
   rect(64, 1260, 952, 2, colors.line);
   text(imageText.tagline, 64, 1310, 28); text(imageText.site, 730, 1310, 28, colors.accent);

@@ -62,7 +62,7 @@ test('舊版結果連結標明舊版計分，次數與排名不重算', async ({
   await expect(page.getByRole('heading', { name: recipientScores })).toHaveCount(0);
 });
 
-test('分享者逐項選擇自訂價值；新版結果暫時只提供結果連結，結果圖按鈕不能用', async ({ page }) => {
+test('分享者逐項選擇自訂價值，勾選的才放進新版結果連結', async ({ page }) => {
   await page.goto('/?experience=preference');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   for (const word of ['保有獨處的時間', '這就是我', '不分享的']) {
@@ -80,14 +80,6 @@ test('分享者逐項選擇自訂價值；新版結果暫時只提供結果連�
   await custom.getByRole('checkbox', { name: '這就是我' }).check();
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).hash).toMatch(/^#r=2\.[^.]+\.[^.]*\.5L-d5pyJ542o6JmV55qE5pmC6ZaT~6YCZ5bCx5piv5oiR\./);
-
-  await expect(share.getByRole('img')).toHaveCount(0);
-  for (const name of ['分享結果', '下載結果圖']) {
-    await expect(share.getByRole('button', { name })).toHaveAttribute('aria-disabled', 'true');
-    await share.getByRole('button', { name }).focus();
-    await share.getByRole('button', { name }).press('Enter');
-    await expect(share.getByRole('status')).toHaveText('新版結果暫時不能產生結果圖，可以先複製結果連結。');
-  }
 });
 
 test('原題組還能重現時用同一份題目作答；題庫不同時改提供用目前題目開始', async ({ page }) => {
