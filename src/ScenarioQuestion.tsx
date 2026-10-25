@@ -5,10 +5,12 @@ import { SliderQuestion } from './SliderQuestion';
 import { AllocationQuestion } from './AllocationQuestion';
 import { TransferScene } from './GameScene';
 import { choiceStages } from './choiceStages';
+import { PreferenceQuestion } from './PreferenceQuestion';
 
 export function ScenarioQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
   scenario: Scenario; answer?: Answer; onConfirm: (answer: Answer) => void; onBack: () => void; onReview?: () => void;
 }) {
+  if (scenario.kind === 'preference') return <PreferenceQuestion scenario={scenario} answer={answer?.kind === 'preference' ? answer : undefined} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;
   if (scenario.kind === 'slider') return <SliderQuestion scenario={scenario} answer={answer?.kind === 'slider' ? answer : undefined} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;
   if (scenario.kind === 'allocate') return <AllocationQuestion scenario={scenario} answer={answer?.kind === 'allocate' ? answer : undefined} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;
   return <ChoiceQuestion scenario={scenario} answer={answer?.kind === 'choice' || answer?.kind === 'strike' ? answer : undefined} onConfirm={onConfirm} onBack={onBack} onReview={onReview} />;

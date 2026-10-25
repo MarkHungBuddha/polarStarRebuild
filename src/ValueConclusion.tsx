@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { evidenceId } from './ResultEvidence';
 import { act1TopThree, byPosition, chosenCountText, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
 import type { Session } from './types';
+import { isPreferenceSession, preferenceScores, preferenceTopThree } from './preferenceRanking';
 
 const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => chosenCountText(row.items[0], row.items.length > 1);
 
@@ -9,20 +10,23 @@ const counted = (row: { items: readonly { chosen: number; directional: number }[
 export interface ColumnRow { position: number; words: string[]; count?: string }
 
 /** The two top-three columns as shown, whoever's they are; `statedNote` sits under the first column. */
-export function ConclusionColumns({ titles, stated, chosen, statedNote }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; statedNote?: ReactNode }) {
+export function ConclusionColumns({ titles, stated, chosen, statedNote, preference = false }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; statedNote?: ReactNode; preference?: boolean }) {
   const label = (row: ColumnRow) => (row.words.length > 1 ? '並列第 ' : '第 ') + row.position;
   return <div className="conclusion-columns">
     <div><h3>{titles[0]}</h3><p className="caption">第一幕的分類與排序</p>
       <ol>{stated.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong></li>)}</ol>
       {statedNote}</div>
-    <div><h3>{titles[1]}</h3><p className="caption">第二幕有偏向一邊的答案</p>
-      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>這次沒有偏向一邊的答案，所以沒有排名。</p>}</div>
+    <div><h3>{titles[1]}</h3><p className="caption">{preference ? '第二幕的偏向分數' : '第二幕有偏向一邊的答案'}</p>
+      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>{preference ? '這次作答沒有明確偏向' : '這次沒有偏向一邊的答案，所以沒有排名。'}</p>}</div>
   </div>;
 }
 
 /** The two top-three columns, one row per position; shared by the result cover and the detailed conclusion. */
 export function TopThreeColumns({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
   const statedRows = byPosition(act1TopThree(session.values));
+  if (isPreferenceSession(session)) return <ConclusionColumns preference titles={['你最重視的', '情境中的偏向分數']}
+    stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
+    chosen={byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ position: row.position, words: row.items.map(item => item.value.word), count: `${row.items.length > 1 ? '各 ' : ''}${row.items[0].score} 分` }))} />;
   const chosenRows = byPosition(scenarioTopThree(scenarioTallies(session)));
   return <ConclusionColumns titles={['你最重視的', '你在情境中最常選的']}
     stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}

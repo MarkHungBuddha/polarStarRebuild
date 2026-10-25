@@ -40,6 +40,8 @@ const base36 = /^(0|[1-9a-z][0-9a-z]*)$/;
 
 /** The session's public conclusion, with the custom values the sharer chose to include (already in first-act order). */
 export function sharedResultOf(session: Session, custom: readonly string[]): SharedResult | undefined {
+  // Explicit preference scores must never be encoded as published legacy counts.
+  if (session.scenarios.some(scenario => scenario.kind === 'preference')) return undefined;
   const plan = questionPlan(session.scenarios);
   if (!plan) return undefined;
   return {

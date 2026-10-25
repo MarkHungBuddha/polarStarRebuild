@@ -5,6 +5,8 @@ import { storageReadFailedNotice } from './storageNotices';
 
 const sessionKey = 'polarstar.session.v1';
 const schemaVersion = 1;
+export interface SessionCatalog { key: string; scenarios: readonly Session['scenarios'][number][] }
+const publishedCatalog: SessionCatalog = { key: sessionKey, scenarios };
 const incompatibleNotice = '先前的本機紀錄無法讀取或版本不相容，請重新開始。';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -13,6 +15,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolean {
   if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== scenario.kind) return false;
+  if (answer.kind === 'preference') return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
   if (answer.kind === 'choice' || answer.kind === 'strike') {
     return Array.isArray(scenario.options) && scenario.options.some(option => isRecord(option) && option.id === answer.optionId);
   }
@@ -31,7 +34,7 @@ function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolea
   return false;
 }
 
-function validSession(value: unknown): value is Session {
+function validSession(value: unknown, catalog: SessionCatalog): value is Session {
   if (!isRecord(value) || typeof value.screen !== 'string' || !['intro', 'classify', 'rank', 'scenario', 'result'].includes(value.screen)) return false;
   if (!Array.isArray(value.values) || value.values.length < baseValues.length || !Array.isArray(value.scenarios) || !value.scenarios.length || !isRecord(value.answers)) return false;
   const values = value.values;
@@ -51,12 +54,12 @@ function validSession(value: unknown): value is Session {
   const slotIds = new Set<string>();
   for (const snapshot of snapshots) {
     if (!isRecord(snapshot) || typeof snapshot.id !== 'string' || typeof snapshot.slotId !== 'string' || variantIds.has(snapshot.id) || slotIds.has(snapshot.slotId)) return false;
-    const current = scenarios.find(scenario => scenario.id === snapshot.id);
+    const current = catalog.scenarios.find(scenario => scenario.id === snapshot.id);
     // A stored answer must never be applied to a rewritten or unknown question.
     if (!current || JSON.stringify(snapshot) !== JSON.stringify(current)) return false;
     variantIds.add(snapshot.id); slotIds.add(snapshot.slotId);
   }
-  const currentSlots = new Set(scenarios.map(scenario => scenario.slotId));
+  const currentSlots = new Set(catalog.scenarios.map(scenario => scenario.slotId));
   if (slotIds.size !== currentSlots.size || [...currentSlots].some(slot => !slotIds.has(slot))) return false;
   // A result is only shown for a fully answered question set.
   if (value.screen === 'result' && !snapshots.every(snapshot => isRecord(snapshot) && typeof snapshot.id === 'string' && isRecord(value.answers) && value.answers[snapshot.id] !== undefined)) return false;
@@ -67,27 +70,27 @@ function validSession(value: unknown): value is Session {
   });
 }
 
-export function loadSavedSession(): { session?: Session; notice?: string } {
+export function loadSavedSession(catalog = publishedCatalog): { session?: Session; notice?: string } {
   try {
-    const raw = localStorage.getItem(sessionKey);
+    const raw = localStorage.getItem(catalog.key);
     if (!raw) return {};
     let saved: unknown;
     try { saved = JSON.parse(raw); } catch { return { notice: incompatibleNotice }; }
-    if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session)) return { notice: incompatibleNotice };
+    if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session, catalog)) return { notice: incompatibleNotice };
     return { session: saved.session };
   } catch {
     return { notice: storageReadFailedNotice };
   }
 }
 
-export function saveSession(session: Session): boolean {
+export function saveSession(session: Session, catalog = publishedCatalog): boolean {
   try {
-    localStorage.setItem(sessionKey, JSON.stringify({ schemaVersion, session }));
+    localStorage.setItem(catalog.key, JSON.stringify({ schemaVersion, session }));
     return true;
   } catch { return false; }
 }
 
-export function clearSavedSession(): boolean {
-  try { localStorage.removeItem(sessionKey); return true; }
+export function clearSavedSession(catalog = publishedCatalog): boolean {
+  try { localStorage.removeItem(catalog.key); return true; }
   catch { return false; }
 }

@@ -1,0 +1,8 @@
+.preference-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.preference-options h2 { font-size: 1.1rem; }
+.preference-scale { border: 0; padding: 1rem 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.preference-scale legend { font-weight: 700; margin-bottom: .75rem; }
+.preference-scale label { display: flex; align-items: center; gap: .5rem; padding: .75rem; min-height: 44px; border: 1px solid currentColor; border-radius: .5rem; cursor: pointer; }
+.preference-scale label:has(:checked) { outline: 2px solid currentColor; }
+.preference-scale input { accent-color: currentColor; }
+@media (max-width: 540px) { .preference-options { grid-template-columns: 1fr; } .preference-scale label { flex: 1 1 40%; } }

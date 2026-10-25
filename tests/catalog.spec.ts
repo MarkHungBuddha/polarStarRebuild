@@ -1,6 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { sliderLeans } from '../src/scenarios/slider-leans';
+import { preferenceScenarios } from '../src/scenarios/preference';
 
 // The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog.
 const blueprint: Record<string, [string, string, string]> = {
@@ -70,4 +71,20 @@ test('每題滑桿都有作者門檻：兩門檻分屬價值對的兩邊，初�
     expect(scenario.min <= lean.atMost && lean.atMost < scenario.initial && scenario.initial < lean.atLeast && lean.atLeast <= scenario.max, scenario.id).toBe(true);
   }
   expect(Object.keys(sliderLeans).sort()).toEqual(scenarios.filter(scenario => scenario.kind === 'slider').map(scenario => scenario.id).sort());
+});
+
+test('五段偏向題沿用藍圖的價值配對，識別不和現行題庫重複，雙方選項與代價完整', () => {
+  const filled = (text: string) => text.trim().length > 0;
+  const published = new Set(scenarios.map(scenario => scenario.id));
+  const ids = preferenceScenarios.map(scenario => scenario.id);
+  expect(ids.length).toBeGreaterThan(0);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const scenario of preferenceScenarios) {
+    expect(published.has(scenario.id), scenario.id).toBe(false);
+    expect([scenario.kind, ...scenario.pair], scenario.id).toEqual(['preference', ...blueprint[scenario.slotId].slice(0, 2)]);
+    expect([scenario.title, scenario.setup, scenario.domain].every(filled), scenario.id).toBe(true);
+    expect(scenario.options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
+    expect(scenario.options.every(option => filled(option.label) && filled(option.consequence)), scenario.id).toBe(true);
+    expect(new Set(scenario.options.map(option => option.id)).size, scenario.id).toBe(2);
+  }
 });
