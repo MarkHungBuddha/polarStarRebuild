@@ -7,11 +7,13 @@ function hash(text: string): number {
   return value >>> 0;
 }
 
-export const catalogVersion = `c${hash(JSON.stringify(scenarios)).toString(36)}`;
+/** A catalog's version: a hash of its full registry JSON, so any change to text, order or variants changes it. */
+export const catalogVersionOf = (catalog: readonly Scenario[]) => `c${hash(JSON.stringify(catalog)).toString(36)}`;
+export const catalogVersion = catalogVersionOf(scenarios);
 
-function groups(): Scenario[][] {
+function groups(catalog: readonly Scenario[] = scenarios): Scenario[][] {
   const slots = new Map<string, Scenario[]>();
-  for (const scenario of scenarios) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
+  for (const scenario of catalog) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
   return [...slots.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([, variants]) => variants);
 }
 
@@ -48,8 +50,8 @@ export function requestedQuestions(search: string): { questions?: Scenario[]; no
 }
 
 /** The variant chosen in each slot, in slot order and base36; a question link's seed is `p.` followed by these joined with dots. */
-export function questionPlan(questions: readonly Scenario[]): string[] | undefined {
-  const slots = groups();
+export function questionPlan(questions: readonly Scenario[], catalog: readonly Scenario[] = scenarios): string[] | undefined {
+  const slots = groups(catalog);
   if (questions.length !== slots.length) return undefined;
   const selectors: string[] = [];
   for (const variants of slots) {

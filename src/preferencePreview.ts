@@ -1,5 +1,6 @@
 import { binarySlotScenarios } from './scenarios/choice-slots';
 import { preferenceScenarios } from './scenarios/preference';
+import { catalogVersionOf, questionPlan } from './questionPlan';
 import type { SessionCatalog } from './sessionStorage';
 import type { PreferenceScenario } from './types';
 
@@ -19,3 +20,12 @@ export const preferencePreviewCatalog: SessionCatalog = {
 };
 
 export const isPreferencePreview = (search: string) => new URLSearchParams(search).get('experience') === 'preference';
+
+/**
+ * PREVIEW ONLY (#54, consolidated into the published catalog by #56): a preview result link names the preview catalog
+ * by its own version, and the preview always asks the same questions, so that version and plan can be answered again
+ * through the preview entry.
+ */
+export const preferencePreviewVersion = catalogVersionOf(preferencePreviewCatalog.scenarios);
+export const preferencePreviewPlan = questionPlan(preferencePreviewCatalog.scenarios, preferencePreviewCatalog.scenarios)!;
+export const preferencePreviewSearch = '?experience=preference';
