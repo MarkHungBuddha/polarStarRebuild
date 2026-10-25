@@ -2,6 +2,8 @@ import type { Session, ValueItem } from './types';
 import { leaningValue, type Placed } from './valueRanking';
 
 export const preferenceScoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這是產品計分約定，不表示偏好強度具有兩倍關係，也不是百分比。';
+/** A score as every preference conclusion shows it; tied rows share it (各). */
+export const preferenceScoreText = (score: number, tied: boolean) => `${tied ? '各 ' : ''}${score} 分`;
 export interface PreferenceScore { value: ValueItem; score: number }
 export const isPreferenceSession = (session: Pick<Session, 'scenarios'>) => session.scenarios.length > 0 && session.scenarios.every(scenario => scenario.kind === 'preference');
 

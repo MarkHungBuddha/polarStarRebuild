@@ -1,5 +1,5 @@
 import { coreValueWord } from './data';
-import { withPositions, type SharedResult } from './resultLink';
+import { withPositions, type LegacySharedResult } from './resultLink';
 import { chosenCountText } from './valueRanking';
 
 export const resultImageColors = {
@@ -49,8 +49,11 @@ function layoutColumn(rows: readonly { ids: string[]; count?: string }[], limit:
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
-/** Draw only the public conclusion. The returned PNG is also the file used by system sharing. */
-export async function createResultImage(result: SharedResult, theme: ImageTheme): Promise<File> {
+/**
+ * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
+ * Only legacy counts are drawn; a preference result (`scoring: 'preference-score'`) has no image until #55.
+ */
+export async function createResultImage(result: LegacySharedResult, theme: ImageTheme): Promise<File> {
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
   const chosenColumn = layoutColumn(result.chosen.map(row => ({ ids: row.ids, count: chosenCountText(row, row.ids.length > 1) })), 5, false);
   const customShown = result.custom.slice(0, imageCustomLimit);

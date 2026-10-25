@@ -172,5 +172,5 @@ test('已看紀錄無法讀取時仍能完成作答，並告知無法保存', as
   await enterScenarios(page);
   await answer(page);
   await expect(resultHeading(page)).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('目前無法保存本機紀錄');
+  await expect(page.getByText('目前無法保存本機紀錄。', { exact: false })).toBeVisible();
 });
