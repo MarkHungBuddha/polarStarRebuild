@@ -210,7 +210,7 @@ test('訊息題可以全刪後選擇這次不傳，與目前無法決定分開�
   await expect((await openRedesignRecords(page)).locator('.evidence-quote')).toHaveText('這次不傳訊息');
 });
 
-test('鍵盤可完成物件分配與訊息題', async ({ page }) => {
+test('鍵盤可完成物件分配', async ({ page }) => {
   await startRedesign(page, 'interactive-slot11-fund');
   for (const [index, object] of ['三月場決定牌', '五月場決定牌', '七月場決定牌', '九月場決定牌', '十月場決定牌', '十二月場決定牌'].entries()) {
     await page.getByRole('button', { name: object, exact: true }).focus();
@@ -221,6 +221,9 @@ test('鍵盤可完成物件分配與訊息題', async ({ page }) => {
   await confirm(page).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('明確決策 1 / 1 題', { exact: true })).toBeVisible();
+});
+
+test('鍵盤可完成訊息題', async ({ page }) => {
   await startRedesign(page, 'interactive-slot12-project');
   const first = page.getByRole('group', { name: '尚未傳送的訊息' }).getByRole('button').first();
   await first.focus();
