@@ -78,12 +78,14 @@ test('返回修改要重新確認才覆蓋；重新整理保留上次已確認�
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
 });
 
-test('新版結果還沒有結果連結、結果圖或題目連結的分享入口', async ({ page }) => {
+test('新版結果只分享結果連結，還沒有結果圖或題目連結的分享入口', async ({ page }) => {
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
-  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveCount(0);
+  // The result link arrives with #66; the result image (#67) and question links (#71) come later.
+  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['複製結果連結']);
   await expect(page.getByRole('link', { name: /分享|結果圖/ })).toHaveCount(0);
-  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await expect(page.getByRole('textbox')).toHaveCount(1);
+  await expect(page.getByRole('textbox', { name: '結果連結' })).toHaveValue(/#r=3\./);
 });
 
 test('沒有預覽參數時，正式入口仍是五段偏向作答', async ({ page }) => {
