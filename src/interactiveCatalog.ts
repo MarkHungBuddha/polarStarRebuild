@@ -12,7 +12,7 @@ function fnv1a(text: string): number {
 export const bankVersion = (scenarios: readonly InteractiveScenario[]) => `c${fnv1a(JSON.stringify(scenarios)).toString(36)}`;
 
 /**
- * The question bank and its version. Drawing a round, seen history, question links, the saved session and format version 3
+ * The question bank and its version. Drawing a round, seen history, question links, the saved session and format version 4
  * result links all use it; records and links made under another version never apply to it (docs/scenario-feature-spec.md「本機保存」).
  */
 export const interactiveCatalog = {

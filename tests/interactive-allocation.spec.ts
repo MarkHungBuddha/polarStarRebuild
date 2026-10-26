@@ -83,5 +83,5 @@ test('結果分享結果圖和結果連結，頁尾另有只分享題目的入�
   await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['分享結果', '下載結果圖', '複製結果連結', '分享這份題目']);
   await expect(page.getByRole('link', { name: /分享|結果圖/ })).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveCount(1);
-  await expect(page.getByRole('textbox', { name: '結果連結' })).toHaveValue(/#r=3\./);
+  await expect(page.getByRole('textbox', { name: '結果連結' })).toHaveValue(/#r=4\./);
 });
