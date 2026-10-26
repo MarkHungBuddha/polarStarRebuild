@@ -9,7 +9,7 @@
 .scenario-progress p { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin: 0 0 10px; color: var(--text-2); font-size: 13px; line-height: 1.7; }
 .scenario-count { color: var(--accent); font: 700 15px/1.6 var(--font-hand); }
 .progress-segments { display: flex; gap: 4px; }
-.progress-segments span { flex: 1; height: 6px; border-radius: 3px; background: var(--track); }
+.progress-segments span { flex: 1; height: 6px; border-radius: 99px; background: var(--track); }
 .progress-segments .done { background: var(--accent); }
 .progress-segments .current { background: var(--tape); box-shadow: inset 0 0 0 1.5px var(--accent); }
 

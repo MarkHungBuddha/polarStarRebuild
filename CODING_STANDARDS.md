@@ -1,6 +1,6 @@
 # Coding standards
 
-Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc + ESLint）擋下，這裡只放需要判斷的規則。用詞以 [GLOSSARY.md](GLOSSARY.md) 為準。
+Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc、ESLint、`scripts/check-css.mjs`）擋下，例如 `src/scenarios.ts` 不能直接寫題目、CSS 不用 rem、圓角只用 token；題庫版本由 `tests/catalog.spec.ts` 固定。這裡只放需要判斷的規則。用詞以 [GLOSSARY.md](GLOSSARY.md) 為準。
 
 ## 版本適用範圍
 
@@ -20,7 +20,7 @@ Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc + ESLint�
 ## 題庫
 
 - **題目只放在 registry 檔。** 內容依組別放在 `src/scenarios/preference-slots-*.ts`，`src/scenarios.ts` 只負責組合；新增或改寫題目不需要改元件。registry 順序決定題庫版本和連結裡的變體編號，只能附加，不能重排。
-- **文案來自作者筆記。** 題目文案依 [docs/content-authoring-notes.md](docs/content-authoring-notes.md)；筆記沒有的題目，先在筆記標記缺口並回報，不自行撰寫後當成定稿。
+- **代理寫的題目是草稿。** 題目文案依 [docs/content-authoring-notes.md](docs/content-authoring-notes.md)。代理起草的題目要在 `docs/preference-content/` 寫明是 AI 草稿，逐題記下取捨條件怎麼維持相近和待決問題；人工審稿前不寫成定稿，也不說經過心理測量驗證。
 
 ## 測試
 
@@ -31,4 +31,4 @@ Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc + ESLint�
 ## 舊版結果（格式版本 1）
 
 - **照分享當時顯示，不重算。** 收件者頁照連結裡的「選了 N 次／共 M 題」與名次顯示，註明使用舊版計分；不換算成偏向分數，也不和格式版本 2 共用欄位。
-- **解讀程式與定版範例不改。** `tests/support/result-links-v1.ts` 的範例連結只增不改；刪除舊作答程式時，不能動到格式版本 1 的讀取與合法性檢查。舊題庫已移除，所以這類連結不再提供用同一份題目作答。
+- **定版範例只增不改，而且要全部通過。** 格式版本 1 的讀取行為由 `tests/support/result-links-v1.ts` 守住；讀取程式可以整理，但任何範例的顯示結果都不能變。舊題庫已移除，所以這類連結不再提供用同一份題目作答。
