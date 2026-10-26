@@ -55,51 +55,6 @@ export async function classifyAndRankValues(page: Page) {
   await rankValuesInListedOrder(page);
 }
 
-/** A five-step answer, as its option is named on the page. */
-export type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
-
-/** Picks `lean` on the current question and confirms it. */
-export async function confirmCurrentScenario(page: Page, lean: Lean = '強烈偏向 A') {
-  await page.getByRole('radio', { name: lean, exact: true }).click();
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
-}
-
-/** Answers every question before the one titled `title` with `lean`, stopping on it. */
-export async function goToScenario(page: Page, title: string, lean: Lean = '強烈偏向 A') {
-  for (let count = 0; count < 30; count += 1) {
-    if (await page.getByRole('heading', { name: title, exact: true }).count()) return;
-    if (!await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
-    const current = await page.locator('.scenario-card h1').textContent();
-    await confirmCurrentScenario(page, lean);
-    if (current) await expect(page.getByRole('heading', { name: current, exact: true })).toHaveCount(0);
-  }
-  await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
-}
-
-/** Answers every remaining scenario with `lean` and stops on the result page as it first opens (the cover after a full run). */
-export async function answerRemainingScenarios(page: Page, lean: Lean = '強烈偏向 A') {
-  const result = page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
-  for (let count = 0; count < 30; count += 1) {
-    if (await result.isVisible() || !await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
-    const current = await page.locator('.scenario-card h1').textContent();
-    await confirmCurrentScenario(page, lean);
-    if (current) await expect(page.getByRole('heading', { name: current, exact: true })).toHaveCount(0);
-  }
-  await expect(result).toBeVisible();
-}
-
-/** Opens the detailed report from the result cover; already on the report, it does nothing. */
-export async function openDetailedReport(page: Page) {
-  const detail = page.getByRole('button', { name: '閱讀詳細報告 →' });
-  if (await detail.count()) await detail.click();
-}
-
-/** Answers every remaining scenario and opens the detailed report, where the evidence is. */
-export async function completeRemainingScenarios(page: Page, lean: Lean = '強烈偏向 A') {
-  await answerRemainingScenarios(page, lean);
-  await openDetailedReport(page);
-}
-
 export async function expectNoHorizontalScroll(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
@@ -170,4 +125,21 @@ export async function expectFocusRing(locator: Locator) {
   const outline = await locator.evaluate(element => ({ style: getComputedStyle(element).outlineStyle, width: parseFloat(getComputedStyle(element).outlineWidth) }));
   expect(outline.style).toBe('solid');
   expect(outline.width).toBeGreaterThanOrEqual(2);
+}
+
+/** No text inside `scope` ends with a line holding a single character (a lone 字 or punctuation mark wrapped onto its own line). */
+export async function expectNoLoneLastCharacter(scope: Locator) {
+  const lone = await scope.evaluate(root => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent?.trimEnd() ?? '';
+      if (text.length < 2 || node.parentElement?.offsetParent === null) continue;
+      const rectAt = (index: number) => { const range = document.createRange(); range.setStart(node!, index); range.setEnd(node!, index + 1); return range.getBoundingClientRect(); };
+      const [last, before] = [rectAt(text.length - 1), rectAt(text.length - 2)];
+      if (last.top - before.top > last.height / 2) found.push(text.slice(-12));
+    }
+    return found;
+  });
+  expect(lone).toEqual([]);
 }

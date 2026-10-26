@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Scenario } from './types';
+import type { InteractiveScenario } from './interactiveTypes';
 import { StarIcon } from './StarIcon';
 import './techo-scenario.css';
 
@@ -20,9 +20,9 @@ function splitClosingQuestion(setup: string) {
   return match ? { body: match[1], question: match[2] } : { body: setup, question: undefined };
 }
 
-/** The question layout: a paper card with the situation, the answer control, then back / confirm / return-to-result. */
+/** The question layout: a paper card with the situation, the answer control, then back / confirm / return-to-result. Every interaction shares it. */
 export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack, onReview, children }: {
-  scenario: Scenario; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
+  scenario: Pick<InteractiveScenario, 'domain' | 'title' | 'setup'>; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
 }) {
   const { body, question } = splitClosingQuestion(scenario.setup);
   return <section className="scenario-page">

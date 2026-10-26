@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
-import { answerRemainingScenarios, classifyAll, classifyAndRankValues } from './experience';
+import { classifyAll } from './experience';
+import { answerInteractiveByTitle, startInteractiveScenarios } from './interactive';
 
 export const corruptHeading = '這條結果連結不完整';
 export const unsupportedHeading = '這條結果連結目前無法顯示';
@@ -18,17 +19,15 @@ export async function expectUnreadable(page: Page, fragment: string, heading = c
 /** The sharer's「分享結果」block on the result page. */
 export const shareRegion = (page: Page) => page.getByRole('region', { name: '分享結果' });
 
-/** The fixed-randomness flow: core values ranked in list order, every scenario answered 強烈偏向 A. */
+/** The fixed-randomness flow: core values ranked in list order, the round's first question split 4 to 2 toward side A, the rest 目前無法決定. */
 export async function reachShare(page: Page) {
-  await page.goto('/');
-  await classifyAndRankValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
+  await startInteractiveScenarios(page);
+  await answerInteractiveByTitle(page, { '六天的旅程，哪幾天自己排？': { allocate: [4, 2] } });
   return shareRegion(page);
 }
 
 /**
- * Adds the custom values on the first screen, puts every core value in「這就是我」and answers every scenario.
+ * Adds the custom values on the first screen, puts every core value in「這就是我」and answers every question 目前無法決定.
  * `classified` runs after the values are classified and `ranked` on the ranking page, for tests that move a value first.
  */
 export async function reachShareWithCustomValues(page: Page, words: readonly string[], { classified, ranked }: { classified?: () => Promise<void>; ranked?: () => Promise<void> } = {}) {
@@ -43,6 +42,6 @@ export async function reachShareWithCustomValues(page: Page, words: readonly str
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await ranked?.();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
+  await answerInteractiveByTitle(page);
   return shareRegion(page);
 }

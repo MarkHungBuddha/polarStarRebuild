@@ -1,7 +1,7 @@
 // Published result links, format version 2 (preference scores). A published link is never edited, only added to: the site promises to keep reading every published format (ADR 0005).
 // `resultLinksV2Catalog` is the catalog version most of these links were written against: the thirteen-slot bank during development (#54),
 // so their plans have thirteen questions. `fixedFlowAtRelease` was written against the bank the site launched with (#56).
-// Tests that need the original question set swap `v` and the plan for today's catalog.
+// The five-step bank is gone (#71), so none of these links offers the original question set any more.
 export const resultLinksV2Catalog = 'c1oezm4';
 
 export interface PublishedPreferenceLink { fragment: string; stated: string[]; scored: string[]; custom?: string[] }
@@ -9,7 +9,7 @@ export interface PublishedPreferenceLink { fragment: string; stated: string[]; s
 export const noScores = '這次作答沒有明確偏向。';
 
 export const resultLinksV2 = {
-  // What the fixed flow in preference-result-link.spec.ts shares: core values ranked in list order, the first variant of each of the
+  // What the fixed flow in the five-step preference-result-link.spec.ts (removed in #71) shared: core values ranked in list order, the first variant of each of the
   // thirteen slots of the development bank, answered B strong, A strong, B slight, B slight, then 兩者相當 for the rest.
   fixedFlow: {
     fragment: '#r=2.autonomy~stimulation~hedonism.3-security~2-autonomy~1-care..c1oezm4.0-0-0-0-0-0-0-0-0-0-0-0-0',

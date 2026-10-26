@@ -17,7 +17,7 @@ test('自訂價值預設不分享，勾選後依第一幕順序送到收件者�
   await group.getByLabel('這就是我', { exact: true }).focus();
   await page.keyboard.press('Space');
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
-  expect(new URL(link).hash.split('.')[3]).toBe('6YCZ5bCx5piv5oiR~5L-d5pyJ542o6JmV55qE5pmC6ZaT');
+  expect(new URL(link).hash.split('.')[4]).toBe('6YCZ5bCx5piv5oiR~5L-d5pyJ542o6JmV55qE5pmC6ZaT');
   const context = await browser.newContext();
   const recipient = await context.newPage();
   await recipient.goto(link);

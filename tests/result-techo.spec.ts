@@ -1,10 +1,11 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { answerRemainingScenarios, classifyAll, expectHorizontalText, expectLongParagraphsInSans, expectNoClippedText, expectNoHorizontalScroll, expectTouchTargets, openDetailedReport } from './support/experience';
+import { classifyAll, expectHorizontalText, expectLongParagraphsInSans, expectNoClippedText, expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
+import { answerInteractiveByTitle } from './support/interactive';
 
 const longCustomValue = 'Supercalifragilisticexpi';
 
-/** First act with a 24-character custom value and every value tied, then all scenarios; stops on the result cover. */
+/** First act with a 24-character custom value and every value tied, then every question 目前無法決定; stops on the result. */
 async function reachResultWithLongNames(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
@@ -13,22 +14,18 @@ async function reachResultWithLongNames(page: Page) {
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerRemainingScenarios(page);
+  await answerInteractiveByTitle(page);
 }
 
-test('結果摘要把解讀限制寫在註記裡，沒有圖片匯出', async ({ page }) => {
+test('結果把解讀限制寫在註記裡', async ({ page }) => {
   await reachResultWithLongNames(page);
   await expect(page.getByRole('note').filter({ hasText: '不是人格判定' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /圖片/ })).toHaveCount(0);
-  await openDetailedReport(page);
-  await expect(page.getByRole('note').filter({ hasText: '改一題就可能換名次' })).toBeVisible();
   await expect(page.getByRole('note').filter({ hasText: '題目與解讀尚未驗證' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /圖片/ })).toHaveCount(0);
 });
 
 for (const width of [320, 390, 1280]) {
   for (const colorScheme of ['light', 'dark'] as const) {
-    test(`結果摘要、詳細回顧與分享區在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下長名稱皆可讀，不橫向溢出，點擊區至少 44 × 44px`, async ({ page }) => {
+    test(`結果、逐題紀錄與分享區在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下長名稱皆可讀，不橫向溢出，點擊區至少 44 × 44px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ colorScheme });
       await reachResultWithLongNames(page);
@@ -42,8 +39,11 @@ for (const width of [320, 390, 1280]) {
       await expectTouchTargets(page.locator('main'));
       await expectHorizontalText(page.locator('body'));
       await expectLongParagraphsInSans(page.locator('main'));
-      await openDetailedReport(page);
-      await expect(page.getByText(longCustomValue)).toBeVisible();
+      await page.locator('details.decision-records summary').click();
+      await page.locator('details.counting-rules summary').click();
+      // Listed with the custom values and offered in the share block.
+      await expect(page.getByText(longCustomValue)).toHaveCount(2);
+      for (const item of await page.getByText(longCustomValue).all()) await expect(item).toBeVisible();
       await expectNoHorizontalScroll(page);
       await expectNoClippedText(page.locator('main'));
       await expectTouchTargets(page.locator('main'));

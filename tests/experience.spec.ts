@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures';
-import { classifyAll, classifyAndRankValues, classifyValues, completeRemainingScenarios, expectNoHorizontalScroll, expectPosition, confirmCurrentScenario, goToScenario, pressOnHandle, rankValuesInListedOrder, setCategory } from './support/experience';
+import { classifyAll, expectNoHorizontalScroll, expectPosition, pressOnHandle, rankValuesInListedOrder, setCategory } from './support/experience';
+import { answerInteractiveByTitle, questionHeading } from './support/interactive';
 
 test('使用者能分類十個共同價值，並在進入情境前排出順序、保留自訂價值', async ({ page }) => {
   await page.goto('/');
@@ -16,24 +17,8 @@ test('使用者能分類十個共同價值，並在進入情境前排出順序�
   await expectPosition(page, '安全穩定', 7);
   await expect(page.getByText('就算很難分，也請排出先後', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '下週，照原計畫嗎？');
-  await expect(page.getByRole('heading', { name: '下週，照原計畫嗎？' })).toBeVisible();
+  await expect(questionHeading(page)).toHaveText('六天的旅程，哪幾天自己排？');
   await expect(page.getByRole('button', { name: '確認答案' })).toBeDisabled();
-});
-
-test('沒有調整排序時照清單順序比對，結果照常標出相符或不同', async ({ page }) => {
-  await page.goto('/');
-  await classifyValues(page);
-  await expectPosition(page, '探索刺激', 2);
-  await expectPosition(page, '安全穩定', 6);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '下週，照原計畫嗎？');
-  await confirmCurrentScenario(page, '強烈偏向 B');
-  await completeRemainingScenarios(page);
-  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
-  await expect(evidence.getByText('你把探索刺激放在安全穩定之前。比較兩幕時只看偏向哪一邊，不看偏向多少。')).toBeVisible();
 });
 
 test('排序只在同一類別內，換類別的價值排到新類別最後', async ({ page }) => {
@@ -58,34 +43,10 @@ test('排序只在同一類別內，換類別的價值排到新類別最後', as
   await expectPosition(page, '成就', 1);
 });
 
-test('結果只使用最後確認答案，並可呈現相符與不同', async ({ page }) => {
-  await page.goto('/');
-  await classifyAndRankValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '下週，照原計畫嗎？');
-  await confirmCurrentScenario(page, '強烈偏向 B');
-  await completeRemainingScenarios(page);
-  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
-  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕不同');
-  await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
-  await evidence.getByRole('button', { name: '修改這題' }).click();
-  await page.getByRole('radio', { name: '稍微偏向 A', exact: true }).click();
-  // Returning without confirming keeps the earlier confirmed answer.
-  await page.getByRole('button', { name: '返回已確認結果' }).click();
-  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕不同');
-  await evidence.getByRole('button', { name: '修改這題' }).click();
-  await expect(page.getByRole('radio', { name: '強烈偏向 B', exact: true })).toBeChecked();
-  await confirmCurrentScenario(page, '稍微偏向 A');
-  await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
-  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕相符');
-  await expect(evidence.getByText('已確認答案：稍微偏向 A。探索刺激加 1 分。')).toBeVisible();
-});
-
-test('自訂價值在結果獨立呈現，不列入兩幕對照', async ({ page }) => {
+test('自訂價值在結果獨立列出分類與位置，不列入次數或兩幕對照', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: '開始這次反思' }).focus();
-  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: '開始這次反思' }).click();
   await page.getByRole('textbox', { name: '自訂價值' }).fill('創作');
   await page.getByRole('button', { name: '新增價值' }).click();
   await classifyAll(page, 'core');
@@ -93,18 +54,9 @@ test('自訂價值在結果獨立呈現，不列入兩幕對照', async ({ page 
   await rankValuesInListedOrder(page);
   await pressOnHandle(page, '創作', 'End');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '下週，照原計畫嗎？');
-  // Keyboard only: the radio group takes focus on its first option, and arrows move the choice.
-  await page.getByRole('radio', { name: '強烈偏向 A', exact: true }).focus();
-  await page.keyboard.press('Space');
-  for (let step = 0; step < 4; step += 1) await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('radio', { name: '強烈偏向 B', exact: true })).toBeChecked();
-  await page.getByRole('button', { name: '確認答案' }).focus();
-  await page.keyboard.press('Enter');
-  await completeRemainingScenarios(page);
-  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
+  await answerInteractiveByTitle(page);
   await expect(page.getByRole('heading', { name: '你的自訂價值' })).toBeVisible();
   await expect(page.getByText('創作 · 這就是我 · 位置 11')).toBeVisible();
+  await expect(page.getByRole('list', { name: '全部價值的優先保留次數' })).not.toContainText('創作');
   await expectNoHorizontalScroll(page);
 });

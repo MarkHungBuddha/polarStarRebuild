@@ -16,7 +16,7 @@ const srcSyntax = [
   { selector: 'JSXText[value=/[A-Z]{2,}/]', message: 'Visible text is Chinese; uppercase English decoration is out of the techo spec (docs/techo-restyle-spec.md).' },
 ];
 // Result-link checks only confirm the format; the result-share UI must not present them as verification (ADR 0005). Elsewhere 驗證 still means the questions are unvalidated.
-const resultShareFiles = ['src/resultLink.ts', 'src/SharedResult.tsx', 'src/ResultShare.tsx', 'src/ShareFooter.tsx', 'src/resultImage.ts', 'src/useResultImage.ts'];
+const resultShareFiles = ['src/resultLink.ts', 'src/SharedResult.tsx', 'src/InteractiveShare.tsx', 'src/ShareActions.tsx', 'src/ShareFooter.tsx', 'src/resultImage.ts', 'src/useResultImage.ts'];
 
 export default tseslint.config(
   { ignores: ['dist', 'test-results', 'playwright-report', 'vite.config.js', 'vite.config.d.ts'] },
@@ -27,11 +27,11 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...srcSyntax] },
   },
   {
-    // The registry only composes the slot files (CODING_STANDARDS.md「題庫」); question content lives in src/scenarios/preference-slots-*.ts.
-    files: ['src/scenarios.ts'],
+    // The registry only composes the slot files (CODING_STANDARDS.md「題庫」); question content lives in src/scenarios/interactive-slots-*.ts.
+    files: ['src/interactiveScenarios.ts'],
     rules: {
       'no-restricted-syntax': ['error', ...srcSyntax,
-        { selector: 'ObjectExpression', message: 'Write question content in src/scenarios/preference-slots-*.ts; src/scenarios.ts only composes them.' }],
+        { selector: 'ObjectExpression', message: 'Write question content in src/scenarios/interactive-slots-*.ts; src/interactiveScenarios.ts only composes them.' }],
     },
   },
   {
