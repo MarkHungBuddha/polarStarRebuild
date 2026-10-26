@@ -1,6 +1,6 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import { isAnswerTo } from './interactiveAnswers';
-import type { InteractiveSession } from './interactiveTypes';
+import { reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
 import { isScreen, validValues } from './sessionStorage';
 import type { Screen } from './types';
 
@@ -13,6 +13,12 @@ const unusableSessionKeys = ['polarstar.session.v1', 'polarstar.interactive-prev
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/** A reflection names one of the session's questions and holds a note of at most `reflectionNoteLimit` characters. */
+function validReflection(value: unknown, scenarioIds: string[]): boolean {
+  return isRecord(value) && Object.keys(value).length === 2 && typeof value.variantId === 'string' && scenarioIds.includes(value.variantId)
+    && typeof value.note === 'string' && value.note.length <= reflectionNoteLimit;
+}
+
 function validSession(value: unknown): value is InteractiveSession {
   if (!isRecord(value) || !isScreen(value.screen) || !validValues(value.values, value.screen)) return false;
   const { scenarios, answers, scenarioIndex } = value;
@@ -22,6 +28,7 @@ function validSession(value: unknown): value is InteractiveSession {
   if (current.some(scenario => !scenario) || new Set(current.map(scenario => scenario!.id)).size !== current.length) return false;
   if (typeof scenarioIndex !== 'number' || !Number.isInteger(scenarioIndex) || scenarioIndex < 0 || scenarioIndex >= scenarios.length) return false;
   if (!Object.entries(answers).every(([id, answer]) => current.some(scenario => scenario!.id === id && isAnswerTo(answer, scenario!)))) return false;
+  if (value.reflection !== undefined && !validReflection(value.reflection, current.map(scenario => scenario!.id))) return false;
   return value.screen !== 'result' || current.every(scenario => answers[scenario!.id] !== undefined);
 }
 
