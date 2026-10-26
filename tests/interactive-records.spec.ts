@@ -58,7 +58,7 @@ test('整理規則收在可展開的「結果怎麼整理」，結果用語不�
   await expect(rule).toBeHidden();
   await page.getByText('結果怎麼整理', { exact: true }).click();
   await expect(rule).toBeVisible();
-  await page.getByText('展開全部 1 題的決策', { exact: true }).click();
+  await page.getByText('展開全部 2 題的決策', { exact: true }).click();
   await expect(page.locator('.result-page')).not.toContainText(/言行|矛盾|真實行為/);
 });
 

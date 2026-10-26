@@ -35,7 +35,7 @@ function InteractiveQuestion({ scenario, answer, ...actions }: {
   const undecided = answer?.kind === 'undecided' ? answer : undefined;
   return interaction.kind === 'choose'
     ? <ChoiceQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'choose' ? answer : undecided} {...actions} />
-    : <AllocationQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'allocate' ? answer : undecided} {...actions} />;
+    : <AllocationQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'allocate' || answer?.kind === 'adjust' ? answer : undecided} {...actions} />;
 }
 
 const createSession = (): InteractiveSession => ({ screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: drawQuestions(), answers: {}, scenarioIndex: 0 });

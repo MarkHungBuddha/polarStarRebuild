@@ -3,13 +3,14 @@ import { expectFullyShown, expectNoClippedText, expectNoHorizontalScroll, expect
 import { answerInteractiveByTitle, applyDecision, choiceCards, confirmButton, confirmDecision, decisionRecord, editQuestion, priorityRows, startInteractiveScenarios, undecidedButton } from './support/interactive';
 
 // The preview's 選方案 sample shares slot03 with the six evenings; a high Math.random draws it instead of the evenings.
-// Card A is the woodwork class of one's own plan (自主), card B helping a friend pack (照顧身邊的人).
+// Card A is the woodwork class of one's own plan (自主), card B helping a friend pack (照顧身邊的人). The round's other preview
+// question (the slot04 adjust sample) is answered evenly, so it adds no count.
 test.use({ scenarioRandom: 0.99 });
 const saturday = '這個週六，去上課還是去幫忙？';
 
 test('選方案：選定卡片並確認，該側價值記 1 次，逐題紀錄寫出選了哪個方案', async ({ page }) => {
   await startInteractiveScenarios(page);
-  expect(await answerInteractiveByTitle(page, { [saturday]: '選 B' })).toEqual([saturday]);
+  expect(await answerInteractiveByTitle(page, { [saturday]: '選 B' })).toContain(saturday);
   expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
   await expect(await decisionRecord(page, saturday)).toContainText('選了「去幫朋友打包」');
 });
@@ -32,6 +33,7 @@ test('兩張卡片呈現方案內容與代價，不顯示價值名稱；一開�
   const screen = page.locator('.scenario-page');
   await expect(screen).not.toContainText(/自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/);
   await confirmButton(page).click();
+  await answerInteractiveByTitle(page);
   expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
 });
 
@@ -46,6 +48,7 @@ test('只用鍵盤也能選卡片、換卡片並確認', async ({ page }) => {
   await expect(choiceCards(page).first()).toBeChecked();
   await confirmButton(page).focus();
   await page.keyboard.press('Enter');
+  await answerInteractiveByTitle(page);
   expect(await priorityRows(page)).toEqual(['第 1｜自主｜1 次／3 題']);
 });
 
@@ -74,8 +77,9 @@ test('選方案也能選目前無法決定：確認後不加次數，逐題記�
   await startInteractiveScenarios(page);
   await applyDecision(page, '選 A');
   await confirmDecision(page, '目前無法決定');
+  await answerInteractiveByTitle(page);
   expect(await priorityRows(page)).toEqual([]);
-  await expect(page.getByText('明確決策 0 / 1 題', { exact: true })).toBeVisible();
+  await expect(page.getByText('明確決策 0 / 2 題', { exact: true })).toBeVisible();
   const record = await decisionRecord(page, saturday);
   await expect(record.locator('.evidence-quote')).toHaveText('目前無法決定');
   await expect(record).not.toContainText(/選了|一致|不同/);

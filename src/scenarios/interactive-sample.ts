@@ -19,6 +19,25 @@ export const interactiveSampleEvenings: InteractiveScenario = {
 };
 
 /**
+ * AI 草稿，只供開發預覽打通「從初始安排調整」：改寫自 preference-slot04-weekend，現況是三個週末走熟悉路線、一個週末去新地方。
+ * 第 1–5 組的內容票（#68）寫好 slot04 的三個變體時，從題庫組合拿掉這題。
+ */
+export const interactiveSampleWeekends: InteractiveScenario = {
+  id: 'interactive-sample-weekends', slotId: 'slot04', pair: ['stimulation', 'security'], domain: '生活',
+  title: '四個週末，照原本排的走嗎？',
+  setup: '假設接下來一個月有四個週末，你已經大致排好：三個週末走熟悉的路線、散步吃飯，照預計的時間回家；第三個週末去沒去過的小鎮參加一日體驗，當天行程還沒確定。交通和預算都準備好了，也沒有非去不可的人情或工作，現在改也不用付取消費。這四個週末，你會怎麼過？',
+  interaction: {
+    kind: 'adjust', unit: '個週末',
+    cells: ['第一個週末', '第二個週末', '第三個週末', '第四個週末'],
+    sides: [
+      { id: 'explore', label: '去陌生小鎮體驗', detail: '去新地方試新活動，也接受當天行程說不準。', valueId: 'stimulation' },
+      { id: 'familiar', label: '走熟悉的路線', detail: '照自己知道的步調過，也放下去新地方的機會。', valueId: 'security' },
+    ],
+    initial: [1, 1, 0, 1],
+  },
+};
+
+/**
  * AI 草稿，只供開發預覽打通選方案題，不是審閱過的題庫內容。跟六晚行事曆同屬 slot03，開發預覽固定抽第一個變體，
  * 所以只有把 Math.random 調大的 spec 會抽到它。第 1–5 組的內容票（#68）寫好 slot03 時，跟上一題一起從題庫組合拿掉。
  */
