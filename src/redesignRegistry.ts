@@ -4,6 +4,7 @@ import { redesignMessage } from './scenarios/redesign-message';
 import { redesignPriority } from './scenarios/redesign-priority';
 import { redesignLinked } from './scenarios/redesign-linked';
 import { redesignResources } from './scenarios/redesign-resources';
+import { redesignSlots01To05 } from './scenarios/redesign-slots-01-05';
 import type { InteractiveScenario } from './interactiveTypes';
 
 /** Development review bank. Each completed mechanism contributes its own scenarios here. */
@@ -14,4 +15,5 @@ export const redesignScenarios: InteractiveScenario[] = [
   ...redesignResources,
   redesignPriority,
   redesignMessage,
+  ...redesignSlots01To05,
 ];
