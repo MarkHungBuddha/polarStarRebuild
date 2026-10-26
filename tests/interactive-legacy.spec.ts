@@ -27,7 +27,7 @@ test('五段偏向版的紀錄只沿用第一幕：分類、排序與自訂價�
   await answerFiveStepVersion(page);
   await page.goto(interactivePreviewPath);
   await expect(page.getByRole('status').filter({ hasText: keptFirstAct })).toBeVisible();
-  await expect(questionHeading(page)).toHaveText('六個晚上，留給誰？');
+  await expect(questionHeading(page)).toHaveText('六天的旅程，哪幾天自己排？');
   // Nothing from the five-step answers is carried over as an interactive answer.
   await expect(confirmButton(page)).toBeDisabled();
   await page.getByRole('button', { name: '返回上一頁' }).click();

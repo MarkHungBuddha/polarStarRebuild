@@ -2,39 +2,39 @@ import { expect, test } from './support/fixtures';
 import { expectFullyShown, expectNoClippedText, expectNoHorizontalScroll, expectNoLoneLastCharacter } from './support/experience';
 import { answerInteractiveByTitle, applyDecision, choiceCards, confirmButton, confirmDecision, decisionRecord, editQuestion, priorityRows, startInteractiveScenarios, undecidedButton } from './support/interactive';
 
-// The preview's 選方案 sample shares slot03 with the six evenings; a high Math.random draws it instead of the evenings.
-// Card A is the woodwork class of one's own plan (自主), card B helping a friend pack (照顧身邊的人). The round's other preview
-// question (the slot04 adjust sample) is answered evenly, so it adds no count.
+// Math.random 0.99 draws every slot's third variant; slot 1's is the round's first question, a 選方案 question between two homes.
+// Card A moves to a place one can arrange oneself (自主), card B renews a three-year lease with fixed rent (安全穩定). Every other
+// question is answered 目前無法決定, so the counts come from this one.
 test.use({ scenarioRandom: 0.99 });
-const saturday = '這個週六，去上課還是去幫忙？';
+const lease = '這次租約，續住還是搬家？';
 
 test('選方案：選定卡片並確認，該側價值記 1 次，逐題紀錄寫出選了哪個方案', async ({ page }) => {
   await startInteractiveScenarios(page);
-  expect(await answerInteractiveByTitle(page, { [saturday]: '選 B' })).toContain(saturday);
-  expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
-  await expect(await decisionRecord(page, saturday)).toContainText('選了「去幫朋友打包」');
+  expect(await answerInteractiveByTitle(page, { [lease]: '選 B' })).toContain(lease);
+  expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
+  await expect(await decisionRecord(page, lease)).toContainText('選了「續簽三年不調租的現住處」');
 });
 
 test('兩張卡片呈現方案內容與代價，不顯示價值名稱；一開始沒有預選，選定後才能確認，也能換卡片', async ({ page }) => {
   await startInteractiveScenarios(page);
   await expect(choiceCards(page)).toHaveCount(2);
   const [a, b] = await choiceCards(page).all();
-  await expect(page.locator('.choice-card').first()).toContainText(/照原計畫去上木工課.*小板凳.*代價.*惦記著他/);
-  await expect(page.locator('.choice-card').last()).toContainText(/去幫朋友打包.*輕鬆一點.*代價.*等到明年/);
+  await expect(page.locator('.choice-card').first()).toContainText(/搬到能自己安排空間的新住處.*照自己的方式布置.*代價.*房租可能調漲/);
+  await expect(page.locator('.choice-card').last()).toContainText(/續簽三年不調租的現住處.*三年內都有保障.*代價.*照房東的規定/);
   await expect(a).not.toBeChecked();
   await expect(b).not.toBeChecked();
   await expect(confirmButton(page)).toBeDisabled();
-  await page.getByText('照原計畫去上木工課').click();
+  await page.getByText('搬到能自己安排空間的新住處').click();
   await expect(a).toBeChecked();
   await expect(confirmButton(page)).toBeEnabled();
-  await page.getByText('陪朋友一起收拾').click();
+  await page.getByText('房租和租期，三年內都有保障。').click();
   await expect(b).toBeChecked();
   await expect(a).not.toBeChecked();
   const screen = page.locator('.scenario-page');
   await expect(screen).not.toContainText(/自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/);
   await confirmButton(page).click();
   await answerInteractiveByTitle(page);
-  expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
+  expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
 });
 
 test('只用鍵盤也能選卡片、換卡片並確認', async ({ page }) => {
@@ -54,44 +54,44 @@ test('只用鍵盤也能選卡片、換卡片並確認', async ({ page }) => {
 
 test('返回修改要重新確認才覆蓋；重新整理保留上次已確認的卡片，不保存未確認的換選', async ({ page }) => {
   await startInteractiveScenarios(page);
-  await answerInteractiveByTitle(page, { [saturday]: '選 A' });
-  await editQuestion(page, saturday);
+  await answerInteractiveByTitle(page, { [lease]: '選 A' });
+  await editQuestion(page, lease);
   await expect(choiceCards(page).first()).toBeChecked();
   await applyDecision(page, '選 B');
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   expect(await priorityRows(page)).toEqual(['第 1｜自主｜1 次／3 題']);
-  await expect(await decisionRecord(page, saturday)).toContainText('選了「照原計畫去上木工課」');
+  await expect(await decisionRecord(page, lease)).toContainText('選了「搬到能自己安排空間的新住處」');
 
-  await editQuestion(page, saturday);
+  await editQuestion(page, lease);
   await applyDecision(page, '選 B');
   await page.reload();
   await expect(choiceCards(page).first()).toBeChecked();
   await confirmDecision(page, '選 B');
-  expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
+  expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
   await page.reload();
-  expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
-  await expect(await decisionRecord(page, saturday)).toContainText('選了「去幫朋友打包」');
+  expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
+  await expect(await decisionRecord(page, lease)).toContainText('選了「續簽三年不調租的現住處」');
 });
 
 test('選方案也能選目前無法決定：確認後不加次數，逐題記錄寫目前無法決定；回到題目改選卡片就取消它', async ({ page }) => {
   await startInteractiveScenarios(page);
   await applyDecision(page, '選 A');
   await confirmDecision(page, '目前無法決定');
-  await answerInteractiveByTitle(page);
+  const rest = await answerInteractiveByTitle(page);
   expect(await priorityRows(page)).toEqual([]);
-  await expect(page.getByText('明確決策 0 / 2 題', { exact: true })).toBeVisible();
-  const record = await decisionRecord(page, saturday);
+  await expect(page.getByText(`明確決策 0 / ${rest.length + 1} 題`, { exact: true })).toBeVisible();
+  const record = await decisionRecord(page, lease);
   await expect(record.locator('.evidence-quote')).toHaveText('目前無法決定');
   await expect(record).not.toContainText(/選了|一致|不同/);
 
-  await editQuestion(page, saturday);
+  await editQuestion(page, lease);
   await expect(undecidedButton(page)).toHaveAttribute('aria-pressed', 'true');
   await expect(choiceCards(page).first()).not.toBeChecked();
   await expect(confirmButton(page)).toBeEnabled();
-  await page.getByText('陪朋友一起收拾').click();
+  await page.getByText('房租和租期，三年內都有保障。').click();
   await expect(undecidedButton(page)).toHaveAttribute('aria-pressed', 'false');
   await confirmButton(page).click();
-  await expect(await decisionRecord(page, saturday)).toContainText('選了「去幫朋友打包」');
+  await expect(await decisionRecord(page, lease)).toContainText('選了「續簽三年不調租的現住處」');
 });
 
 for (const viewport of [{ width: 375, height: 812 }, { width: 1280, height: 900 }]) {
