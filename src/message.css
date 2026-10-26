@@ -1,0 +1,7 @@
+.message-bubble { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 4px; padding: 20px; }
+.message-sentence { min-width: 44px; min-height: 48px; max-width: 100%; padding: 8px 10px; white-space: normal; overflow-wrap: anywhere; text-align: left; line-height: 1.7; color: var(--ink); background: transparent; }
+.message-sentence[aria-pressed="false"] { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ink); }
+.message-sentence[aria-pressed="true"] { text-decoration: none; }
+.message-preview { margin-top: 20px; padding: 20px; }
+.message-full-text { overflow-wrap: anywhere; line-height: 1.9; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+@media (max-width: 500px) { .message-bubble, .message-preview { padding: 14px; } }

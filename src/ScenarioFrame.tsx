@@ -21,8 +21,8 @@ function splitClosingQuestion(setup: string) {
 }
 
 /** The question layout: a paper card with the situation, the answer control, then back / confirm / return-to-result. Every interaction shares it. */
-export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack, onReview, children }: {
-  scenario: Pick<InteractiveScenario, 'domain' | 'title' | 'setup'>; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
+export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, confirmLabel = '確認答案', onBack, onReview, children }: {
+  scenario: Pick<InteractiveScenario, 'domain' | 'title' | 'setup'>; caption: string; canConfirm: boolean; onConfirm: () => void; confirmLabel?: string; onBack: () => void; onReview?: () => void; children: ReactNode;
 }) {
   const { body, question } = splitClosingQuestion(scenario.setup);
   return <section className="scenario-page">
@@ -36,7 +36,7 @@ export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack
     <div className="scenario-mechanic">{children}</div>
     <p className="caption">{caption}</p>
     <nav className="actions"><button className="secondary" onClick={onBack}>返回上一頁</button>
-      <button className="primary" disabled={!canConfirm} onClick={onConfirm}>確認答案</button>
+      <button className="primary" disabled={!canConfirm} onClick={onConfirm}>{confirmLabel}</button>
       {onReview && <button className="text-button" onClick={onReview}>返回已確認結果</button>}
     </nav>
   </section>;

@@ -18,10 +18,10 @@ export const priorityColumnText = { caption: '第二幕的優先保留次數', e
  * The rest are exactly the even splits and 目前無法決定: the result opens, and a result link is made, only once every question has
  * a confirmed answer, and every confirmed answer either has a direction or is one of those two.
  */
-export function DecidedCount({ decided, total }: { decided: number; total: number }) {
+export function DecidedCount({ decided, total, undirectedNote }: { decided: number; total: number; undirectedNote?: string }) {
   return <>
     <p className="decided-count"><strong>明確決策 {decided} / {total} 題</strong></p>
-    {decided < total && <p className="caption">平均分配或「目前無法決定」的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
+    {decided < total && <p className="caption">{undirectedNote ?? `平均分配或「目前無法決定」的 ${total - decided} 題沒有方向，不計入優先保留次數。`}</p>}
   </>;
 }
 
@@ -58,7 +58,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart, revie
       {reviewOnly ? <p>這是開發審閱題組，各價值出現次數不同，不產生完整十價值排名。已確認的具體安排可在下方回看與修改。</p> : <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
         stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
         chosen={columnRows(chosen, row => priorityCountText(row.count))} />}
-      <DecidedCount decided={decided} total={total} />
+      <DecidedCount decided={decided} total={total} undirectedNote={reviewOnly ? `未計數的 ${total - decided} 題可能是平均分配、目前無法決定，或保留具體決策但不判方向；不傳訊息、混合考量與條件回報不會自動當成無法決定。` : undefined} />
     </section>
     <section className="result-evidence"><h2>逐題對照</h2>
       <p>{decided ? `方向明確的 ${decided} 題中，${same} 題與原先排序一致，${decided - same} 題不同。` : '這次沒有方向明確的題目，所以沒有和原先排序比較。'}</p>
