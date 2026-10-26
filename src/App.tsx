@@ -5,9 +5,9 @@ import { baseValues } from './data';
 import { withCategory, withStrictOrder } from './firstAct';
 import { ClassifyScreen, RankScreen } from './FirstActScreens';
 import { HomeIntro } from './HomeIntro';
-import { drawInteractiveQuestions } from './interactiveCatalog';
+import { bankVersion, drawInteractiveQuestions } from './interactiveCatalog';
 import { leaveQuestionLink, questionShareLink, requestedQuestions } from './interactiveQuestionLink';
-import { clearInteractiveSession, loadInteractiveSession, saveInteractiveSession } from './interactiveSessionStorage';
+import { clearInteractiveSession, loadInteractiveSession, redesignSessionKey, saveInteractiveSession } from './interactiveSessionStorage';
 import type { InteractiveAnswer, InteractiveScenario, InteractiveSession } from './interactiveTypes';
 import { InteractiveResult } from './InteractiveResult';
 import { ScenarioProgress } from './ScenarioFrame';
@@ -45,9 +45,10 @@ export function App() {
   const reviewId = new URLSearchParams(window.location.search).get('question');
   const reviewQuestions = reviewId ? redesignScenarios.filter(question => question.id === reviewId) : redesignScenarios;
   const developmentQuestions = reviewQuestions.length ? reviewQuestions : redesignScenarios;
+  const storageScope = redesign ? { key: redesignSessionKey, catalogVersion: bankVersion(redesignScenarios), scenarios: redesignScenarios } : undefined;
   const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
-  const [initial] = useState(() => redesign ? {} : loadInteractiveSession(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids))));
+  const [initial] = useState(() => loadInteractiveSession(() => createSession(redesign ? developmentQuestions : request.questions ?? drawInteractiveQuestions(initialHistory.ids)), storageScope));
   // A saved session waits on the home page until the user continues it or starts over; replacing it is always the user's choice.
   const [resumable, setResumable] = useState(initial.session);
   // A record that cannot be used stays until the user chooses 重新開始; starting a new round must not overwrite it unannounced.
@@ -58,8 +59,8 @@ export function App() {
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   useEffect(() => {
-    if (!redesign && saveEnabled && !resumable && !saveInteractiveSession(session)) setStorageNotice(storageSaveFailedNotice);
-  }, [session, saveEnabled, resumable, redesign]);
+    if (saveEnabled && !resumable && !saveInteractiveSession(session, storageScope)) setStorageNotice(storageSaveFailedNotice);
+  }, [session, saveEnabled, resumable, storageScope]);
   useEffect(() => {
     if (!redesign && session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
   }, [session.screen, session.scenarioIndex, session.scenarios, redesign]);
@@ -67,8 +68,8 @@ export function App() {
   // The question set comes from the link unless the user leaves it; leaving drops the link from the address bar.
   const leaveRequest = () => { leaveQuestionLink(); setRequest({ specified: false }); };
   const startOver = ({ clearHistory = false, useCurrentVersion = false } = {}) => {
-    const sessionCleared = redesign || clearInteractiveSession();
-    const historyCleared = redesign || !clearHistory || clearSeenHistory();
+    const sessionCleared = clearInteractiveSession(clearHistory ? undefined : storageScope);
+    const historyCleared = !clearHistory || clearSeenHistory();
     const history = loadSeenHistory();
     if (useCurrentVersion) leaveRequest();
     setSaveEnabled(false); setResumable(undefined); setUnusableRecord(false);

@@ -1,6 +1,6 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import { isAnswerTo, isRecord } from './interactiveAnswers';
-import { reflectionDirections, reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
+import { reflectionDirections, reflectionNoteLimit, type InteractiveScenario, type InteractiveSession } from './interactiveTypes';
 import { baseValues, categoryOrder } from './data';
 import { storageReadFailedNotice } from './storageNotices';
 import type { Screen, ValueItem } from './types';
@@ -11,6 +11,10 @@ export const interactiveSessionKey = 'polarstar.session.v3';
 const fiveStepSessionKey = 'polarstar.session.v2';
 /** The mixed-mechanism bank's record: nothing can be carried from it. */
 const unusableSessionKeys = ['polarstar.session.v1'];
+
+/** A versioned bank owns its key and validation registry; the deployed v3 path keeps its original format. */
+export interface SessionStorageScope { key: string; catalogVersion: string; scenarios: readonly InteractiveScenario[] }
+export const redesignSessionKey = 'polarstar.session.v4';
 
 const screens = ['intro', 'classify', 'rank', 'scenario', 'result'];
 const isScreen = (screen: unknown): screen is Screen => typeof screen === 'string' && screens.includes(screen);
@@ -38,12 +42,12 @@ function validReflection(value: unknown, scenarioIds: string[]): boolean {
     && (!('direction' in value) || reflectionDirections.some(direction => direction === value.direction));
 }
 
-function validSession(value: unknown): value is InteractiveSession {
+function validSession(value: unknown, registry: readonly InteractiveScenario[] = interactiveScenarios): value is InteractiveSession {
   if (!isRecord(value) || !isScreen(value.screen) || !validValues(value.values, value.screen)) return false;
   const { scenarios, answers, scenarioIndex } = value;
   if (!Array.isArray(scenarios) || !scenarios.length || !isRecord(answers)) return false;
   // A stored answer must never be applied to a rewritten or unknown question.
-  const current = scenarios.map(snapshot => interactiveScenarios.find(scenario => isRecord(snapshot) && scenario.id === snapshot.id && JSON.stringify(scenario) === JSON.stringify(snapshot)));
+  const current = scenarios.map(snapshot => registry.find(scenario => isRecord(snapshot) && scenario.id === snapshot.id && JSON.stringify(scenario) === JSON.stringify(snapshot)));
   if (current.some(scenario => !scenario) || new Set(current.map(scenario => scenario!.id)).size !== current.length) return false;
   if (typeof scenarioIndex !== 'number' || !Number.isInteger(scenarioIndex) || scenarioIndex < 0 || scenarioIndex >= scenarios.length) return false;
   if (!Object.entries(answers).every(([id, answer]) => current.some(scenario => scenario!.id === id && isAnswerTo(answer, scenario!)))) return false;
@@ -59,11 +63,12 @@ const unusableLegacyNotice = '上次留下的作答紀錄來自舊版或已經�
  * The five-step record's first act, or `undefined` when it cannot be used. Its second-act answers are never read: a first act
  * that was already finished resumes on the first interactive question.
  */
-function fiveStepFirstAct(raw: string): Pick<InteractiveSession, 'screen' | 'values'> | undefined {
+function fiveStepFirstAct(raw: string, wrapped = true): Pick<InteractiveSession, 'screen' | 'values'> | undefined {
   try {
-    const saved: unknown = JSON.parse(raw);
-    if (!isRecord(saved) || !isRecord(saved.session) || !isScreen(saved.session.screen)) return undefined;
-    const { screen, values } = saved.session;
+    const parsed: unknown = JSON.parse(raw);
+    const saved = wrapped && isRecord(parsed) ? parsed.session : parsed;
+    if (!isRecord(saved) || !isScreen(saved.screen)) return undefined;
+    const { screen, values } = saved;
     if (!validValues(values, screen)) return undefined;
     const carried: Screen = screen === 'scenario' || screen === 'result' ? 'scenario' : screen;
     return { screen: carried, values };
@@ -75,7 +80,34 @@ function fiveStepFirstAct(raw: string): Pick<InteractiveSession, 'screen' | 'val
  * and stays until the user chooses 重新開始. Without an interactive record, an earlier version's record is reported too, and a
  * five-step first act is carried into a session started by `start` (its fresh questions and no answers), offered like a saved one.
  */
-export function loadInteractiveSession(start: () => InteractiveSession): { session?: InteractiveSession; notice?: string; unusable?: boolean } {
+export function loadInteractiveSession(start: () => InteractiveSession, scope?: SessionStorageScope): { session?: InteractiveSession; notice?: string; unusable?: boolean } {
+  if (scope) {
+    let raw: string | null;
+    let earlier: string | null;
+    let wrapped = false;
+    let hasUnusableLegacy = false;
+    try {
+      raw = localStorage.getItem(scope.key);
+      earlier = raw === null ? localStorage.getItem(interactiveSessionKey) : null;
+      if (raw === null && earlier === null) { earlier = localStorage.getItem(fiveStepSessionKey); wrapped = true; }
+      if (raw === null && earlier === null) hasUnusableLegacy = unusableSessionKeys.some(key => localStorage.getItem(key) !== null);
+    } catch { return { notice: storageReadFailedNotice }; }
+    if (raw !== null) {
+      try {
+        const saved: unknown = JSON.parse(raw);
+        if (!isRecord(saved) || saved.format !== 4) return { notice: unusableNotice, unusable: true };
+        if (saved.catalogVersion === scope.catalogVersion) return validSession(saved.session, scope.scenarios) ? { session: saved.session } : { notice: unusableNotice, unusable: true };
+        // A rewritten bank can retain a valid first act, never its now-incompatible second act.
+        const firstAct = fiveStepFirstAct(JSON.stringify(saved.session), false);
+        return firstAct ? { session: { ...start(), ...firstAct }, notice: keptFirstActNotice } : { notice: unusableNotice, unusable: true };
+      } catch { return { notice: unusableNotice, unusable: true }; }
+    }
+    if (earlier !== null) {
+      const firstAct = fiveStepFirstAct(earlier, wrapped);
+      return firstAct ? { session: { ...start(), ...firstAct }, notice: keptFirstActNotice } : { notice: unusableLegacyNotice, unusable: true };
+    }
+    return hasUnusableLegacy ? { notice: unusableLegacyNotice, unusable: true } : {};
+  }
   let raw: string | null; let fiveStep: string | null; let unusable: boolean;
   try {
     raw = localStorage.getItem(interactiveSessionKey);
@@ -98,12 +130,12 @@ export function loadInteractiveSession(start: () => InteractiveSession): { sessi
   return unusable ? { notice: unusableLegacyNotice, unusable: true } : {};
 }
 
-export function saveInteractiveSession(session: InteractiveSession): boolean {
-  try { localStorage.setItem(interactiveSessionKey, JSON.stringify(session)); return true; } catch { return false; }
+export function saveInteractiveSession(session: InteractiveSession, scope?: SessionStorageScope): boolean {
+  try { localStorage.setItem(scope?.key ?? interactiveSessionKey, JSON.stringify(scope ? { format: 4, catalogVersion: scope.catalogVersion, session } : session)); return true; } catch { return false; }
 }
 
 /** Removes the interactive record and every earlier version's, so restarting never brings back a carried first act. */
-export function clearInteractiveSession(): boolean {
-  try { for (const key of [interactiveSessionKey, fiveStepSessionKey, ...unusableSessionKeys]) localStorage.removeItem(key); return true; }
+export function clearInteractiveSession(scope?: SessionStorageScope): boolean {
+  try { for (const key of scope ? [scope.key] : [redesignSessionKey, interactiveSessionKey, fiveStepSessionKey, ...unusableSessionKeys]) localStorage.removeItem(key); return true; }
   catch { return false; }
 }
