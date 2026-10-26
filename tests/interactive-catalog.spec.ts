@@ -26,3 +26,18 @@ test('分配題的總格數為偶數，格子標籤唯一，A／B 兩側依序�
     expect(new Set(sides.map(side => side.id)).size, scenario.id).toBe(2);
   }
 });
+
+test('初始安排題的現況每格標一側，格數為偶數，A／B 兩側依序對應價值配對', () => {
+  for (const scenario of interactiveScenarios) {
+    if (scenario.interaction.kind !== 'adjust') continue;
+    const { cells, sides, unit, initial } = scenario.interaction;
+    expect(cells.length > 0 && cells.length % 2 === 0, scenario.id).toBe(true);
+    expect(new Set(cells).size, scenario.id).toBe(cells.length);
+    expect(unit.trim().length > 0, scenario.id).toBe(true);
+    expect(initial.length, scenario.id).toBe(cells.length);
+    expect(initial.every(side => side === 0 || side === 1), scenario.id).toBe(true);
+    expect(sides.map(side => side.valueId), scenario.id).toEqual([...scenario.pair]);
+    expect(sides.every(side => side.label.trim() && side.detail.trim()), scenario.id).toBe(true);
+    expect(new Set(sides.map(side => side.id)).size, scenario.id).toBe(2);
+  }
+});

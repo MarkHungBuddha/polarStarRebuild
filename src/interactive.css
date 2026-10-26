@@ -7,6 +7,8 @@
 .allocation-cell legend { padding: 0 4px; color: var(--muted); font-size: 13px; }
 .allocation-cell button { min-height: 48px; padding: 8px; border: 1px solid var(--opt-border); border-radius: var(--radius-control); background: var(--opt-bg); color: var(--ink); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; cursor: pointer; }
 .allocation-cell button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.allocation-current { margin: 20px 0 0; color: var(--body); font-size: 14px; line-height: 1.6; }
+.allocation-cell-current { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
 .allocation-totals { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 20px 0 8px; padding: 16px 20px; border-radius: var(--radius-sticky); background: var(--sticky); color: var(--ink); }
 .allocation-totals p { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 14px; }
 .allocation-totals b { font-size: 20px; }

@@ -1,4 +1,5 @@
 import { columnRows } from './columnRows';
+import { answerRecord } from './interactiveAnswers';
 import type { InteractiveSession } from './interactiveTypes';
 import { PageHeader } from './PageHeader';
 import { priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
@@ -24,7 +25,7 @@ export function InteractiveResult({ session, onEdit, onRestart }: { session: Int
     </section>
     <p className="sticky-note" role="note">每題最多讓一個價值多 1 次：分得多的一側記 1 次，平均分配兩邊都不加，分配差距也不加權。次數只描述這一輪的選擇，不代表偏好強度。</p>
     <section className="result-evidence"><h2>這次的情境</h2>
-      <ol>{session.scenarios.map((scenario, index) => <li key={scenario.id}>第 {index + 1} 題 · {scenario.title} <button className="text-button" onClick={() => onEdit(index)}>修改這題</button></li>)}</ol>
+      <ol>{session.scenarios.map((scenario, index) => <li key={scenario.id}>第 {index + 1} 題 · {scenario.title}：{answerRecord(scenario, session.answers[scenario.id])} <button className="text-button" onClick={() => onEdit(index)}>修改這題</button></li>)}</ol>
     </section>
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;

@@ -21,7 +21,16 @@ export interface AllocationInteraction {
   sides: readonly [AllocationSide, AllocationSide];
 }
 
-export type Interaction = AllocationInteraction;
+/**
+ * 從初始安排調整: an allocation whose situation already has a current arrangement (現況), which may be uneven. `initial` names the
+ * side each cell is on now (0 = A, 1 = B), one entry per cell. The question opens on it; keeping it is an explicit choice.
+ */
+export interface AdjustInteraction extends Omit<AllocationInteraction, 'kind'> {
+  kind: 'adjust';
+  initial: readonly (0 | 1)[];
+}
+
+export type Interaction = AllocationInteraction | AdjustInteraction;
 
 /** An interactive question variant. Slot, pair and three variants per slot work as in the five-step bank; `interaction` replaces its `kind: 'preference'`. */
 export interface InteractiveScenario {
@@ -40,8 +49,14 @@ export interface InteractiveScenario {
  */
 export interface AllocationAnswer { kind: 'allocate'; variantId: string; counts: readonly [number, number] }
 
+/**
+ * A confirmed answer to an adjust question: the counts it ends on, as for an allocation. It counts as 維持原本安排 whenever they equal
+ * the initial arrangement's counts, whether kept outright or adjusted and changed back.
+ */
+export interface AdjustAnswer { kind: 'adjust'; variantId: string; counts: readonly [number, number] }
+
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
-export type InteractiveAnswer = AllocationAnswer;
+export type InteractiveAnswer = AllocationAnswer | AdjustAnswer;
 
 export interface InteractiveSession {
   screen: Screen;

@@ -6,10 +6,11 @@ export { confirmButton, questionHeading, resultHeading };
 
 /**
  * One interactive decision, applied to whichever question carries the title it is listed under.
- * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells.
+ * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells; '維持初始安排' presses
+ * 維持這個安排 on a question that opens on a current arrangement.
  * Later interactions add their own members here (選 A／選 B, 維持初始安排, 目前無法決定) so every spec keeps answering by title.
  */
-export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配';
+export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配' | '維持初始安排';
 
 /** The development preview of the interactive second act; it only exists on the dev server. */
 export const interactivePreviewPath = '/?preview=interactive';
@@ -26,6 +27,7 @@ export const allocationCells = (page: Page) => page.locator('.allocation-cells')
 
 /** Sets the current question to `decision` without confirming it. */
 export async function applyDecision(page: Page, decision: InteractiveDecision) {
+  if (decision === '維持初始安排') return page.getByRole('button', { name: '維持這個安排', exact: true }).click();
   const cells = await allocationCells(page).all();
   const [a, b] = decision === '平均分配' ? [cells.length / 2, cells.length / 2] : decision.allocate;
   expect(a + b, 'an allocation fills every cell').toBe(cells.length);
@@ -51,6 +53,12 @@ export async function answerInteractiveByTitle(page: Page, decisions: Readonly<R
   }
   return titles;
 }
+
+/** The result page's line for one question, found by its title. */
+export const resultLine = (page: Page, title: string) => page.locator('.result-evidence').getByRole('listitem').filter({ hasText: title });
+
+/** Reopens one question from the result page by its title. */
+export const editQuestion = (page: Page, title: string) => resultLine(page, title).getByRole('button', { name: '修改這題' }).click();
 
 /** Waits for the result page, then reads its second-act column as「名次｜價值（不論順序）｜次數」rows. */
 export async function priorityRows(page: Page) {

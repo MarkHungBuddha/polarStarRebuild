@@ -12,6 +12,16 @@ export function answerDirection(scenario: InteractiveScenario, answer: Interacti
   return a === b ? undefined : scenario.interaction.sides[a > b ? 0 : 1].valueId;
 }
 
+/**
+ * How the result's question list records a confirmed answer: 維持原本安排 when an adjust question ends on its initial counts,
+ * otherwise each side's count (「做攝影小誌 4 晚、陪朋友練面試 2 晚」).
+ */
+export function answerRecord(scenario: InteractiveScenario, answer: InteractiveAnswer): string {
+  const { interaction } = scenario;
+  if (interaction.kind === 'adjust' && [0, 1].every(side => interaction.initial.filter(cell => cell === side).length === answer.counts[side])) return '維持原本安排';
+  return interaction.sides.map((side, at) => `${side.label} ${answer.counts[at]} ${interaction.unit}`).join('、');
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0;
 
