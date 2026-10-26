@@ -16,10 +16,10 @@ export function ShareFooter({ questionShare, onClearRecords }: { questionShare?:
     {questionShare && <button className="text-button" disabled={questionShare.disabled} onClick={() => setSharing(current => !current)}>分享這份題目</button>}
     {questionShare && sharing &&<section className="share-questions">{shareLink ? <>
       <p>只分享題目，不包含你的答案、排序或自訂價值。</p>
-      <label>題目分享連結<input readOnly value={shareLink} onFocus={event => event.currentTarget.select()} /></label>
+      <label>題目連結<input readOnly value={shareLink} onFocus={event => event.currentTarget.select()} /></label>
       <button className="secondary" onClick={() => copyLink(shareLink, '已複製題目連結。', setCopyNotice)}>複製題目連結</button>
       {copyNotice && <p role="status">{copyNotice}</p>}
-    </> : <p>這份題目與目前版本不相容，無法產生相同題目的分享連結。請重新開始。</p>}</section>}
+    </> : <p>這份題目與目前版本不相容，無法產生這組題目的題目連結。請重新開始。</p>}</section>}
     <button className="text-button" onClick={onClearRecords}>清除本機作答紀錄</button><p>清除後，作答和看過的題目紀錄都會刪除；按「重新開始」則會保留看過的題目紀錄。</p>
   </footer>;
 }
