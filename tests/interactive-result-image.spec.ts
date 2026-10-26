@@ -5,10 +5,12 @@ import { answerInteractiveByTitle, decisionRecord, interactivePreviewPath, type 
 import { shareRegion } from './support/result-share';
 import { allText, drawnImage, expectFullyLegible, expectRowsDrawn, recordImageText } from './support/result-image';
 
-// The preview's samples: six evenings between a photo zine of one's own (A, 自主) and a friend's interview practice (B, 照顧身邊的人),
-// and four weekends that open on a current plan, between a new town (A, 探索刺激) and the familiar route (B, 安全穩定).
-const evenings = '六個晚上，留給誰？';
-const weekends = '四個週末，照原本排的走嗎？';
+// Questions of the round Math.random 0 draws: six days of a trip, planned by oneself (A, 自主) or on a day tour (B, 安全穩定);
+// four weekend afternoons that open on a current plan, own walks (A, 自主) or sorting photos with an elder (B, 照顧身邊的人); and four
+// holiday days that open on a current plan, a new outdoor activity (A, 探索刺激) or an elder's old craft (B, 傳承).
+const trip = '六天的旅程，哪幾天自己排？';
+const afternoons = '這個月的週末下午，照原本排的嗎？';
+const holiday = '四天連假，照原本排的過嗎？';
 
 const ownColumn = (page: Page, heading: string) => page.getByRole('heading', { name: heading, exact: true }).locator('..');
 const countColumn = (page: Page) => ownColumn(page, '情境中優先保留的');
@@ -38,8 +40,8 @@ async function reachInteractiveShare(page: Page, decisions: Readonly<Record<stri
 
 test('互動結果圖畫出兩幕前三名、並列者的「N 次／3 題」和明確決策題數，長名稱與並列都不溢出', async ({ page }) => {
   await recordImageText(page);
-  const share = await reachInteractiveShare(page, { [evenings]: { allocate: [2, 4] }, [weekends]: { allocate: [0, 4] } }, [longCustom, '早睡']);
-  await expect(countColumn(page).getByRole('listitem')).toHaveText(['並列第 1安全穩定、照顧身邊的人1 次／3 題']);
+  const share = await reachInteractiveShare(page, { [trip]: { allocate: [2, 4] }, [afternoons]: { allocate: [0, 4] }, [holiday]: { allocate: [0, 4] } }, [longCustom, '早睡']);
+  await expect(countColumn(page).getByRole('listitem')).toHaveText(['並列第 1安全穩定、傳承、照顧身邊的人1 次／3 題']);
   const group = share.getByRole('group', { name: '也分享自訂價值' });
   for (const word of [longCustom, '早睡']) await group.getByRole('checkbox', { name: word, exact: true }).check();
 
@@ -78,7 +80,7 @@ test('互動結果可以下載結果圖，系統分享帶的連結就是格式�
       calls.push({ url: data.url, type: data.files![0].type, width: bitmap.width, height: bitmap.height });
     } });
   });
-  const share = await reachInteractiveShare(page, { [evenings]: { allocate: [4, 2] } });
+  const share = await reachInteractiveShare(page, { [trip]: { allocate: [4, 2] } });
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).hash).toMatch(/^#r=3\./);
   for (const name of ['分享結果', '下載結果圖']) await expect(share.getByRole('button', { name })).toHaveAttribute('aria-disabled', 'false');
@@ -94,21 +96,21 @@ test('互動結果可以下載結果圖，系統分享帶的連結就是格式�
 
 test('結果圖和結果連結都不含逐題決策和反思筆記', async ({ page }) => {
   await recordImageText(page);
-  const share = await reachInteractiveShare(page, { [evenings]: { allocate: [4, 2] }, [weekends]: '維持初始安排' });
+  const share = await reachInteractiveShare(page, { [trip]: { allocate: [4, 2] }, [afternoons]: '維持初始安排' });
   const records: string[] = [];
-  for (const title of [evenings, weekends]) records.push((await (await decisionRecord(page, title)).locator('.evidence-quote').textContent())!);
-  expect(records).toEqual([expect.stringContaining('4 晚'), expect.stringContaining('維持原本安排')]);
+  for (const title of [trip, afternoons]) records.push((await (await decisionRecord(page, title)).locator('.evidence-quote').textContent())!);
+  expect(records).toEqual([expect.stringContaining('4 天'), expect.stringContaining('維持原本安排')]);
 
   const note = '朋友那邊其實更急';
   const reflection = page.getByRole('region', { name: '回想一題（可略過）' });
   const picker = reflection.getByLabel('選一題有感的情境');
-  const option = await picker.getByRole('option').filter({ hasText: evenings }).textContent();
+  const option = await picker.getByRole('option').filter({ hasText: trip }).textContent();
   await picker.selectOption({ label: option! });
   await reflection.getByLabel('反思筆記（可不填）').fill(note);
 
   const link = decodeURIComponent(await share.getByRole('textbox', { name: '結果連結' }).inputValue());
   const text = allText(await drawnImage(page));
-  for (const secret of [note, ...records, evenings, weekends]) {
+  for (const secret of [note, ...records, trip, afternoons]) {
     expect(link, secret).not.toContain(secret);
     expect(text, secret).not.toContain(secret);
   }

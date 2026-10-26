@@ -5,8 +5,9 @@ import { corruptHeading as corrupt, expectUnreadable, shareRegion, statedColumn,
 import { noRanking, resultLinksV3, resultLinksV3Catalog } from './support/result-links-v3';
 import { interactiveCatalog } from '../src/interactiveCatalog';
 
-// The preview's sample: six evenings between a photo zine of one's own (A, 自主) and a friend's interview practice (B, 照顧身邊的人).
-const evenings = '六個晚上，留給誰？';
+// The round's first question at Math.random 0: six days of a trip, each planned by oneself (A, 自主) or spent on a fixed day tour
+// (B, 安全穩定). Every other question is answered 目前無法決定.
+const trip = '六天的旅程，哪幾天自己排？';
 const recipientCounts = '分享者在情境中優先保留的';
 const versionLabel = '結果連結版本 3：優先保留次數';
 
@@ -20,7 +21,7 @@ const current = (fragment: string) => fragment.slice(0, fragment.lastIndexOf(`.$
 
 test('互動結果連結在別人的瀏覽器打開，前三名、次數和明確決策題數都和本人結果相同', async ({ page, browser }) => {
   await startInteractiveScenarios(page);
-  await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
+  await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
   const own = page.getByRole('region', { name: '你的前三名' });
   const stated = await own.getByRole('list').nth(0).getByRole('listitem').allTextContents();
   const counted = await countColumn(page, '情境中優先保留的').getByRole('listitem').allTextContents();
@@ -61,7 +62,7 @@ test('互動定版範例連結的並列、無排名、第一幕並列和自訂�
 
 test('沒有方向明確的決策時，收件者頁和本人結果一樣不產生第二幕排名', async ({ page, browser }) => {
   await startInteractiveScenarios(page);
-  await answerInteractiveByTitle(page, { [evenings]: '目前無法決定' });
+  await answerInteractiveByTitle(page, { [trip]: '目前無法決定' });
   await expect(countColumn(page, '情境中優先保留的').getByText(noRanking, { exact: true })).toBeVisible();
   const link = await shareRegion(page).getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).hash).toBe(current(resultLinksV3.noRanking.fragment.replace('.c0ld.', `.${resultLinksV3Catalog}.`)));
@@ -85,7 +86,7 @@ test('分享者逐項選擇自訂價值，勾選的才放進互動結果連結',
   for (const group of await page.getByRole('group', { name: /的重要性$/ }).all()) await group.getByRole('button', { name: '這就是我', exact: true }).click();
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
+  await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
   const custom = shareRegion(page).getByRole('group', { name: '也分享自訂價值' });
   for (const word of ['保有獨處的時間', '這就是我', '不分享的']) await expect(custom.getByRole('checkbox', { name: word })).not.toBeChecked();
   await custom.getByRole('checkbox', { name: '保有獨處的時間' }).check();
@@ -135,10 +136,10 @@ test('互動格式的邊界剛好成立：次數 3、明確決策題數等於題
 
 test('反思筆記不會進入結果連結', async ({ page }) => {
   await startInteractiveScenarios(page);
-  await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
+  await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
   const linkBox = shareRegion(page).getByRole('textbox', { name: '結果連結' });
   const before = await linkBox.inputValue();
-  await page.getByRole('combobox', { name: '選一題有感的情境' }).selectOption({ label: `第 1 題：${evenings}` });
+  await page.getByRole('combobox', { name: '選一題有感的情境' }).selectOption({ label: `第 1 題：${trip}` });
   await page.getByRole('textbox', { name: '反思筆記（可不填）' }).fill('朋友那邊其實更急');
   await expect(linkBox).toHaveValue(before);
   expect(decodeURIComponent(before)).not.toContain('朋友那邊');
