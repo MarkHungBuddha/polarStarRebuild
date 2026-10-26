@@ -50,10 +50,11 @@ export interface InteractiveScenario {
 export interface AllocationAnswer { kind: 'allocate'; variantId: string; counts: readonly [number, number] }
 
 /**
- * A confirmed answer to an adjust question: the counts it ends on, as for an allocation. It counts as 維持原本安排 whenever they equal
- * the initial arrangement's counts, whether kept outright or adjusted and changed back.
+ * A confirmed answer to an adjust question: the counts it ends on, which give its direction as for an allocation. `kept` records
+ * that it was confirmed through 維持這個安排 with no cell changed afterwards; adjusting and changing back to the initial counts
+ * leans the same way but is not kept.
  */
-export interface AdjustAnswer { kind: 'adjust'; variantId: string; counts: readonly [number, number] }
+export interface AdjustAnswer { kind: 'adjust'; variantId: string; counts: readonly [number, number]; kept: boolean }
 
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
 export type InteractiveAnswer = AllocationAnswer | AdjustAnswer;

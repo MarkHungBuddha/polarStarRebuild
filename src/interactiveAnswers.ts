@@ -13,12 +13,12 @@ export function answerDirection(scenario: InteractiveScenario, answer: Interacti
 }
 
 /**
- * How the result's question list records a confirmed answer: 維持原本安排 when an adjust question ends on its initial counts,
- * otherwise each side's count (「做攝影小誌 4 晚、陪朋友練面試 2 晚」).
+ * How the result's question list records a confirmed answer: 維持原本安排 when it was kept through 維持這個安排, otherwise each
+ * side's count (「做攝影小誌 4 晚、陪朋友練面試 2 晚」), also when an adjustment ends back on the initial counts.
  */
 export function answerRecord(scenario: InteractiveScenario, answer: InteractiveAnswer): string {
   const { interaction } = scenario;
-  if (interaction.kind === 'adjust' && [0, 1].every(side => interaction.initial.filter(cell => cell === side).length === answer.counts[side])) return '維持原本安排';
+  if (answer.kind === 'adjust' && answer.kept) return '維持原本安排';
   return interaction.sides.map((side, at) => `${side.label} ${answer.counts[at]} ${interaction.unit}`).join('、');
 }
 
@@ -28,6 +28,10 @@ const isCount = (value: unknown): value is number => typeof value === 'number' &
 /** Whether a stored value is a complete answer to this very question; restored records are checked with it before any use. */
 export function isAnswerTo(answer: unknown, scenario: InteractiveScenario): answer is InteractiveAnswer {
   if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== scenario.interaction.kind) return false;
+  const { interaction } = scenario;
   const counts = answer.counts;
-  return Array.isArray(counts) && counts.length === 2 && counts.every(isCount) && counts[0] + counts[1] === scenario.interaction.cells.length;
+  if (!Array.isArray(counts) || counts.length !== 2 || !counts.every(isCount) || counts[0] + counts[1] !== interaction.cells.length) return false;
+  if (interaction.kind !== 'adjust') return true;
+  // A kept answer must end on the initial arrangement's counts.
+  return typeof answer.kept === 'boolean' && (!answer.kept || [0, 1].every(side => interaction.initial.filter(cell => cell === side).length === counts[side]));
 }

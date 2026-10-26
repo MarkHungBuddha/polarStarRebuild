@@ -31,18 +31,19 @@ export function AllocationQuestion({ scenario, interaction, answer, onConfirm, o
   const [draft, setDraft] = useState(() => draftOf(interaction, answer));
   // An allocation starts empty, so placing every cell is already a decision; an adjust question starts complete and needs one.
   const [decided, setDecided] = useState(Boolean(answer) || !initial);
+  // Set only by 維持這個安排 (or a reopened kept answer); any change to a cell clears it, even one that ends on the initial counts.
+  const [kept, setKept] = useState(answer?.kind === 'adjust' && answer.kept);
   const counts = countsOf(draft);
   const remaining = draft.length - counts[0] - counts[1];
   const { unit, sides } = interaction;
-  const update = (next: (current: (Side | null)[]) => (Side | null)[]) => { setDraft(next); setDecided(true); };
+  const update = (next: (current: (Side | null)[]) => (Side | null)[], keeps = false) => { setDraft(next); setDecided(true); setKept(keeps); };
   const place = (index: number, side: Side) => update(current => current.map((cell, at) => at === index ? side : cell));
-  const keeps = initial !== undefined && countsOf(initial).every((count, side) => count === counts[side]);
   const caption = remaining ? `每一${unit}都安排好，才能確認答案。`
     : !decided ? '這是現在的安排。可以直接維持，也可以調整；按「確認答案」才算作答。'
-    : keeps ? '目前維持原本安排，按「確認答案」才算作答。'
+    : kept ? '目前維持原本安排，按「確認答案」才算作答。'
     : '確認前都可以再調整。';
   return <ScenarioFrame scenario={scenario} caption={caption} canConfirm={decided && remaining === 0}
-    onConfirm={() => decided && remaining === 0 && onConfirm({ kind: interaction.kind, variantId: scenario.id, counts })} onBack={onBack} onReview={onReview}>
+    onConfirm={() => decided && remaining === 0 && onConfirm(interaction.kind === 'adjust' ? { kind: 'adjust', variantId: scenario.id, counts, kept } : { kind: 'allocate', variantId: scenario.id, counts })} onBack={onBack} onReview={onReview}>
     <div className="allocation-sides">{sides.map(side => <section className="paper-card" key={side.id}><h2>{side.label}</h2><p>{side.detail}</p></section>)}</div>
     {initial && <p className="allocation-current">現況：{sides.map((side, at) => `${side.label} ${countsOf(initial)[at]} ${unit}`).join('、')}。每格標著現在排的是哪一邊。</p>}
     <div className="allocation-cells">{interaction.cells.map((cell, index) => <fieldset className="allocation-cell" key={cell}>
@@ -55,7 +56,7 @@ export function AllocationQuestion({ scenario, interaction, answer, onConfirm, o
       <p><span>還沒安排</span><b>{remaining} {unit}</b></p>
       <div className="allocation-meter" aria-hidden="true"><span style={{ flexGrow: counts[0] }} /><span style={{ flexGrow: counts[1] }} /><span style={{ flexGrow: remaining }} /></div>
     </div>
-    {initial && <button type="button" className="secondary" onClick={() => update(() => [...initial])}>維持這個安排</button>}
+    {initial && <button type="button" className="secondary" onClick={() => update(() => [...initial], true)}>維持這個安排</button>}
     <button type="button" className="text-button" disabled={remaining === draft.length} onClick={() => update(current => current.map(() => null))}>全部清空，重新安排</button>
   </ScenarioFrame>;
 }

@@ -42,18 +42,38 @@ test('作答輔助依標題維持初始安排', async ({ page }) => {
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
 });
 
-test('調整後再改回初始配置，跟直接維持的計數與紀錄相同；調整成另一側較多就記另一側', async ({ page }) => {
+test('調整後再改回初始配置，計數跟直接維持相同，但紀錄寫實際格數；按維持後再改格子也不算維持', async ({ page }) => {
   await openWeekends(page);
   const third = allocationCells(page).nth(2);
   await third.getByRole('button', { name: '走熟悉的路線' }).click();
   await third.getByRole('button', { name: '去陌生小鎮體驗' }).click();
   await confirmButton(page).click();
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
+  await expect(resultLine(page, weekends)).toContainText('去陌生小鎮體驗 1 個週末、走熟悉的路線 3 個週末');
+  await expect(resultLine(page, weekends)).not.toContainText('維持原本安排');
+
+  await editQuestion(page, weekends);
+  await page.getByRole('button', { name: '維持這個安排' }).click();
+  await allocationCells(page).nth(2).getByRole('button', { name: '走熟悉的路線' }).click();
+  await allocationCells(page).nth(2).getByRole('button', { name: '去陌生小鎮體驗' }).click();
+  await confirmButton(page).click();
+  await expect(resultLine(page, weekends)).not.toContainText('維持原本安排');
+
+  await editQuestion(page, weekends);
+  await page.getByRole('button', { name: '維持這個安排' }).click();
+  await confirmButton(page).click();
+  await expect(resultLine(page, weekends)).toContainText('維持原本安排');
+  expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
+  await page.reload();
   await expect(resultLine(page, weekends)).toContainText('維持原本安排');
 
   await editQuestion(page, weekends);
   const pressed = await Promise.all((await allocationCells(page).all()).map(cell => cell.getByRole('button', { pressed: true }).textContent()));
   expect(pressed, 'a kept answer reopens on the current arrangement').toEqual(['走熟悉的路線', '走熟悉的路線', '去陌生小鎮體驗', '走熟悉的路線']);
+  await confirmButton(page).click();
+  await expect(resultLine(page, weekends), 'confirming a reopened kept answer unchanged keeps it').toContainText('維持原本安排');
+
+  await editQuestion(page, weekends);
   await confirmDecision(page, { allocate: [3, 1] });
   expect(await priorityRows(page)).toEqual(['第 1｜探索刺激｜1 次／3 題']);
   await expect(resultLine(page, weekends)).toContainText('去陌生小鎮體驗 3 個週末、走熟悉的路線 1 個週末');
