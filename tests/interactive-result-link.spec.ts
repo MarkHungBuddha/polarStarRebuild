@@ -132,3 +132,14 @@ test('互動格式的邊界剛好成立：次數 3、明確決策題數等於題
   await expect(countColumn(page, recipientCounts).getByRole('listitem')).toHaveText(['第 1照顧身邊的人3 次／3 題', '並列第 2自主、普遍關懷2 次／3 題']);
   await expect(page.getByText('明確決策 7 / 9 題', { exact: true })).toBeVisible();
 });
+
+test('反思筆記不會進入結果連結', async ({ page }) => {
+  await startInteractiveScenarios(page);
+  await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
+  const linkBox = shareRegion(page).getByRole('textbox', { name: '結果連結' });
+  const before = await linkBox.inputValue();
+  await page.getByRole('combobox', { name: '選一題有感的情境' }).selectOption({ label: `第 1 題：${evenings}` });
+  await page.getByRole('textbox', { name: '反思筆記（可不填）' }).fill('朋友那邊其實更急');
+  await expect(linkBox).toHaveValue(before);
+  expect(decodeURIComponent(before)).not.toContain('朋友那邊');
+});

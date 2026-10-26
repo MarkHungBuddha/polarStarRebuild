@@ -75,10 +75,21 @@ export interface UndecidedAnswer { kind: 'undecided'; variantId: string }
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
 export type InteractiveAnswer = AllocationAnswer | AdjustAnswer | ChoiceAnswer | UndecidedAnswer;
 
+/**
+ * The optional 反思筆記 after the result: the question the user picked to look back on and what they wrote, possibly nothing.
+ * It sits beside the answers and never changes them, the counts or the ranking; it stays on this device, out of result links and images.
+ */
+export interface Reflection { variantId: string; note: string }
+
+/** A note is meant to be one sentence; the field stops here. */
+export const reflectionNoteLimit = 200;
+
 export interface InteractiveSession {
   screen: Screen;
   values: ValueItem[];
   scenarios: InteractiveScenario[];
   answers: Record<string, InteractiveAnswer>;
   scenarioIndex: number;
+  /** Missing until the user picks a question in the reflection step, which can be skipped. */
+  reflection?: Reflection;
 }

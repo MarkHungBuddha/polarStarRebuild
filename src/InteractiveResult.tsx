@@ -1,8 +1,9 @@
 import { columnRows } from './columnRows';
 import { decisionText, firstActComparison } from './interactiveAnswers';
-import type { InteractiveSession } from './interactiveTypes';
+import type { InteractiveSession, Reflection } from './interactiveTypes';
 import { InteractiveShare } from './InteractiveShare';
 import { PageHeader } from './PageHeader';
+import { ReflectionStep } from './ReflectionStep';
 import { decidedCount, fullListCountText, priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
 import { act1TopThree, byPosition } from './valueRanking';
 import { ConclusionColumns } from './ValueConclusion';
@@ -24,9 +25,11 @@ const comparisonText = { 一致: '這次情境選擇與原先排序一致', 不�
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
  * count, then the question-by-question comparison with each raw decision. The counting rules sit in 結果怎麼整理, folded away.
- * 分享結果 carries a format version 3 result link; reflection and the result image are later tickets (#65, #67).
+ * Then the skippable reflection step, and 分享結果 with a format version 3 result link (never the notes); the result image is #67.
  */
-export function InteractiveResult({ session, onEdit, onRestart }: { session: InteractiveSession; onEdit: (index: number) => void; onRestart: () => void }) {
+export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
+  session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void;
+}) {
   const counts = priorityCounts(session);
   const decided = decidedCount(session);
   const total = session.scenarios.length;
@@ -70,6 +73,7 @@ export function InteractiveResult({ session, onEdit, onRestart }: { session: Int
         <li>次數只描述這一輪情境中的選擇，不代表偏好強度，也不是完整或穩定的價值排序。</li>
       </ul>
     </details>
+    <ReflectionStep session={session} onChange={onReflect} />
     <InteractiveShare session={session} />
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;
