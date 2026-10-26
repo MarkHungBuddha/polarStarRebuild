@@ -95,40 +95,6 @@ function placesTopThree(rows: readonly string[][]) {
   return new Set(ids).size === ids.length && ids.length - rows[rows.length - 1].length < 3;
 }
 
-const knownIds = (ids: readonly string[]) => ids.length > 0 && ids.every(id => coreIds.has(id));
-
-/** Version 1 rows are `<N>-<M>-<id>…`: 1 ≤ N ≤ M ≤ questions, more leans first, then fewer leaning appearances. */
-function readChosen(field: string, conclusion: SharedConclusion): LegacySharedResult | undefined {
-  const rows = field === '' ? [] : field.split('~').map(row => {
-    const [chosenCount, directional, ...ids] = row.split('-');
-    if (!positiveBase36.test(chosenCount) || !positiveBase36.test(directional) || !knownIds(ids)) return undefined;
-    const counts = { chosen: parseInt(chosenCount, 36), directional: parseInt(directional, 36) };
-    return counts.chosen <= counts.directional && counts.directional <= conclusion.plan.length ? { ids, ...counts } : undefined;
-  });
-  if (rows.some(row => !row)) return undefined;
-  const chosen = rows as SharedChosenRow[];
-  if (!placesTopThree(chosen.map(row => row.ids))) return undefined;
-  // Strictly ordered: equal counts would have been one tied row.
-  if (chosen.some((row, index) => index > 0 && !(row.chosen < chosen[index - 1].chosen || (row.chosen === chosen[index - 1].chosen && row.directional > chosen[index - 1].directional)))) return undefined;
-  return { scoring: 'legacy-count', ...conclusion, chosen };
-}
-
-/** Version 2 rows are `<score>-<id>…`: 1 ≤ score ≤ 2 × questions, strictly falling; zero-score values are never listed. */
-function readScored(field: string, conclusion: SharedConclusion): PreferenceSharedResult | undefined {
-  const rows = field === '' ? [] : field.split('~').map(row => {
-    const [score, ...ids] = row.split('-');
-    if (!positiveBase36.test(score) || !knownIds(ids)) return undefined;
-    const value = parseInt(score, 36);
-    return value <= 2 * conclusion.plan.length ? { ids, score: value } : undefined;
-  });
-  if (rows.some(row => !row)) return undefined;
-  const scored = rows as SharedScoreRow[];
-  if (!placesTopThree(scored.map(row => row.ids))) return undefined;
-  // Equal scores would have been one tied row.
-  if (scored.some((row, index) => index > 0 && row.score >= scored[index - 1].score)) return undefined;
-  return { scoring: 'preference-score', ...conclusion, scored };
-}
-
 /** Reads a result link from the address fragment; anything that is not `#r=…` is not a result link. Every field is checked before any of it is shown. */
 export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   if (!hash.startsWith('#r=')) return undefined;
@@ -138,17 +104,58 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   if (!/^(0|[1-9][0-9]*)$/.test(fields[0])) return { kind: 'corrupt' };
   if (fields[0] !== '1' && fields[0] !== '2') return { kind: 'unsupported' };
   if (fields.length !== 6) return { kind: 'corrupt' };
-  const [version, statedField, secondField, customField, catalog, planField] = fields;
+  return fields[0] === '1' ? readVersion1(fields) : readVersion2(fields);
+}
+
+/**
+ * Format version 1, read and checked as it was published (CODING_STANDARDS「舊版結果」); keep it apart from version 2 rather
+ * than share code with it. Its question bank is gone, so it never offers the original question set.
+ */
+function readVersion1(fields: readonly string[]): ResultLinkOutcome {
+  const [, statedField, chosenField, customField, catalog, planField] = fields;
+  const plan = planField.split('-');
+  const custom = readCustom(customField);
+  if (!custom || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => base36.test(selector))) return { kind: 'corrupt' };
+  const ids = (text: string[]) => text.length > 0 && text.every(id => coreIds.has(id)) ? text : undefined;
+  const stated = statedField.split('~').map(row => ids(row.split('-')));
+  const chosen = chosenField === '' ? [] : chosenField.split('~').map(row => {
+    const [chosenCount, directional, ...rowIds] = row.split('-');
+    if (!positiveBase36.test(chosenCount) || !positiveBase36.test(directional) || !ids(rowIds)) return undefined;
+    const counts = { chosen: parseInt(chosenCount, 36), directional: parseInt(directional, 36) };
+    return counts.chosen <= counts.directional && counts.directional <= plan.length ? { ids: rowIds, ...counts } : undefined;
+  });
+  if (stated.some(row => !row) || chosen.some(row => !row)) return { kind: 'corrupt' };
+  const result: LegacySharedResult = { scoring: 'legacy-count', stated: stated as string[][], chosen: chosen as SharedChosenRow[], custom, catalog, plan };
+  if (!placesTopThree(result.stated) || result.stated.flat().length < 3 || !placesTopThree(result.chosen.map(row => row.ids))) return { kind: 'corrupt' };
+  // Second-act rows are strictly ordered: more leans first, then fewer leaning appearances; equal counts would have been one tied row.
+  if (result.chosen.some((row, index) => index > 0 && !(row.chosen < result.chosen[index - 1].chosen || (row.chosen === result.chosen[index - 1].chosen && row.directional > result.chosen[index - 1].directional)))) return { kind: 'corrupt' };
+  return { kind: 'result', result };
+}
+
+const knownIds = (ids: readonly string[]) => ids.length > 0 && ids.every(id => coreIds.has(id));
+
+/** Format version 2: second-act rows are `<score>-<id>…`, 1 ≤ score ≤ 2 × questions, strictly falling; zero-score values are never listed. */
+function readVersion2(fields: readonly string[]): ResultLinkOutcome {
+  const [, statedField, scoredField, customField, catalog, planField] = fields;
   const plan = planField.split('-');
   const custom = readCustom(customField);
   if (!custom || !/^c[0-9a-z]+$/.test(catalog) || !plan.every(selector => base36.test(selector))) return { kind: 'corrupt' };
   const stated = statedField.split('~').map(row => row.split('-'));
   if (!stated.every(knownIds) || !placesTopThree(stated) || stated.flat().length < 3) return { kind: 'corrupt' };
-  const conclusion = { stated, custom, catalog, plan };
-  const result = version === '1' ? readChosen(secondField, conclusion) : readScored(secondField, conclusion);
-  if (!result) return { kind: 'corrupt' };
-  // Only a preference result made with today's catalog can be answered again; a version 1 result's questions are gone.
-  if (result.scoring !== 'preference-score' || catalog !== currentCatalog.version) return { kind: 'result', result };
+  const rows = scoredField === '' ? [] : scoredField.split('~').map(row => {
+    const [score, ...ids] = row.split('-');
+    if (!positiveBase36.test(score) || !knownIds(ids)) return undefined;
+    const value = parseInt(score, 36);
+    return value <= 2 * plan.length ? { ids, score: value } : undefined;
+  });
+  if (rows.some(row => !row)) return { kind: 'corrupt' };
+  const scored = rows as SharedScoreRow[];
+  if (!placesTopThree(scored.map(row => row.ids))) return { kind: 'corrupt' };
+  // Equal scores would have been one tied row.
+  if (scored.some((row, index) => index > 0 && row.score >= scored[index - 1].score)) return { kind: 'corrupt' };
+  const result: PreferenceSharedResult = { scoring: 'preference-score', stated, scored, custom, catalog, plan };
+  // Only a result made with today's catalog can be answered again.
+  if (catalog !== currentCatalog.version) return { kind: 'result', result };
   try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`) }; }
   catch { return { kind: 'corrupt' }; }
 }
