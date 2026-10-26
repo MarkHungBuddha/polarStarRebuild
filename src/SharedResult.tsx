@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { clearInteractiveSession } from './interactiveSessionStorage';
 import { PageHeader } from './PageHeader';
 import { questionShareLink } from './questionPlan';
 import type { ResultLinkOutcome, SharedResult } from './resultLink';
@@ -20,11 +21,13 @@ function SharedResultPage({ result, questionLink }: { result: SharedResult; ques
     <PageHeader eyebrow="分享給你的反思 · 一頁摘要" title="這一次，分享者的選擇。" description="這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。" />
     <section className="conclusion paper-card">{result.scoring === 'preference-score'
       ? <><ConclusionColumns titles={['分享者最重視的', '分享者在情境中的偏向分數']} {...preferenceColumnText} stated={stated} chosen={columnRows(result.scored, scoreCount)} />
-        <p>{preferenceScoringNote}</p></>
+        <p>{preferenceScoringNote}</p>
+        <p className="caption">結果連結版本 2：五段分數</p></>
       // A legacy link keeps the counts and positions it was shared with; it is labeled, never rescored.
       : <><ConclusionColumns titles={['分享者最重視的', '分享者在情境中最常選的']} caption="第二幕有偏向一邊的答案" empty="這次沒有偏向一邊的答案，所以沒有排名。"
         stated={stated} chosen={columnRows(result.chosen, row => chosenCountText(row, row.ids.length > 1))} />
-        <p className="caption">這份結果使用舊版計分：第二幕依偏向一邊的答案次數排名，不是偏向分數。</p></>}</section>
+        <p className="caption">這份結果使用舊版計分：第二幕依偏向一邊的答案次數排名，不是偏向分數。</p>
+        <p className="caption">結果連結版本 1：選邊次數</p></>}</section>
     {result.custom.length > 0 && <section className="custom-results"><h2>分享者的自訂價值</h2><p>由分享者自行加入，沒有納入兩份前三名。</p><ul>{result.custom.map((word, index) => <li key={index}>{word}</li>)}</ul></section>}
     <p className="sticky-note" role="note">這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值在一次作答中只出現在三題，改一題就可能換名次。</p>
     {/* The original question set is offered only while today's catalog can still reproduce it; never swap in today's questions under its name. */}
@@ -51,7 +54,10 @@ function UnreadableResult({ unsupported }: { unsupported: boolean }) {
 /** What a result link opens: the sharer's result, read-only, without reading or writing this browser's answers or seen questions. */
 export function SharedResultApp({ outcome }: { outcome: ResultLinkOutcome }) {
   const [storageNotice, setStorageNotice] = useState('');
-  const clearLocalRecords = () => setStorageNotice(clearSavedSession() && clearSeenHistory() ? '' : storageClearFailedNotice);
+  const clearLocalRecords = () => {
+    const results = [clearInteractiveSession(), clearSavedSession(), clearSeenHistory()];
+    setStorageNotice(results.every(Boolean) ? '' : storageClearFailedNotice);
+  };
   const questionLink = outcome.kind === 'result' && outcome.questions ? questionShareLink(outcome.questions, window.location) : undefined;
   return <main className="app-shell screen-result">
     <header className="masthead"><a href="./"><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
