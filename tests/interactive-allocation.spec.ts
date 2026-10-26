@@ -77,11 +77,11 @@ test('返回修改要重新確認才覆蓋；重新整理保留上次已確認�
   expect(await priorityRows(page)).toEqual(['第 1｜照顧身邊的人｜1 次／3 題']);
 });
 
-test('新版結果只分享結果連結，還沒有結果圖或題目連結的分享入口', async ({ page }) => {
+test('新版結果分享結果圖和結果連結，還沒有題目連結的分享入口', async ({ page }) => {
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
-  // The result link arrives with #66; the result image (#67) and question links (#71) come later.
-  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['複製結果連結']);
+  // Question links (#71) come later.
+  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['分享結果', '下載結果圖', '複製結果連結']);
   await expect(page.getByRole('link', { name: /分享|結果圖/ })).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveCount(1);
   await expect(page.getByRole('textbox', { name: '結果連結' })).toHaveValue(/#r=3\./);

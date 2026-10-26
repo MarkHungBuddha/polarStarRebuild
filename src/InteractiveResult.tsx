@@ -25,7 +25,7 @@ const comparisonText = { 一致: '這次情境選擇與原先排序一致', 不�
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
  * count, then the question-by-question comparison with each raw decision. The counting rules sit in 結果怎麼整理, folded away.
- * Then the skippable reflection step, and 分享結果 with a format version 3 result link (never the notes); the result image is #67.
+ * Then the skippable reflection step, and 分享結果 with the result image and format version 3 result link (never the notes).
  */
 export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
   session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void;

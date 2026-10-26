@@ -1,6 +1,7 @@
 import { coreValueWord } from './data';
 import { scoreCount } from './columnRows';
-import { withPositions, type PreferenceSharedResult } from './resultLink';
+import { priorityCountText } from './priorityRanking';
+import { withPositions, type PreferenceSharedResult, type PrioritySharedResult } from './resultLink';
 
 export const resultImageColors = {
   light: { background: '#f6f1e7', paper: '#fffdf8', ink: '#2b2a27', muted: '#5e584d', accent: '#2f4a6d', line: '#ddd3c2', sticky: '#fff6d6' },
@@ -19,10 +20,19 @@ const imageText = {
   title: '這一次，我的選擇。',
   statedTitle: '我最重視的',
   statedCaption: '第一幕的分類與排序',
-  scoredTitle: '我在情境中的偏向分數',
-  scoredCaption: '第二幕的偏向分數',
-  noScored: '這次作答沒有明確偏向',
-  scoringRule: '計分：強烈偏向 2 分，稍微偏向 1 分，兩者相當 0 分，不是百分比。',
+  /** The second column and the line above the limits, per scoring: preference scores (version 2) or 優先保留次數 (version 3). */
+  'preference-score': {
+    title: '我在情境中的偏向分數',
+    caption: '第二幕的偏向分數',
+    empty: '這次作答沒有明確偏向',
+    rule: () => '計分：強烈偏向 2 分，稍微偏向 1 分，兩者相當 0 分，不是百分比。',
+  },
+  'priority-count': {
+    title: '我在情境中優先保留的',
+    caption: '第二幕的優先保留次數',
+    empty: '這次沒有方向明確的決策，不產生第二幕排名',
+    rule: (result: PrioritySharedResult) => `明確決策 ${result.decided} / ${result.plan.length} 題`,
+  },
   customTitle: '我的自訂價值 · 不納入前三名',
   limits: '這是我在假設情境下的自我回報，不是人格判定，也不代表實際行為。',
   tagline: '北極星 · 你重視什麼，會怎麼選？',
@@ -50,24 +60,28 @@ function layoutColumn(rows: readonly { ids: string[]; count?: string }[], limit:
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
-/** Where each part sits, top to bottom; the scoring rule sits above the limits, then the footer rule and the tagline. */
-const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154, limits: 1196, footerRule: 1260, tagline: 1310 };
+/** Where each part sits, top to bottom; the scoring rule (or 明確決策 N / M 題) sits above the limits, then the footer rule and the tagline. */
+const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, rule: 1154, limits: 1196, footerRule: 1260, tagline: 1310 };
 
 /**
- * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
- * The second column shows every value at positions 1–3 with its score, plus the 2／1／0 scoring rule.
+ * Draw only the public conclusion, the same one the result link carries. The returned PNG is also the file used by system sharing.
+ * The second column shows every value at positions 1–3 with its score (and the 2／1／0 scoring rule) or its「N 次／3 題」(and
+ * 明確決策 N / M 題); with no rows it says why instead.
  */
-export async function createResultImage(result: PreferenceSharedResult, theme: ImageTheme): Promise<File> {
+export async function createResultImage(result: PreferenceSharedResult | PrioritySharedResult, theme: ImageTheme): Promise<File> {
+  const second = result.scoring === 'priority-count'
+    ? { ...imageText['priority-count'], rule: imageText['priority-count'].rule(result), rows: result.counted.map(row => ({ ids: row.ids, count: priorityCountText(row.count) })) }
+    : { ...imageText['preference-score'], rule: imageText['preference-score'].rule(), rows: result.scored.map(row => ({ ids: row.ids, count: scoreCount(row) })) };
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
-  const scoredColumn = layoutColumn(result.scored.map(row => ({ ids: row.ids, count: scoreCount(row) })), Infinity, true);
+  const scoredColumn = layoutColumn(second.rows, Infinity, true);
   const customShown = result.custom.slice(0, imageCustomLimit);
   const customExtra = result.custom.length > imageCustomLimit ? `另有 ${result.custom.length - imageCustomLimit} 個自訂價值` : undefined;
 
   // Fonts are loaded for exactly the text drawn below.
   const drawnText = [
-    imageText.title, imageText.statedTitle, imageText.statedCaption, imageText.scoredTitle, imageText.scoredCaption,
+    imageText.title, imageText.statedTitle, imageText.statedCaption, second.title, second.caption,
     ...[statedColumn, scoredColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.count ?? '']), column.extra ?? '']),
-    result.scored.length ? '' : imageText.noScored, imageText.scoringRule,
+    second.rows.length ? '' : second.empty, second.rule,
     result.custom.length ? imageText.customTitle : '', ...customShown, customExtra ?? '',
     imageText.limits, imageText.tagline, imageText.site,
   ].join('');
@@ -111,9 +125,9 @@ export async function createResultImage(result: PreferenceSharedResult, theme: I
   text(imageText.title, 64, layout.title, 60, colors.ink, true);
   rect(54, layout.box, 472, layout.boxHeight, colors.paper); rect(554, layout.box, 472, layout.boxHeight, colors.paper);
   text(imageText.statedTitle, 84, layout.heading, 38, colors.ink, true); text(imageText.statedCaption, 84, layout.caption, 28, colors.muted);
-  text(imageText.scoredTitle, 584, layout.heading, 34, colors.ink, true); text(imageText.scoredCaption, 584, layout.caption, 28, colors.muted);
+  text(second.title, 584, layout.heading, 34, colors.ink, true); text(second.caption, 584, layout.caption, 28, colors.muted);
   drawColumn(statedColumn, 84); drawColumn(scoredColumn, 584);
-  if (!result.scored.length) wrap(imageText.noScored, 584, layout.rows + 20, 410, 32);
+  if (!second.rows.length) wrap(second.empty, 584, layout.rows + 20, 410, 32);
   if (result.custom.length) {
     const lines = customShown.length + (customExtra ? 1 : 0);
     rect(64, layout.custom, 952, 66 + lines * 42, colors.sticky);
@@ -121,7 +135,7 @@ export async function createResultImage(result: PreferenceSharedResult, theme: I
     customShown.forEach((word, index) => text(word, 88, layout.custom + 86 + index * 42, 28));
     if (customExtra) text(customExtra, 88, layout.custom + 86 + customShown.length * 42, 28, colors.accent);
   }
-  text(imageText.scoringRule, 64, layout.scoringRule, 28, colors.muted);
+  text(second.rule, 64, layout.rule, 28, colors.muted);
   wrap(imageText.limits, 64, layout.limits, 952, 28, colors.muted);
   rect(64, layout.footerRule, 952, 2, colors.line);
   text(imageText.tagline, 64, layout.tagline, 28); text(imageText.site, 730, layout.tagline, 28, colors.accent);
