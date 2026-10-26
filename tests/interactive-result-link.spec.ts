@@ -26,7 +26,8 @@ test('互動結果連結在別人的瀏覽器打開，前三名、次數和明�
   const counted = await countColumn(page, '情境中優先保留的').getByRole('listitem').allTextContents();
   const decided = await own.locator('.decided-count').textContent();
   expect(counted).toEqual(resultLinksV3.fixedFlow.counted);
-  expect(decided).toBe(resultLinksV3.fixedFlow.decided);
+  // The sample was shared from a one-question bank; today's bank may hold more questions, all answered without a direction.
+  expect(decided).toBe(`明確決策 1 / ${slotCount} 題`);
 
   const link = await shareRegion(page).getByRole('textbox', { name: '結果連結' }).inputValue();
   // Only the conclusion travels: fixed answers give exactly the published link, with no per-question arrangement or full first-act order.
