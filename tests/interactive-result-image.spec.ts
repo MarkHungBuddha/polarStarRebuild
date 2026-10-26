@@ -82,7 +82,7 @@ test('互動結果可以下載結果圖，系統分享帶的連結就是格式�
   });
   const share = await reachInteractiveShare(page, { [trip]: { allocate: [4, 2] } });
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
-  expect(new URL(link).hash).toMatch(/^#r=3\./);
+  expect(new URL(link).hash).toMatch(/^#r=4\./);
   for (const name of ['分享結果', '下載結果圖']) await expect(share.getByRole('button', { name })).toHaveAttribute('aria-disabled', 'false');
 
   const downloading = page.waitForEvent('download');

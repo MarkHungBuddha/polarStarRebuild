@@ -14,21 +14,20 @@ import './techo-result.css';
 export const priorityColumnText = { caption: '第二幕的優先保留次數', empty: '這次沒有方向明確的決策，不產生第二幕排名。' };
 
 /**
- * 明確決策 N / M 題, and why the rest add no count; the sharer's result and a version 3 result link show it the same way.
- * The rest are exactly the even splits and 目前無法決定: the result opens, and a result link is made, only once every question has
- * a confirmed answer, and every confirmed answer either has a direction or is one of those two.
+ * 明確決策 N / M 題, and why the rest add no count; the sharer's result and a version 4 result link show it the same way.
+ * The rest are confirmed answers without a direction: even splits, 目前無法決定, and kept concrete decisions that lean to no side.
  */
 export function DecidedCount({ decided, total, undirectedNote }: { decided: number; total: number; undirectedNote?: string }) {
   return <>
     <p className="decided-count"><strong>明確決策 {decided} / {total} 題</strong></p>
-    {decided < total && <p className="caption">{undirectedNote ?? `平均分配或「目前無法決定」的 ${total - decided} 題沒有方向，不計入優先保留次數。`}</p>}
+    {decided < total && <p className="caption">{undirectedNote ?? `未計數的 ${total - decided} 題可能是平均分配、目前無法決定，或保留具體決策但不判方向，不計入優先保留次數。`}</p>}
   </>;
 }
 
-/** 結果怎麼整理, one rule per entry; a version 3 result link states the rules about counting in the same words. */
+/** 結果怎麼整理, one rule per entry; a version 4 result link states the rules about counting in the same words. */
 export const countingRules = {
   counted: '每題最多讓一個價值多 1 次：選定的方案，或分得較多的一側，記 1 次；分配差距不加權。',
-  undirected: '平均分配和目前無法決定都不加次數；明確決策題數只算有方向的題目。',
+  undirected: '平均分配、目前無法決定，以及保留具體決策但不判方向的題目（例如不傳訊息、混合考量、條件回報）都不加次數；明確決策題數只算有方向的題目。',
   perValue: `每個價值這一輪出現在 ${appearancesPerValue} 題，最多 ${appearancesPerValue} 次。同次數並列，不用第一幕排序拆開；0 次標成「本輪未優先保留」，不表示不重要。`,
   comparison: '逐題對照只看方向：這題保留的價值在第一幕排得比較前面，就是一致，反之是不同；平均分配和目前無法決定標成無法對照。自訂價值不參與比較。',
   scope: '次數只描述這一輪情境中的選擇，不代表偏好強度，也不是完整或穩定的價值排序。',
@@ -38,7 +37,7 @@ export const countingRules = {
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
  * count, then the question-by-question comparison with each raw decision, and custom values on their own. The counting rules sit in
  * 結果怎麼整理, folded away.
- * Then the skippable reflection step, and 分享結果 with the result image and format version 3 result link (never the notes).
+ * Then the skippable reflection step, and 分享結果 with the result image and format version 4 result link (never the notes).
  */
 export function InteractiveResult({ session, onEdit, onReflect, onRestart, reviewOnly = false }: {
   session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void; reviewOnly?: boolean;
@@ -58,7 +57,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart, revie
       {reviewOnly ? <p>這是開發審閱題組，各價值出現次數不同，不產生完整十價值排名。已確認的具體安排可在下方回看與修改。</p> : <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
         stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
         chosen={columnRows(chosen, row => priorityCountText(row.count))} />}
-      <DecidedCount decided={decided} total={total} undirectedNote={reviewOnly ? `未計數的 ${total - decided} 題可能是平均分配、目前無法決定，或保留具體決策但不判方向；不傳訊息、混合考量與條件回報不會自動當成無法決定。` : undefined} />
+      <DecidedCount decided={decided} total={total} />
     </section>
     <section className="result-evidence"><h2>逐題對照</h2>
       <p>{decided ? `方向明確的 ${decided} 題中，${same} 題與原先排序一致，${decided - same} 題不同。` : '這次沒有方向明確的題目，所以沒有和原先排序比較。'}</p>
