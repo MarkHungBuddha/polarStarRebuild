@@ -33,7 +33,7 @@ test('沒有調整排序時照清單順序比對，結果照常標出相符或�
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
   await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
-  await expect(evidence.getByText('你把探索刺激放在安全穩定之前。兩幕比較只看偏向方向，不以程度推論差異大小。')).toBeVisible();
+  await expect(evidence.getByText('你把探索刺激放在安全穩定之前。比較兩幕時只看偏向哪一邊，不看偏向多少。')).toBeVisible();
 });
 
 test('排序只在同一類別內，換類別的價值排到新類別最後', async ({ page }) => {

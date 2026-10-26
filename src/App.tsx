@@ -22,17 +22,16 @@ export function createSession(questions: Scenario[] = selectQuestions()): Sessio
 const sameQuestions = (left: readonly Scenario[], right: readonly Scenario[]) => left.length === right.length && left.every((scenario, index) => scenario.id === right[index].id);
 
 export function App() {
-  const pick = (seen?: ReadonlySet<string>) => selectQuestions(seen);
   const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
-  const [initialHistory] = useState(() => loadSeenHistory());
+  const [initialHistory] = useState(loadSeenHistory);
   // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.
-  const [initialSaved] = useState(() => loadSavedSession());
+  const [initialSaved] = useState(loadSavedSession);
   const [resumable, setResumable] = useState(initialSaved.session);
   // The mixed-mechanism bank's record stays until the user restarts; it is never resumed or converted.
   const [legacyNotice, setLegacyNotice] = useState(initialSaved.legacy ? initialSaved.notice : undefined);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState((initialSaved.legacy ? undefined : initialSaved.notice) ?? initialHistory.notice ?? '');
-  const [session, setSession] = useState<Session>(() => createSession(request.questions ?? pick(initialHistory.ids)));
+  const [session, setSession] = useState<Session>(() => createSession(request.questions ?? selectQuestions(initialHistory.ids)));
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   const [editedEvidence, setEditedEvidence] = useState<string>();
@@ -59,7 +58,7 @@ export function App() {
     const historyCleared = !clearHistory || clearSeenHistory();
     const history = loadSeenHistory();
     if (useCurrentVersion) leaveShareRequest();
-    setSaveEnabled(false); setResumable(undefined); if (cleared) setLegacyNotice(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : pick(history.ids)));
+    setSaveEnabled(false); setResumable(undefined); if (cleared) setLegacyNotice(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : selectQuestions(history.ids)));
     setCustomWord(''); setNotice('');
     setStorageNotice(cleared && historyCleared ? history.notice ?? '' : storageClearFailedNotice);
     window.scrollTo({ top: 0 });
@@ -90,7 +89,7 @@ export function App() {
     <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {legacyNotice && session.screen === 'intro' && <section className="storage-notice"><p role="status">{legacyNotice}</p><button className="secondary" onClick={restart}>重新開始</button></section>}
-    {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>開始新版測驗</button></section>}
+    {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>用目前題目開始</button></section>}
     {session.screen === 'intro' && <HomeIntro actions={resumable ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2><p>繼續原本的題目與已確認答案，或重新開始。</p>{sharedDiffers && <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>}<nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{sharedDiffers ? '改做分享的題目' : '重新開始'}</button>}</nav></section> : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>} />}
     {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
     {session.screen === 'rank' && <RankScreen values={session.values} onArrange={arrange => setSession(current => ({ ...current, values: arrange(current.values) }))} onBack={() => go('classify')} onNext={() => { setSession(current => ({ ...current, values: withStrictOrder(current.values) })); go('scenario'); }} />}

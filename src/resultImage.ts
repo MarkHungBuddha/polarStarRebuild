@@ -1,5 +1,5 @@
 import { coreValueWord } from './data';
-import { preferenceScoreText } from './preferenceRanking';
+import { scoreCount } from './columnRows';
 import { withPositions, type PreferenceSharedResult } from './resultLink';
 
 export const resultImageColors = {
@@ -30,28 +30,28 @@ const imageText = {
 };
 
 /** One position as drawn: its label, the names shown, the score beside the label, and whether the names use the smaller size. */
-interface DrawnRow { label: string; names: string; score?: string; compact: boolean }
+interface DrawnRow { label: string; names: string; count?: string; compact: boolean }
 interface DrawnColumn { rows: DrawnRow[]; extra?: string }
 
 /**
  * Lays out one column: positions until `limit` names are shown, then「另有 N 個並列」for the rest.
  * With `compactTies`, a position shared by more than three values uses the smaller name size.
  */
-function layoutColumn(rows: readonly { ids: string[]; score?: string }[], limit: number, compactTies: boolean): DrawnColumn {
+function layoutColumn(rows: readonly { ids: string[]; count?: string }[], limit: number, compactTies: boolean): DrawnColumn {
   const drawn: DrawnRow[] = [];
   let shown = 0;
   for (const row of withPositions(rows)) {
     if (shown >= limit) break;
     const ids = row.ids.slice(0, limit - shown);
     shown += ids.length;
-    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), score: row.score, compact: compactTies && row.ids.length > 3 });
+    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), count: row.count, compact: compactTies && row.ids.length > 3 });
   }
   const extra = rows.reduce((sum, row) => sum + row.ids.length, 0) - shown;
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
-/** Where each part sits; the scoring rule sits above the limits. */
-const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154 };
+/** Where each part sits, top to bottom; the scoring rule sits above the limits, then the footer rule and the tagline. */
+const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154, limits: 1196, footerRule: 1260, tagline: 1310 };
 
 /**
  * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
@@ -59,16 +59,15 @@ const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 37
  */
 export async function createResultImage(result: PreferenceSharedResult, theme: ImageTheme): Promise<File> {
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
-  const chosenColumn = layoutColumn(result.scored.map(row => ({ ids: row.ids, score: preferenceScoreText(row.score, row.ids.length > 1) })), Infinity, true);
-  const second = { title: imageText.scoredTitle, caption: imageText.scoredCaption, empty: imageText.noScored, rows: result.scored.length };
+  const scoredColumn = layoutColumn(result.scored.map(row => ({ ids: row.ids, count: scoreCount(row) })), Infinity, true);
   const customShown = result.custom.slice(0, imageCustomLimit);
   const customExtra = result.custom.length > imageCustomLimit ? `另有 ${result.custom.length - imageCustomLimit} 個自訂價值` : undefined;
 
   // Fonts are loaded for exactly the text drawn below.
   const drawnText = [
-    imageText.title, imageText.statedTitle, imageText.statedCaption, second.title, second.caption,
-    ...[statedColumn, chosenColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.score ?? '']), column.extra ?? '']),
-    second.rows ? '' : second.empty, imageText.scoringRule,
+    imageText.title, imageText.statedTitle, imageText.statedCaption, imageText.scoredTitle, imageText.scoredCaption,
+    ...[statedColumn, scoredColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.count ?? '']), column.extra ?? '']),
+    result.scored.length ? '' : imageText.noScored, imageText.scoringRule,
     result.custom.length ? imageText.customTitle : '', ...customShown, customExtra ?? '',
     imageText.limits, imageText.tagline, imageText.site,
   ].join('');
@@ -101,7 +100,7 @@ export async function createResultImage(result: PreferenceSharedResult, theme: I
       const labelY = y;
       y = wrap(row.names, x, y + 46, 410, row.compact ? 28 : 34, colors.ink, true);
       // Drawn after the names but on the label's line, right-aligned, so even the tallest tie stays inside the column.
-      if (row.score) text(row.score, x + 410, labelY, 28, colors.muted, false, 'right');
+      if (row.count) text(row.count, x + 410, labelY, 28, colors.muted, false, 'right');
       y += 58;
     }
     if (extra) text(extra, x, y, 28, colors.accent);
@@ -112,9 +111,9 @@ export async function createResultImage(result: PreferenceSharedResult, theme: I
   text(imageText.title, 64, layout.title, 60, colors.ink, true);
   rect(54, layout.box, 472, layout.boxHeight, colors.paper); rect(554, layout.box, 472, layout.boxHeight, colors.paper);
   text(imageText.statedTitle, 84, layout.heading, 38, colors.ink, true); text(imageText.statedCaption, 84, layout.caption, 28, colors.muted);
-  text(second.title, 584, layout.heading, 34, colors.ink, true); text(second.caption, 584, layout.caption, 28, colors.muted);
-  drawColumn(statedColumn, 84); drawColumn(chosenColumn, 584);
-  if (!second.rows) wrap(second.empty, 584, layout.rows + 20, 410, 32);
+  text(imageText.scoredTitle, 584, layout.heading, 34, colors.ink, true); text(imageText.scoredCaption, 584, layout.caption, 28, colors.muted);
+  drawColumn(statedColumn, 84); drawColumn(scoredColumn, 584);
+  if (!result.scored.length) wrap(imageText.noScored, 584, layout.rows + 20, 410, 32);
   if (result.custom.length) {
     const lines = customShown.length + (customExtra ? 1 : 0);
     rect(64, layout.custom, 952, 66 + lines * 42, colors.sticky);
@@ -123,9 +122,9 @@ export async function createResultImage(result: PreferenceSharedResult, theme: I
     if (customExtra) text(customExtra, 88, layout.custom + 86 + customShown.length * 42, 28, colors.accent);
   }
   text(imageText.scoringRule, 64, layout.scoringRule, 28, colors.muted);
-  wrap(imageText.limits, 64, 1196, 952, 28, colors.muted);
-  rect(64, 1260, 952, 2, colors.line);
-  text(imageText.tagline, 64, 1310, 28); text(imageText.site, 730, 1310, 28, colors.accent);
+  wrap(imageText.limits, 64, layout.limits, 952, 28, colors.muted);
+  rect(64, layout.footerRule, 952, 2, colors.line);
+  text(imageText.tagline, 64, layout.tagline, 28); text(imageText.site, 730, layout.tagline, 28, colors.accent);
   // Encode synchronously: on Linux Chromium (CI) canvas.toBlob sometimes never called back, leaving the image preparing forever.
   const png = canvas.toDataURL('image/png');
   if (!png.startsWith('data:image/png;base64,')) throw new Error('PNG export failed');

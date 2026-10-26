@@ -2,29 +2,27 @@ import { evidenceId } from './ResultEvidence';
 import { act1TopThree, byPosition, differsFromFirstAct } from './valueRanking';
 import type { Session } from './types';
 import { preferenceScores, preferenceScoreText, preferenceScoringNote, preferenceTopThree } from './preferenceRanking';
+import { columnRows, scoreCount, type ColumnRow } from './columnRows';
 
-/** One position in a top-three column: the words sharing it and, in the second act, its score or legacy count. */
-export interface ColumnRow { position: number; words: string[]; count?: string }
+/** What the second column says above preference scores, and when no value scored. */
+export const preferenceColumnText = { caption: '第二幕的偏向分數', empty: '這次作答沒有明確偏向。' };
 
-/**
- * The two top-three columns as shown, whoever's they are. The second column shows preference scores, or with `legacy`
- * the counts a format version 1 result link was shared with.
- */
-export function ConclusionColumns({ titles, stated, chosen, legacy = false }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; legacy?: boolean }) {
+/** The two top-three columns as shown, whoever's they are; the second column's caption and empty text say what its numbers mean. */
+export function ConclusionColumns({ titles, stated, chosen, caption, empty }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; caption: string; empty: string }) {
   const label = (row: ColumnRow) => (row.words.length > 1 ? '並列第 ' : '第 ') + row.position;
   return <div className="conclusion-columns">
     <div><h3>{titles[0]}</h3><p className="caption">第一幕的分類與排序</p>
       <ol>{stated.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong></li>)}</ol></div>
-    <div><h3>{titles[1]}</h3><p className="caption">{legacy ? '第二幕有偏向一邊的答案' : '第二幕的偏向分數'}</p>
-      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>{legacy ? '這次沒有偏向一邊的答案，所以沒有排名。' : '這次作答沒有明確偏向'}</p>}</div>
+    <div><h3>{titles[1]}</h3><p className="caption">{caption}</p>
+      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>{empty}</p>}</div>
   </div>;
 }
 
 /** The two top-three columns, one row per position; shared by the result cover and the detailed conclusion. */
 export function TopThreeColumns({ session }: { session: Session }) {
-  return <ConclusionColumns titles={['你最重視的', '情境中的偏向分數']}
-    stated={byPosition(act1TopThree(session.values)).map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
-    chosen={byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ position: row.position, words: row.items.map(item => item.value.word), count: preferenceScoreText(row.items[0].score, row.items.length > 1) }))} />;
+  return <ConclusionColumns titles={['你最重視的', '情境中的偏向分數']} {...preferenceColumnText}
+    stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
+    chosen={columnRows(byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ ids: row.items.map(item => item.value.id), score: row.items[0].score })), scoreCount)} />;
 }
 
 /** The conclusion: the first act's top three beside the values with the highest preference scores, one row per position, with what to take away. */
@@ -47,7 +45,7 @@ export function ValueConclusion({ session }: { session: Session }) {
     <h3>對照你最重視的前三名</h3>
     <ul className="conclusion-checks">{stated.map(({ item }) => {
       const score = scoreOf(item.id);
-      const detail = !score ? '這次沒有偏向它的答案，是 0 分。' : `在情境中得到 ${score} 分，${scoredIds.has(item.id) ? '也排進情境中的前三名。' : '沒有排進情境中的前三名。'}`;
+      const detail = !score ? '這次沒有答案偏向它，得 0 分。' : `在情境中得到 ${score} 分，${scoredIds.has(item.id) ? '也排進情境中的前三名。' : '沒有排進情境中的前三名。'}`;
       return <li key={item.id}><strong>{item.word}</strong>：{detail}</li>;
     })}
     {onlyScored.length > 0 && <li>另外在情境中分數較高的：{byPosition(onlyScored).map(row => `${row.items.map(entry => entry.value.word).join('、')}（${preferenceScoreText(row.items[0].score, row.items.length > 1)}）`).join('；')}。</li>}</ul>
