@@ -1,5 +1,7 @@
 import type { InteractiveScenario } from './interactiveTypes';
 import { interactiveSlots01To05 } from './scenarios/interactive-slots-01-05';
+import { interactiveSlots06To10 } from './scenarios/interactive-slots-06-10';
+import { interactiveSlots11To15 } from './scenarios/interactive-slots-11-15';
 
 /**
  * The interactive question bank, shown only by the development preview until the official entry switches (#71).
@@ -8,4 +10,6 @@ import { interactiveSlots01To05 } from './scenarios/interactive-slots-01-05';
  */
 export const interactiveScenarios: InteractiveScenario[] = [
   ...interactiveSlots01To05,
+  ...interactiveSlots06To10,
+  ...interactiveSlots11To15,
 ];
