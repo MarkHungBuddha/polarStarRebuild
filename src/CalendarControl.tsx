@@ -17,14 +17,14 @@ export function CalendarControl({ interaction, placements, onChange }: {
     onChange(next);
   });
   return <div className="calendar-control">
-    <p>把行程卡放到每天的空格。排好的卡可以交換，也能移回卡片區。先選卡片、再選目的地也可以；按 Esc 取消拿取。</p>
+    <p>把行程卡放到每個空格。排好的卡可以交換，也能移回卡片區。先選卡片、再選目的地也可以；按 Esc 取消拿取。</p>
     <div className="calendar-palette">
       {interaction.sides.map((side, index) => <div key={side.id}><button {...drag.source(String(index), side.label)}>{side.label}</button><p>{side.detail}</p></div>)}
       <button {...drag.destination('tray')}>移回卡片區</button>
     </div>
     {drag.feedback}
-    <p role="status">還有 {placements.filter(side => side < 0).length} 天未安排</p>
-    <div className="calendar-days" aria-label="旅行行事曆">{placements.map((side, index) => {
+    <p role="status">還有 {placements.filter(side => side < 0).length} {interaction.unit ?? '天'}未安排</p>
+    <div className="calendar-days" aria-label={interaction.label ?? '行事曆'}>{placements.map((side, index) => {
       const label = `${interaction.slots[index]}：${side < 0 ? '尚未安排' : interaction.sides[side].label}`;
       return <button key={interaction.slots[index]} aria-label={label} {...(side < 0 ? drag.destination(`day:${index}`) : drag.source(`day:${index}`, label, `day:${index}`))}>
         <span>{interaction.slots[index]}</span><strong>{side < 0 ? '把行程放進來' : interaction.sides[side].label}</strong>
