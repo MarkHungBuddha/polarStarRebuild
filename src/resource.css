@@ -1,0 +1,8 @@
+.resource-control button { min-height: 48px; min-width: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.resource-token { display: grid; gap: 4px; touch-action: none; }
+.resource-token[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: 2px; }
+.resource-tokens { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.resource-tray, .resource-destinations > section { padding: 16px; border: 1px dashed currentColor; border-radius: var(--radius-paper); }
+.resource-destinations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.resource-destinations button, .resource-tray > button { touch-action: none; }
+@media (max-width: 600px) { .resource-destinations { grid-template-columns: minmax(0, 1fr); } }
