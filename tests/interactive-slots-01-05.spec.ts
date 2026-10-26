@@ -2,39 +2,14 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { expectNoClippedText, expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
 import { interactiveScenarios } from '../src/interactiveScenarios';
+import { expectSlotContent } from './support/interactive-content';
 import {
   allocationCells, answerInteractiveByTitle, choiceCards, confirmButton, keepButton, priorityRows, questionHeading, resultHeading,
   startInteractiveScenarios, undecidedButton, type InteractiveDecision,
 } from './support/interactive';
 
-// Slots 1–5 of the blueprint in docs/scenario-feature-spec.md, written out independently of the bank (#68).
-const pairs: Record<string, [string, string]> = {
-  slot01: ['autonomy', 'security'],
-  slot02: ['autonomy', 'rules'],
-  slot03: ['autonomy', 'care'],
-  slot04: ['stimulation', 'security'],
-  slot05: ['stimulation', 'tradition'],
-};
-const valueNames = /自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/;
-
-test('第 1–5 組各恰有三個互動變體，沿用原配對，三種互動都有用到，畫面文字不寫出價值名稱', () => {
-  const covered = interactiveScenarios.filter(scenario => scenario.slotId in pairs);
-  expect(covered).toHaveLength(15);
-  for (const [slotId, pair] of Object.entries(pairs)) {
-    const variants = covered.filter(scenario => scenario.slotId === slotId);
-    expect(variants, slotId).toHaveLength(3);
-    expect(new Set(variants.map(scenario => scenario.setup)).size, slotId).toBe(3);
-    for (const scenario of variants) expect([...scenario.pair], scenario.id).toEqual(pair);
-  }
-  const kinds = covered.map(scenario => scenario.interaction.kind);
-  for (const kind of ['allocate', 'adjust', 'choose']) expect(kinds.filter(item => item === kind).length, kind).toBeGreaterThanOrEqual(3);
-  for (const scenario of covered) {
-    const { interaction } = scenario;
-    const shown = interaction.kind === 'choose'
-      ? interaction.options.flatMap(option => [option.label, option.content, option.cost])
-      : [interaction.unit, ...interaction.cells, ...interaction.sides.flatMap(side => [side.label, side.detail])];
-    expect([scenario.title, scenario.setup, ...shown].join('\n'), scenario.id).not.toMatch(valueNames);
-  }
+test('第 1–5 組各恰有三個互動變體，沿用藍圖配對，三種互動各用五次，題面不寫出價值名稱也不催時間', () => {
+  expectSlotContent(['slot01', 'slot02', 'slot03', 'slot04', 'slot05']);
   expect(interactiveScenarios.map(scenario => scenario.id).filter(id => id.includes('sample')), 'the AI-draft samples are gone').toEqual([]);
 });
 

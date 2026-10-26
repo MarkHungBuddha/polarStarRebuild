@@ -1,39 +1,14 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { interactiveScenarios } from '../src/interactiveScenarios';
+import { expectSlotContent, variantsOf } from './support/interactive-content';
 import { allocationCells, answerInteractiveByTitle, choiceCards, confirmButton, keepButton, priorityRows, questionHeading, startInteractiveScenarios, type InteractiveDecision } from './support/interactive';
 
-// Slots 11–15 keep the original value pairs (docs/scenario-feature-spec.md), written out independently of the catalog.
-const pairs = {
-  slot11: ['influence', 'fairness'],
-  slot12: ['influence', 'care'],
-  slot13: ['influence', 'tradition'],
-  slot14: ['security', 'fairness'],
-  slot15: ['rules', 'tradition'],
-} as const;
-const slots = Object.keys(pairs) as (keyof typeof pairs)[];
-const variantsOf = (slotId: string) => interactiveScenarios.filter(scenario => scenario.slotId === slotId);
+const slots = ['slot11', 'slot12', 'slot13', 'slot14', 'slot15'] as const;
 
-test('第 11–15 組各恰有三個互動變體，沿用原價值配對，三種互動都用到，題面不揭露價值也不催時間', () => {
-  for (const [slotId, pair] of Object.entries(pairs)) {
-    const variants = variantsOf(slotId);
-    expect(variants, slotId).toHaveLength(3);
-    expect(new Set(variants.map(variant => variant.domain)).size, `${slotId} 使用不同生活情境`).toBeGreaterThan(1);
-    for (const variant of variants) {
-      expect(variant.id.startsWith(`interactive-${slotId}-`), variant.id).toBe(true);
-      expect([...variant.pair], variant.id).toEqual([...pair]);
-      expect(variant.setup.length, variant.id).toBeGreaterThan(80);
-      const { interaction } = variant;
-      const sides = interaction.kind === 'choose'
-        ? interaction.options.map(option => [option.label, option.content, option.cost].join(''))
-        : interaction.sides.map(side => side.label + side.detail);
-      const visible = [variant.title, variant.setup, ...sides].join('');
-      expect(visible, variant.id).not.toMatch(/自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/);
-      expect(visible, variant.id).not.toMatch(/刪掉|劃掉|排完|分完|倒數|計時|秒|限時/);
-    }
-  }
-  const kinds = slots.flatMap(slotId => variantsOf(slotId).map(variant => variant.interaction.kind));
-  for (const kind of ['choose', 'allocate', 'adjust']) expect(kinds.filter(item => item === kind), kind).toHaveLength(5);
+test('第 11–15 組各恰有三個互動變體，沿用藍圖配對，三種互動各用五次，題面不寫出價值名稱也不催時間', () => {
+  expectSlotContent(slots);
+  // Slots 11–15 were drafted under one more rule: no wording of crossing out or finishing a sort.
+  for (const variant of slots.flatMap(variantsOf)) expect([variant.title, variant.setup].join(''), variant.id).not.toMatch(/刪掉|劃掉|排完|分完/);
 });
 
 test('有初始安排的題目，現況寫在題面裡', () => {
