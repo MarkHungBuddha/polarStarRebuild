@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
+import { catalog } from '../src/questionCatalog';
 
 // The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog: option A leans to the first value.
 const blueprint: Record<string, [string, string]> = {
@@ -45,4 +46,10 @@ test('每個變體都有完整題意與雙方代價，A／B 依序偏向價值�
     expect(scenario.options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
     expect(new Set(scenario.options.map(option => option.id)).size, scenario.id).toBe(2);
   }
+});
+
+// Pinned on purpose: the version keys question links, saved sessions and the result links already shared. Editing or
+// reordering questions changes it; when that is intended, update this value and the launch version in docs/result-share-spec.md.
+test('題庫版本維持上線版本，改題目時要一併更新這裡和結果分享規格', () => {
+  expect(catalog.version).toBe('c2gdvoe');
 });

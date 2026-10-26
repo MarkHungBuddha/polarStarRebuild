@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "check": "tsc -b && eslint .",
+    "check": "tsc -b && eslint . && node scripts/check-css.mjs",
     "preview": "vite preview",
     "test": "playwright test"
   },

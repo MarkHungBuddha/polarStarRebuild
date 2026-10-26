@@ -27,6 +27,14 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...srcSyntax] },
   },
   {
+    // The registry only composes the slot files (CODING_STANDARDS.md「題庫」); question content lives in src/scenarios/preference-slots-*.ts.
+    files: ['src/scenarios.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...srcSyntax,
+        { selector: 'ObjectExpression', message: 'Write question content in src/scenarios/preference-slots-*.ts; src/scenarios.ts only composes them.' }],
+    },
+  },
+  {
     files: resultShareFiles,
     rules: {
       'no-restricted-syntax': ['error', ...srcSyntax,
