@@ -18,16 +18,31 @@ import './techo-result.css';
 /** How a version 2 result was scored, as the five-step result said it. */
 const preferenceScoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這只是計分方式，2 分不代表偏好多一倍，也不是百分比。';
 
-/** How a version 3 result was put together: the counting rules of the sharer's own 結果怎麼整理 (the link has no per-question comparison). */
-const priorityCountingNote = [countingRules.counted, countingRules.undirected, countingRules.perValue, countingRules.scope].join('');
+/** How a version 4 result was put together: the counting rules of the sharer's own 結果怎麼整理 (the link has no per-question comparison). */
+const directionCountingNote = [countingRules.counted, countingRules.undirected, countingRules.perValue, countingRules.scope].join('');
+
+/**
+ * Version 3 as it was published: only even splits and 目前無法決定 were uncounted then. Its wording is kept here word for word, so
+ * rewording the sharer's own 結果怎麼整理 never changes what an old link says.
+ */
+const version3Wording = {
+  undirected: '平均分配和目前無法決定都不加次數；明確決策題數只算有方向的題目。',
+  decidedNote: (undirected: number) => `平均分配或「目前無法決定」的 ${undirected} 題沒有方向，不計入優先保留次數。`,
+};
+const priorityCountingNote = [countingRules.counted, version3Wording.undirected, countingRules.perValue, countingRules.scope].join('');
 
 /** The second column and its labels for each format version; versions never share their rows or wording. */
 function SharedConclusion({ result }: { result: SharedResult }) {
   const stated = columnRows(result.stated.map(ids => ({ ids })));
   switch (result.scoring) {
-    case 'priority-count': return <>
+    case 'direction-count': return <>
       <ConclusionColumns titles={['分享者最重視的', '分享者在情境中優先保留的']} {...priorityColumnText} stated={stated} chosen={columnRows(result.counted, row => priorityCountText(row.count))} />
       <DecidedCount decided={result.decided} total={result.plan.length} />
+      <p>{directionCountingNote}</p>
+      <p className="caption">結果連結版本 4：優先保留次數</p></>;
+    case 'priority-count': return <>
+      <ConclusionColumns titles={['分享者最重視的', '分享者在情境中優先保留的']} {...priorityColumnText} stated={stated} chosen={columnRows(result.counted, row => priorityCountText(row.count))} />
+      <DecidedCount decided={result.decided} total={result.plan.length} undirectedNote={version3Wording.decidedNote(result.plan.length - result.decided)} />
       <p>{priorityCountingNote}</p>
       <p className="caption">結果連結版本 3：優先保留次數</p></>;
     case 'preference-score': return <>

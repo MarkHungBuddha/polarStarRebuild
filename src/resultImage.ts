@@ -19,7 +19,7 @@ const imageText = {
   title: '這一次，我的選擇。',
   statedTitle: '我最重視的',
   statedCaption: '第一幕的分類與排序',
-  /** The second column and the line above the limits: 優先保留次數 and 明確決策 N / M 題 (format version 3). */
+  /** The second column and the line above the limits: 優先保留次數 and 明確決策 N / M 題 (format version 4). */
   'priority-count': {
     title: '我在情境中優先保留的',
     caption: '第二幕的優先保留次數',
