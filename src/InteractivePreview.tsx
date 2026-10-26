@@ -42,7 +42,7 @@ const createSession = (): InteractiveSession => ({ screen: 'intro', values: base
 
 /**
  * The development-only entry (?preview=interactive) for the interactive second act: the first act as today, then interactive
- * questions, then both acts side by side. It keeps the interactive record (interactiveSessionStorage.ts) and offers no result link, result image or question link yet.
+ * questions, then both acts side by side. It keeps the interactive record (interactiveSessionStorage.ts) and shares a format version 3 result link, but no result image or question link yet.
  */
 export default function InteractivePreview() {
   const [initial] = useState(() => loadInteractiveSession(createSession));
@@ -91,7 +91,7 @@ export default function InteractivePreview() {
     <ThemeControl />
     {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
     {questionLinkNotice && <section className="storage-notice"><p role="status">{questionLinkNotice}</p><button className="secondary" onClick={startWithCurrentQuestions}>用目前題目開始</button></section>}
-    {session.screen === 'intro' && <HomeIntro actions={<><p className="storage-notice">開發預覽：第二幕改用互動情境題，結果還不能分享。</p><button className="primary" disabled={Boolean(questionLinkNotice)} onClick={() => go('classify')}>開始這次反思</button></>} />}
+    {session.screen === 'intro' && <HomeIntro actions={<><p className="storage-notice">開發預覽：第二幕改用互動情境題，結果目前只能分享結果連結。</p><button className="primary" disabled={Boolean(questionLinkNotice)} onClick={() => go('classify')}>開始這次反思</button></>} />}
     {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
     {session.screen === 'rank' && <RankScreen values={session.values} onArrange={arrange => setSession(current => ({ ...current, values: arrange(current.values) }))} onBack={() => go('classify')} onNext={() => { setSession(current => ({ ...current, values: withStrictOrder(current.values) })); go('scenario'); }} />}
     {session.screen === 'scenario' && scenario && <>

@@ -19,7 +19,7 @@ export function answerDirection(scenario: InteractiveScenario, answer: Interacti
 
 /**
  * The confirmed decision in the question's own words, so the user can check where each count came from
- * (「做攝影小誌 4 晚、陪朋友練面試 2 晚」, 「選了「去幫朋友打包」」). An adjustment kept through 維持這個安排 reads 維持原本安排;
+ * (「做攝影小誌 4 晚、陪朋友練面試 2 晚」, 「選了「去幫朋友整理新家」」). An adjustment kept through 維持這個安排 reads 維持原本安排;
  * one that was changed reads as its counts, also when it ends back on the initial counts.
  * Only called with an answer to this very question (`isAnswerTo`).
  */
