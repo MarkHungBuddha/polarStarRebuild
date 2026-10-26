@@ -57,8 +57,11 @@ export async function confirmDecision(page: Page, decision: InteractiveDecision)
   if (title) await expect(page.getByRole('heading', { name: title, exact: true })).toHaveCount(0);
 }
 
-/** Answers every remaining question by its title: listed titles get their decision, every other question `rest`. Returns the titles in order. */
-export async function answerInteractiveByTitle(page: Page, decisions: Readonly<Record<string, InteractiveDecision>> = {}, rest: InteractiveDecision = '平均分配') {
+/**
+ * Answers every remaining question by its title: listed titles get their decision, every other question `rest`. Returns the titles in order.
+ * The default rest, 目前無法決定, fits every kind of question and adds no count, so a test sees only the counts of the titles it lists.
+ */
+export async function answerInteractiveByTitle(page: Page, decisions: Readonly<Record<string, InteractiveDecision>> = {}, rest: InteractiveDecision = '目前無法決定') {
   const titles: string[] = [];
   while (!await resultHeading(page).isVisible()) {
     const title = (await questionHeading(page).textContent())!;

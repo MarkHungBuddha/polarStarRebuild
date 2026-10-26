@@ -1,6 +1,7 @@
 import { columnRows } from './columnRows';
 import { decisionText, firstActComparison } from './interactiveAnswers';
 import type { InteractiveSession, Reflection } from './interactiveTypes';
+import { InteractiveShare } from './InteractiveShare';
 import { PageHeader } from './PageHeader';
 import { ReflectionStep } from './ReflectionStep';
 import { decidedCount, fullListCountText, priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
@@ -11,12 +12,20 @@ import './techo-result.css';
 /** What the second column says above 優先保留次數, and when no confirmed answer has a direction (no ranking then). */
 export const priorityColumnText = { caption: '第二幕的優先保留次數', empty: '這次沒有方向明確的決策，不產生第二幕排名。' };
 
+/** 明確決策 N / M 題, and why the rest add no count; the sharer's result and a version 3 result link show it the same way. */
+export function DecidedCount({ decided, total }: { decided: number; total: number }) {
+  return <>
+    <p className="decided-count"><strong>明確決策 {decided} / {total} 題</strong></p>
+    {decided < total && <p className="caption">平均分配和目前無法決定的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
+  </>;
+}
+
 const comparisonText = { 一致: '這次情境選擇與原先排序一致', 不同: '這次情境選擇與原先排序不同' };
 
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
  * count, then the question-by-question comparison with each raw decision. The counting rules sit in 結果怎麼整理, folded away.
- * The skippable reflection step closes the page; sharing is a later ticket (#66, #67).
+ * Then the skippable reflection step, and 分享結果 with a format version 3 result link (never the notes); the result image is #67.
  */
 export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
   session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void;
@@ -33,8 +42,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
       <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
         stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
         chosen={columnRows(chosen, row => priorityCountText(row.count))} />
-      <p className="decided-count"><strong>明確決策 {decided} / {total} 題</strong></p>
-      {decided < total && <p className="caption">平均分配和目前無法決定的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
+      <DecidedCount decided={decided} total={total} />
     </section>
     <section className="result-evidence"><h2>逐題對照</h2>
       <p>{decided ? `方向明確的 ${decided} 題中，${same} 題與原先排序一致，${decided - same} 題不同。` : '這次沒有方向明確的題目，所以沒有和原先排序比較。'}</p>
@@ -66,6 +74,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
       </ul>
     </details>
     <ReflectionStep session={session} onChange={onReflect} />
+    <InteractiveShare session={session} />
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;
 }
