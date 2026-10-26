@@ -6,7 +6,14 @@ export interface ResourceInteraction { kind: 'resources'; objects: readonly stri
 export interface SceneInteraction { kind: 'scene'; object: string; locations: readonly { id: string; label: string; consequence: string; valueId?: AllocationSide['valueId'] }[] }
 export interface MessageInteraction { kind: 'message'; sentences: readonly { id: string; text: string }[] }
 export interface PriorityInteraction { kind: 'priority'; capacity: number; keepLabel: string; deferLabel: string; resourceUnit?: string; items: readonly { id: string; label: string; detail: string; valueId?: AllocationSide['valueId'] }[] }
-export interface LinkedInteraction { kind: 'linked'; min: number; max: number; step: number; initial: number; unit: string; label: string; consequence: string; resourceSides?: readonly [AllocationSide, AllocationSide] }
+export interface LinkedMetric { label: string; unit: string; source: 'value' | 'remainder'; multiplier?: number; subtractFrom?: number; minimum?: number }
+export interface LinkedInteraction {
+  kind: 'linked'; min: number; max: number; step: number; initial: number; unit: string; label: string; consequence: string;
+  presentation?: { kind: 'clock'; startHour: number } | { kind: 'calendar' };
+  metrics?: readonly LinkedMetric[];
+  /** Only an explicitly fixed total of the same resource can yield a direction. */
+  resourceTotal?: number; resourceSides?: readonly [AllocationSide, AllocationSide];
+}
 export type RedesignInteraction = CalendarInteraction | ResourceInteraction | SceneInteraction | MessageInteraction | PriorityInteraction | LinkedInteraction;
 
 export interface CalendarAnswer { kind: 'calendar'; variantId: string; placements: readonly (0 | 1)[] }

@@ -1,6 +1,7 @@
 import type { InteractiveAnswer, InteractiveScenario } from './interactiveTypes';
 import { CalendarQuestion } from './CalendarQuestion';
 import { PriorityQuestion } from './PriorityQuestion';
+import { LinkedQuestion } from './LinkedQuestion';
 import { ResourceQuestion } from './ResourceQuestion';
 
 export interface RedesignQuestionProps {
@@ -11,6 +12,7 @@ export interface RedesignQuestionProps {
 export function RedesignQuestion(props: RedesignQuestionProps) {
   if (props.scenario.interaction.kind === 'calendar') return <CalendarQuestion {...props} />;
   if (props.scenario.interaction.kind === 'priority') return <PriorityQuestion {...props} />;
+  if (props.scenario.interaction.kind === 'linked') return <LinkedQuestion {...props} />;
   if (props.scenario.interaction.kind === 'resources') return <ResourceQuestion {...props} />;
   return null;
 }
