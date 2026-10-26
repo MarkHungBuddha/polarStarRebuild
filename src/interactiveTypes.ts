@@ -3,8 +3,8 @@ import type { Screen, ValueId, ValueItem } from './types';
 /*
  * The interactive second act's question and answer contracts (docs/interactive-scenario-spec.md, ADR 0007).
  * Each question declares one interaction; each confirmed answer is one of a few shapes whose direction needs no guessing
- * (interactiveAnswers.ts). Only allocation exists so far: 選方案 (#62) and 初始安排 (#63) add their members to `Interaction`,
- * and they and 目前無法決定 (#64) add theirs to `InteractiveAnswer`; every consumer switches on `kind`.
+ * (interactiveAnswers.ts). Allocation and 目前無法決定 exist so far: 選方案 (#62) and 初始安排 (#63) add their members to `Interaction`
+ * and `InteractiveAnswer`; every consumer switches on `kind` (`decisionText` included).
  */
 
 /** One side of an allocation: what the cells given to it are spent on. Side A (first) and B lean to the slot's pair in order. */
@@ -40,8 +40,11 @@ export interface InteractiveScenario {
  */
 export interface AllocationAnswer { kind: 'allocate'; variantId: string; counts: readonly [number, number] }
 
+/** 目前無法決定, confirmed like any answer and open to every interaction. It has no direction, unlike an unanswered question it counts as answered. */
+export interface UndecidedAnswer { kind: 'undecided'; variantId: string }
+
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
-export type InteractiveAnswer = AllocationAnswer;
+export type InteractiveAnswer = AllocationAnswer | UndecidedAnswer;
 
 export interface InteractiveSession {
   screen: Screen;

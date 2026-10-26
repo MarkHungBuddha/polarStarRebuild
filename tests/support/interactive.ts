@@ -6,10 +6,14 @@ export { confirmButton, questionHeading, resultHeading };
 
 /**
  * One interactive decision, applied to whichever question carries the title it is listed under.
- * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells.
- * Later interactions add their own members here (選 A／選 B, 維持初始安排, 目前無法決定) so every spec keeps answering by title.
+ * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells;
+ * '目前無法決定' presses the button every question offers. Later interactions add their own members here (選 A／選 B,
+ * 維持初始安排) so every spec keeps answering by title.
  */
-export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配';
+export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配' | '目前無法決定';
+
+/** The 目前無法決定 button every interactive question offers; it still needs 確認答案. */
+export const undecidedButton = (page: Page) => page.getByRole('button', { name: '目前無法決定', exact: true });
 
 /** The development preview of the interactive second act; it only exists on the dev server. */
 export const interactivePreviewPath = '/?preview=interactive';
@@ -26,6 +30,7 @@ export const allocationCells = (page: Page) => page.locator('.allocation-cells')
 
 /** Sets the current question to `decision` without confirming it. */
 export async function applyDecision(page: Page, decision: InteractiveDecision) {
+  if (decision === '目前無法決定') { await undecidedButton(page).click(); return; }
   const cells = await allocationCells(page).all();
   const [a, b] = decision === '平均分配' ? [cells.length / 2, cells.length / 2] : decision.allocate;
   expect(a + b, 'an allocation fills every cell').toBe(cells.length);
@@ -60,4 +65,16 @@ export async function priorityRows(page: Page) {
     const [position, words, count] = await Promise.all(['span', 'strong', 'small'].map(tag => item.locator(tag).textContent()));
     return `${position}｜${words!.split('、').sort().join('、')}｜${count}`;
   }));
+}
+
+/** One question's record on the result page, found by its title; opens the folded per-question records first. */
+export async function decisionRecord(page: Page, title: string) {
+  const records = page.locator('details.decision-records');
+  if (!await records.evaluate(element => (element as HTMLDetailsElement).open)) await records.locator('summary').click();
+  return records.getByRole('listitem').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+}
+
+/** Goes back from the result page to change the question with this title. */
+export async function editQuestion(page: Page, title: string) {
+  await (await decisionRecord(page, title)).getByRole('button', { name: '修改這題' }).click();
 }

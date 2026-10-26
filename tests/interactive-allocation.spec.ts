@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues } from './support/experience';
-import { allocationCells, answerInteractiveByTitle, applyDecision, confirmButton, confirmDecision, priorityRows, resultHeading, startInteractiveScenarios } from './support/interactive';
+import { allocationCells, answerInteractiveByTitle, applyDecision, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios } from './support/interactive';
 
 // The preview's sample: six evenings between a photo zine of one's own (A, 自主) and a friend's interview practice (B, 照顧身邊的人).
 const evenings = '六個晚上，留給誰？';
@@ -17,7 +17,7 @@ test('平均分配兩側都不加次數，沒有方向時不產生第二幕排�
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [evenings]: '平均分配' });
   expect(await priorityRows(page)).toEqual([]);
-  await expect(page.getByText('這次的決策都沒有偏向哪一邊，不產生排名。')).toBeVisible();
+  await expect(page.getByText('這次沒有方向明確的決策，不產生第二幕排名。')).toBeVisible();
 });
 
 test('分配差距不加權：六比零和四比二一樣只記 1 次', async ({ page }) => {
@@ -59,14 +59,14 @@ test('只用鍵盤也能完成分配並確認', async ({ page }) => {
 test('返回修改要重新確認才覆蓋；重新整理保留上次已確認的版本，不保存未確認的修改', async ({ page }) => {
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } });
-  await page.getByRole('button', { name: '修改這題' }).click();
+  await editQuestion(page, evenings);
   const totals = page.locator('.scenario-mechanic').getByRole('status');
   await expect(totals).toHaveText(/做攝影小誌\s*4 晚.*陪朋友練面試\s*2 晚/);
   await applyDecision(page, { allocate: [1, 5] });
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   expect(await priorityRows(page)).toEqual(['第 1｜自主｜1 次／3 題']);
 
-  await page.getByRole('button', { name: '修改這題' }).click();
+  await editQuestion(page, evenings);
   await applyDecision(page, { allocate: [1, 5] });
   await page.reload();
   await expect(totals).toHaveText(/做攝影小誌\s*4 晚.*陪朋友練面試\s*2 晚/);
