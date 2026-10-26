@@ -32,7 +32,7 @@ export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: st
   });
 }
 
-const outdatedQuestionLinkNotice = '這份題目連結建立後，題目已經改版，無法重現原本的題組。你可以用目前題目開始。';
+export const outdatedQuestionLinkNotice = '這份題目連結建立後，題目已經改版，無法重現原本的題組。你可以用目前題目開始。';
 
 export function requestedQuestions(search: string): { questions?: Scenario[]; notice?: string; specified: boolean } {
   const params = new URLSearchParams(search);
