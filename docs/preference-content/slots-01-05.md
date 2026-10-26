@@ -1,6 +1,6 @@
 # 第 1–5 組情境變體：草稿與審閱紀錄（#50）
 
-題目在 `src/scenarios/preference-slots-01-05.ts`，槽 4 的工作示範題在 `src/scenarios/preference.ts`。
+題目在 `src/scenarios/preference-slots-01-05.ts`，槽 4 的工作示範題在 `src/scenarios.ts`。
 
 這批文案是 AI 依[新版規格](../preference-strength-spec.md)與[內容作者筆記](../content-authoring-notes.md)起草，並由 AI 逐題自審，不是人工撰寫的定稿，也沒有經過心理測量驗證。正式上線前，仍需專案負責人審閱。
 
