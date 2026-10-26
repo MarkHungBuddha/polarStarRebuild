@@ -4,7 +4,7 @@ import { questionShareLink, requestedQuestions, selectQuestions } from './questi
 import { withCategory, withStrictOrder } from './firstAct';
 import { ClassifyScreen, RankScreen } from './FirstActScreens';
 import { clearSeenHistory, loadSeenHistory, markQuestionSeen } from './seenHistory';
-import { ScenarioQuestion } from './ScenarioQuestion';
+import { PreferenceQuestion } from './PreferenceQuestion';
 import { ScenarioProgress } from './ScenarioFrame';
 import { evidenceId } from './ResultEvidence';
 import { ResultReport } from './ResultReport';
@@ -15,7 +15,6 @@ import { ShareFooter } from './ShareFooter';
 import { clearSavedSession, loadSavedSession, saveSession } from './sessionStorage';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
 import type { Scenario, Screen, Session } from './types';
-import { catalogFor, entryPath } from './questionCatalog';
 
 export function createSession(questions: Scenario[] = selectQuestions()): Session {
   return { screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: questions, answers: {}, scenarioIndex: 0 };
@@ -23,14 +22,13 @@ export function createSession(questions: Scenario[] = selectQuestions()): Sessio
 const sameQuestions = (left: readonly Scenario[], right: readonly Scenario[]) => left.length === right.length && left.every((scenario, index) => scenario.id === right[index].id);
 
 export function App() {
-  const [catalog] = useState(() => catalogFor(window.location.search));
-  const pick = (seen?: ReadonlySet<string>) => selectQuestions(seen, undefined, catalog);
-  const [request, setRequest] = useState(() => requestedQuestions(window.location.search, catalog));
-  const [initialHistory] = useState(() => loadSeenHistory(catalog));
+  const pick = (seen?: ReadonlySet<string>) => selectQuestions(seen);
+  const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
+  const [initialHistory] = useState(() => loadSeenHistory());
   // A saved session is always offered, even under a share link for other questions: replacing it must be the user's explicit choice.
-  const [initialSaved] = useState(() => loadSavedSession(catalog));
+  const [initialSaved] = useState(() => loadSavedSession());
   const [resumable, setResumable] = useState(initialSaved.session);
-  // An earlier bank's record stays until the user restarts; it is never resumed or converted.
+  // The mixed-mechanism bank's record stays until the user restarts; it is never resumed or converted.
   const [legacyNotice, setLegacyNotice] = useState(initialSaved.legacy ? initialSaved.notice : undefined);
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState((initialSaved.legacy ? undefined : initialSaved.notice) ?? initialHistory.notice ?? '');
@@ -39,13 +37,13 @@ export function App() {
   const [notice, setNotice] = useState('');
   const [editedEvidence, setEditedEvidence] = useState<string>();
   useEffect(() => {
-    if (saveEnabled && !resumable && !saveSession(session, catalog)) {
+    if (saveEnabled && !resumable && !saveSession(session)) {
       setStorageNotice(storageSaveFailedNotice);
     }
-  }, [session, saveEnabled, resumable, catalog]);
+  }, [session, saveEnabled, resumable]);
   useEffect(() => {
-    if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id, catalog)) setStorageNotice(storageSaveFailedNotice);
-  }, [session.screen, session.scenarioIndex, session.scenarios, catalog]);
+    if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
+  }, [session.screen, session.scenarioIndex, session.scenarios]);
   useEffect(() => {
     if (session.screen !== 'result' || !editedEvidence) return;
     // Returning from an edit lands on the evidence that was edited, not the top of a long report.
@@ -55,11 +53,11 @@ export function App() {
     setEditedEvidence(undefined);
   }, [session.screen, editedEvidence]);
   // The question set comes from the share link unless the user leaves it; leaving drops the link from the address bar.
-  const leaveShareRequest = () => { window.history.replaceState(null, '', entryPath(catalog, window.location.pathname)); setRequest({ specified: false }); };
+  const leaveShareRequest = () => { window.history.replaceState(null, '', window.location.pathname); setRequest({ specified: false }); };
   const startOver = ({ clearHistory = false, useCurrentVersion = false }: { clearHistory?: boolean; useCurrentVersion?: boolean } = {}) => {
-    const cleared = clearSavedSession(catalog);
-    const historyCleared = !clearHistory || clearSeenHistory(catalog);
-    const history = loadSeenHistory(catalog);
+    const cleared = clearSavedSession();
+    const historyCleared = !clearHistory || clearSeenHistory();
+    const history = loadSeenHistory();
     if (useCurrentVersion) leaveShareRequest();
     setSaveEnabled(false); setResumable(undefined); if (cleared) setLegacyNotice(undefined); setSession(createSession(!useCurrentVersion && request.questions ? request.questions : pick(history.ids)));
     setCustomWord(''); setNotice('');
@@ -86,7 +84,7 @@ export function App() {
   };
   const scenario = session.scenarios[session.scenarioIndex];
   const complete = session.scenarios.every(item => session.answers[item.id]);
-  const shareLink = questionShareLink(session.scenarios, window.location, catalog);
+  const shareLink = questionShareLink(session.scenarios, window.location);
   return <main className={`app-shell screen-${session.screen}`}>
     <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
     <ThemeControl />
@@ -97,7 +95,7 @@ export function App() {
     {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
     {session.screen === 'rank' && <RankScreen values={session.values} onArrange={arrange => setSession(current => ({ ...current, values: arrange(current.values) }))} onBack={() => go('classify')} onNext={() => { setSession(current => ({ ...current, values: withStrictOrder(current.values) })); go('scenario'); }} />}
     {session.screen === 'scenario' && scenario && <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />}
-    {session.screen === 'scenario' && scenario && <ScenarioQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={complete ? () => go('result') : undefined} onConfirm={answer => { setSession(current => {
+    {session.screen === 'scenario' && scenario && <PreferenceQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={() => session.scenarioIndex === 0 ? go('rank') : setSession(current => ({ ...current, scenarioIndex: current.scenarioIndex - 1 }))} onReview={complete ? () => go('result') : undefined} onConfirm={answer => { setSession(current => {
       const answers = { ...current.answers, [scenario.id]: answer };
       // Once every question has a confirmed answer, a confirmation returns to the result instead of walking the remaining questions again.
       return current.scenarios.every(item => answers[item.id]) ? { ...current, answers, screen: 'result' } : { ...current, answers, scenarioIndex: Math.min(current.scenarioIndex + 1, current.scenarios.length - 1) };

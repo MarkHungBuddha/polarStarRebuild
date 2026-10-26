@@ -1,9 +1,9 @@
-import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues, openDetailedReport } from './support/experience';
-import type { PreferenceScenario } from '../src/types';
+import { confirmButton as confirm, evidence, leanOption as lean, resultHeading, scoreRow as row, scoreRows, type Lean } from './support/preference';
+import type { Scenario } from '../src/types';
 import { baseValues } from '../src/data';
-import { preferenceScenarios } from '../src/scenarios/preference';
+import { scenarios } from '../src/scenarios';
 
 // Slots 6–10 of the blueprint in docs/scenario-feature-spec.md, written out independently of the catalog; A is the first value.
 const slots = {
@@ -17,7 +17,7 @@ const slots = {
 test('第 6–10 組各恰有三個五段偏向情境，沿用原價值配對，題面不揭露價值名稱', () => {
   const valueWords = baseValues.map(value => value.word);
   for (const [slotId, pair] of Object.entries(slots)) {
-    const variants = preferenceScenarios.filter(scenario => scenario.slotId === slotId);
+    const variants = scenarios.filter(scenario => scenario.slotId === slotId);
     expect(variants, slotId).toHaveLength(3);
     expect(new Set(variants.map(variant => variant.title)).size, slotId).toBe(3);
     expect(new Set(variants.map(variant => variant.domain)).size, `${slotId} uses different life settings`).toBeGreaterThan(1);
@@ -34,7 +34,6 @@ test('第 6–10 組各恰有三個五段偏向情境，沿用原價值配對，
   }
 });
 
-type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
 // One lean per slot; the evidence and labels follow the first act below (自主, 探索刺激, 享受生活, 成就, …, 照顧身邊的人, 普遍關懷).
 const plan: Record<keyof typeof slots, { lean: Lean; evidence: string; label: string }> = {
   slot06: { lean: '強烈偏向 A', evidence: '已確認答案：強烈偏向 A。探索刺激加 2 分。', label: '與第一幕相符' },
@@ -44,29 +43,16 @@ const plan: Record<keyof typeof slots, { lean: Lean; evidence: string; label: st
   slot10: { lean: '強烈偏向 B', evidence: '已確認答案：強烈偏向 B。普遍關懷加 2 分。', label: '與第一幕不同' },
 };
 
-const confirm = (page: Page) => page.getByRole('button', { name: '確認答案', exact: true });
-const lean = (page: Page, name: Lean) => page.getByRole('radio', { name, exact: true });
-const evidence = (page: Page, title: string): Locator => page.getByRole('article').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
-const resultHeading = (page: Page) => page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
 
-/** The second-act column's rows as「名次｜價值（不論順序）｜分數」. */
-async function scoreRows(page: Page) {
-  const column = page.locator('.conclusion-columns > div').filter({ has: page.getByRole('heading', { name: '情境中的偏向分數' }) });
-  return Promise.all((await column.getByRole('listitem').all()).map(async row => {
-    const [position, words, score] = await Promise.all(['span', 'strong', 'small'].map(tag => row.locator(tag).textContent()));
-    return `${position}｜${words!.split('、').sort().join('、')}｜${score}`;
-  }));
-}
-const row = (position: string, words: string[], score: string) => `${position}｜${[...words].sort().join('、')}｜${score}`;
 
-// The preview draws each slot's variant with Math.random, so these three fixed values reach every variant in catalog order.
+// Each run draws each slot's variant with Math.random, so these three fixed values reach every variant in catalog order.
 for (const [index, random] of [0, 0.4, 0.8].entries()) test.describe(`第 ${index + 1} 個變體`, () => {
   test.use({ scenarioRandom: random });
-  const variants = Object.fromEntries(Object.keys(slots).map(slotId => [slotId, preferenceScenarios.filter(scenario => scenario.slotId === slotId)[index]])) as Record<keyof typeof slots, PreferenceScenario>;
+  const variants = Object.fromEntries(Object.keys(slots).map(slotId => [slotId, scenarios.filter(scenario => scenario.slotId === slotId)[index]])) as Record<keyof typeof slots, Scenario>;
   const slotOf = (title: string) => (Object.keys(variants) as (keyof typeof slots)[]).find(slotId => variants[slotId].title === title);
 
   test('第 6–10 組的變體可確認、續答、修改，逐題依據與分數跟著最新確認答案', async ({ page }) => {
-    await page.goto('/?experience=preference');
+    await page.goto('/');
     await classifyAndRankValues(page);
     await page.getByRole('button', { name: '進入情境中的取捨' }).click();
     const reached = new Set<string>();

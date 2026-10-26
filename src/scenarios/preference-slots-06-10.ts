@@ -1,11 +1,11 @@
-import type { PreferenceScenario } from '../types';
+import type { Scenario } from '../types';
 
 /**
  * Slots 6–10 (#51), three five-step preference variants each. Option order follows the slot pair, so A is the
  * pair's first value; valueId is the only source of direction. AI-drafted and AI-reviewed, not psychometrically
  * validated; the per-variant review is in docs/preference-content/slots-06-10.md.
  */
-export const preferenceSlots06To10: PreferenceScenario[] = [{
+export const preferenceSlots06To10: Scenario[] = [{
   id: 'preference-slot06-learning', slotId: 'slot06', pair: ['stimulation', 'achievement'], kind: 'preference', domain: '學習',
   title: '這次進修，往哪裡走？',
   setup: '假設接下來一個月，你有六次進修空檔，每次兩小時，只能整批報名一種安排。你可以報一系列沒試過的短課，木工、即興、聲音採集輪著上；也可以六次都拿來練熟悉的工作技能，完成一份自己在意、能公開展示的作品。兩邊費用差不多，都要認真投入，也都不是工作要求。',

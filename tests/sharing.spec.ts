@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyValues, completeRemainingScenarios, goToScenario, sceneOption, setAmount } from './support/experience';
+import { classifyValues, completeRemainingScenarios, confirmCurrentScenario, goToScenario } from './support/experience';
 
 test('分享連結只重現同一份題目，不帶自己的答案或價值詞', async ({ page, browser }) => {
   await page.goto('/');
@@ -10,8 +10,7 @@ test('分享連結只重現同一份題目，不帶自己的答案或價值詞',
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).click();
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await confirmCurrentScenario(page, '強烈偏向 B');
   await completeRemainingScenarios(page);
   await page.getByRole('button', { name: '重新開始', exact: true }).click();
   await classifyValues(page);
@@ -38,8 +37,7 @@ test('指定分享題目中途重新開啟，仍可續答同一份已確認進�
   await page.goto(link);
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await setAmount(page, 1);
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await confirmCurrentScenario(page);
   const nextTitle = await page.getByRole('heading', { level: 1 }).textContent();
   await page.reload();
   await page.getByRole('button', { name: '繼續上次作答' }).click();
@@ -54,8 +52,7 @@ test('開啟不同題目的分享連結時，仍可選擇繼續本機進度，�
   other.searchParams.set('seed', 'p.' + own.searchParams.get('seed')!.slice(2).split('.').map(selector => selector === '0' ? '1' : '0').join('.'));
   await classifyValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await setAmount(page, 1);
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
+  await confirmCurrentScenario(page);
   const savedTitle = await page.getByRole('heading', { level: 1 }).textContent();
 
   await page.goto(other.href);
@@ -118,7 +115,7 @@ test('已看紀錄無法讀取時仍能完成作答並告知無法保存', async
   await page.addInitScript(() => {
     const getItem = Storage.prototype.getItem;
     Storage.prototype.getItem = function(key) {
-      if (key === 'polarstar.seen.v1') throw new DOMException('Denied', 'SecurityError');
+      if (key === 'polarstar.seen.v2') throw new DOMException('Denied', 'SecurityError');
       return getItem.call(this, key);
     };
   });

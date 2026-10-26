@@ -1,7 +1,6 @@
 import { coreValueWord } from './data';
 import { preferenceScoreText } from './preferenceRanking';
-import { withPositions, type SharedResult } from './resultLink';
-import { chosenCountText } from './valueRanking';
+import { withPositions, type PreferenceSharedResult } from './resultLink';
 
 export const resultImageColors = {
   light: { background: '#f6f1e7', paper: '#fffdf8', ink: '#2b2a27', muted: '#5e584d', accent: '#2f4a6d', line: '#ddd3c2', sticky: '#fff6d6' },
@@ -20,9 +19,6 @@ const imageText = {
   title: '這一次，我的選擇。',
   statedTitle: '我最重視的',
   statedCaption: '第一幕的分類與排序',
-  chosenTitle: '我在情境中最常選的',
-  chosenCaption: '第二幕有偏向一邊的答案',
-  noChosen: '這次沒有偏向一邊的答案，所以沒有排名。',
   scoredTitle: '我在情境中的偏向分數',
   scoredCaption: '第二幕的偏向分數',
   noScored: '這次作答沒有明確偏向',
@@ -33,60 +29,46 @@ const imageText = {
   site: 'northstarmetric.org',
 };
 
-/**
- * One position as drawn: its label, the names shown (a long legacy tie may be cut short), the chosen count under the names
- * or the score beside the label, and whether the names use the smaller size.
- */
-interface DrawnRow { label: string; names: string; count?: string; score?: string; compact: boolean }
+/** One position as drawn: its label, the names shown, the score beside the label, and whether the names use the smaller size. */
+interface DrawnRow { label: string; names: string; score?: string; compact: boolean }
 interface DrawnColumn { rows: DrawnRow[]; extra?: string }
 
 /**
  * Lays out one column: positions until `limit` names are shown, then「另有 N 個並列」for the rest.
  * With `compactTies`, a position shared by more than three values uses the smaller name size.
  */
-function layoutColumn(rows: readonly { ids: string[]; count?: string; score?: string }[], limit: number, compactTies: boolean): DrawnColumn {
+function layoutColumn(rows: readonly { ids: string[]; score?: string }[], limit: number, compactTies: boolean): DrawnColumn {
   const drawn: DrawnRow[] = [];
   let shown = 0;
   for (const row of withPositions(rows)) {
     if (shown >= limit) break;
     const ids = row.ids.slice(0, limit - shown);
     shown += ids.length;
-    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), count: row.count, score: row.score, compact: compactTies && row.ids.length > 3 });
+    drawn.push({ label: `${row.ids.length > 1 ? '並列' : ''}第 ${row.position}`, names: names(ids), score: row.score, compact: compactTies && row.ids.length > 3 });
   }
   const extra = rows.reduce((sum, row) => sum + row.ids.length, 0) - shown;
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
-/**
- * Where each part sits. A preference image moves the columns up to make room for the scoring rule above the limits;
- * the legacy image keeps its published layout.
- */
-const legacyLayout = { title: 170, box: 280, boxHeight: 610, heading: 350, caption: 400, rows: 460, custom: 920 };
-const preferenceLayout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154 };
+/** Where each part sits; the scoring rule sits above the limits. */
+const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, scoringRule: 1154 };
 
 /**
  * Draw only the public conclusion. The returned PNG is also the file used by system sharing.
- * `scoring` decides the second column: a legacy result shows its counts as shared (at most five names, then「另有 N 個並列」);
- * a preference result shows every value at positions 1–3 with its score, plus the 2／1／0 scoring rule.
+ * The second column shows every value at positions 1–3 with its score, plus the 2／1／0 scoring rule.
  */
-export async function createResultImage(result: SharedResult, theme: ImageTheme): Promise<File> {
-  const preference = result.scoring === 'preference-score';
-  const layout = preference ? preferenceLayout : legacyLayout;
+export async function createResultImage(result: PreferenceSharedResult, theme: ImageTheme): Promise<File> {
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
-  const chosenColumn = preference
-    ? layoutColumn(result.scored.map(row => ({ ids: row.ids, score: preferenceScoreText(row.score, row.ids.length > 1) })), Infinity, true)
-    : layoutColumn(result.chosen.map(row => ({ ids: row.ids, count: chosenCountText(row, row.ids.length > 1) })), 5, false);
-  const second = preference
-    ? { title: imageText.scoredTitle, caption: imageText.scoredCaption, empty: imageText.noScored, rows: result.scored.length }
-    : { title: imageText.chosenTitle, caption: imageText.chosenCaption, empty: imageText.noChosen, rows: result.chosen.length };
+  const chosenColumn = layoutColumn(result.scored.map(row => ({ ids: row.ids, score: preferenceScoreText(row.score, row.ids.length > 1) })), Infinity, true);
+  const second = { title: imageText.scoredTitle, caption: imageText.scoredCaption, empty: imageText.noScored, rows: result.scored.length };
   const customShown = result.custom.slice(0, imageCustomLimit);
   const customExtra = result.custom.length > imageCustomLimit ? `另有 ${result.custom.length - imageCustomLimit} 個自訂價值` : undefined;
 
   // Fonts are loaded for exactly the text drawn below.
   const drawnText = [
     imageText.title, imageText.statedTitle, imageText.statedCaption, second.title, second.caption,
-    ...[statedColumn, chosenColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.count ?? '', row.score ?? '']), column.extra ?? '']),
-    second.rows ? '' : second.empty, preference ? imageText.scoringRule : '',
+    ...[statedColumn, chosenColumn].flatMap(column => [...column.rows.flatMap(row => [row.label, row.names, row.score ?? '']), column.extra ?? '']),
+    second.rows ? '' : second.empty, imageText.scoringRule,
     result.custom.length ? imageText.customTitle : '', ...customShown, customExtra ?? '',
     imageText.limits, imageText.tagline, imageText.site,
   ].join('');
@@ -120,7 +102,6 @@ export async function createResultImage(result: SharedResult, theme: ImageTheme)
       y = wrap(row.names, x, y + 46, 410, row.compact ? 28 : 34, colors.ink, true);
       // Drawn after the names but on the label's line, right-aligned, so even the tallest tie stays inside the column.
       if (row.score) text(row.score, x + 410, labelY, 28, colors.muted, false, 'right');
-      if (row.count) { text(row.count, x, y + 42, 28, colors.muted); y += 42; }
       y += 58;
     }
     if (extra) text(extra, x, y, 28, colors.accent);
@@ -141,7 +122,7 @@ export async function createResultImage(result: SharedResult, theme: ImageTheme)
     customShown.forEach((word, index) => text(word, 88, layout.custom + 86 + index * 42, 28));
     if (customExtra) text(customExtra, 88, layout.custom + 86 + customShown.length * 42, 28, colors.accent);
   }
-  if (preference) text(imageText.scoringRule, 64, preferenceLayout.scoringRule, 28, colors.muted);
+  text(imageText.scoringRule, 64, layout.scoringRule, 28, colors.muted);
   wrap(imageText.limits, 64, 1196, 952, 28, colors.muted);
   rect(64, 1260, 952, 2, colors.line);
   text(imageText.tagline, 64, 1310, 28); text(imageText.site, 730, 1310, 28, colors.accent);

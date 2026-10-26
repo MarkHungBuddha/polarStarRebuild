@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { classifyAll, classifyAndRankValues, classifyValues, completeRemainingScenarios, expectNoHorizontalScroll, expectPosition, goToScenario, pressOnHandle, rankValuesInListedOrder, sceneOption, setCategory } from './support/experience';
+import { classifyAll, classifyAndRankValues, classifyValues, completeRemainingScenarios, expectNoHorizontalScroll, expectPosition, confirmCurrentScenario, goToScenario, pressOnHandle, rankValuesInListedOrder, setCategory } from './support/experience';
 
 test('使用者能分類十個共同價值，並在進入情境前排出順序、保留自訂價值', async ({ page }) => {
   await page.goto('/');
@@ -28,12 +28,12 @@ test('沒有調整排序時照清單順序比對，結果照常標出相符或�
   await expectPosition(page, '安全穩定', 6);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).click();
-  await page.getByRole('button', { name: '確認答案' }).click();
+  await confirmCurrentScenario(page, '強烈偏向 B');
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
   await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('你把探索刺激放在安全穩定之前；在這題，你選擇了「留在原團隊」。')).toBeVisible();
+  await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
+  await expect(evidence.getByText('你把探索刺激放在安全穩定之前。兩幕比較只看偏向方向，不以程度推論差異大小。')).toBeVisible();
 });
 
 test('排序只在同一類別內，換類別的價值排到新類別最後', async ({ page }) => {
@@ -63,22 +63,22 @@ test('結果只使用最後確認答案，並可呈現相符與不同', async ({
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).click();
-  await page.getByRole('button', { name: '確認答案' }).click();
+  await confirmCurrentScenario(page, '強烈偏向 B');
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？', exact: true }) });
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('你把探索刺激放在安全穩定之前；在這題，你選擇了「留在原團隊」。')).toBeVisible();
+  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕不同');
+  await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await sceneOption(page, /去新團隊試兩週/).click();
+  await page.getByRole('radio', { name: '稍微偏向 A', exact: true }).click();
+  // Returning without confirming keeps the earlier confirmed answer.
   await page.getByRole('button', { name: '返回已確認結果' }).click();
-  await expect(evidence.getByText('與第一幕不同', { exact: true })).toBeVisible();
+  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕不同');
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await sceneOption(page, /去新團隊試兩週/).click();
-  await page.getByRole('button', { name: '確認答案' }).click();
-  await completeRemainingScenarios(page);
-  await expect(evidence.getByText('與第一幕相符', { exact: true })).toBeVisible();
-  await expect(evidence.getByText('你把探索刺激放在安全穩定之前；在這題，你選擇了「去新團隊試兩週」。')).toBeVisible();
+  await expect(page.getByRole('radio', { name: '強烈偏向 B', exact: true })).toBeChecked();
+  await confirmCurrentScenario(page, '稍微偏向 A');
+  await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
+  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕相符');
+  await expect(evidence.getByText('已確認答案：稍微偏向 A。探索刺激加 1 分。')).toBeVisible();
 });
 
 test('自訂價值在結果獨立呈現，不列入兩幕對照', async ({ page }) => {
@@ -94,8 +94,11 @@ test('自訂價值在結果獨立呈現，不列入兩幕對照', async ({ page 
   await pressOnHandle(page, '創作', 'End');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).focus();
+  // Keyboard only: the radio group takes focus on its first option, and arrows move the choice.
+  await page.getByRole('radio', { name: '強烈偏向 A', exact: true }).focus();
   await page.keyboard.press('Space');
+  for (let step = 0; step < 4; step += 1) await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('radio', { name: '強烈偏向 B', exact: true })).toBeChecked();
   await page.getByRole('button', { name: '確認答案' }).focus();
   await page.keyboard.press('Enter');
   await completeRemainingScenarios(page);

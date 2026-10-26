@@ -1,10 +1,9 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues, openDetailedReport } from './support/experience';
+import { classifyAndRankValues, openDetailedReport, type Lean } from './support/experience';
 import { baseValues } from '../src/data';
 import { scenarios } from '../src/scenarios';
-import { preferenceScenarios } from '../src/scenarios/preference';
 
-// Slots 11–15 keep the published value pairs (docs/scenario-feature-spec.md), written out independently of the catalog.
+// Slots 11–15 keep the original value pairs (docs/scenario-feature-spec.md), written out independently of the catalog.
 const pairs = {
   slot11: ['influence', 'fairness'],
   slot12: ['influence', 'care'],
@@ -15,15 +14,13 @@ const pairs = {
 
 test('第 11–15 組各恰有三個五段偏向情境，沿用原價值配對，題面不揭露價值名稱', () => {
   const valueWords = baseValues.map(value => value.word);
-  const published = new Set(scenarios.map(scenario => scenario.id));
   for (const [slotId, pair] of Object.entries(pairs)) {
-    const variants = preferenceScenarios.filter(scenario => scenario.slotId === slotId);
+    const variants = scenarios.filter(scenario => scenario.slotId === slotId);
     expect(variants, slotId).toHaveLength(3);
     expect(new Set(variants.map(variant => variant.title)).size, slotId).toBe(3);
     expect(new Set(variants.map(variant => variant.domain)).size, `${slotId} 使用不同生活情境`).toBeGreaterThan(1);
     for (const variant of variants) {
       expect(variant.id.startsWith(`preference-${slotId}-`), variant.id).toBe(true);
-      expect(published.has(variant.id), variant.id).toBe(false);
       expect([variant.kind, ...variant.pair], variant.id).toEqual(['preference', ...pair]);
       expect(variant.options.map(option => option.valueId), variant.id).toEqual([...pair]);
       expect(variant.setup.length, variant.id).toBeGreaterThan(60);
@@ -37,10 +34,9 @@ test('第 11–15 組各恰有三個五段偏向情境，沿用原價值配對�
   }
 });
 
-type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
-const titlesOf = (index: number) => Object.fromEntries(Object.keys(pairs).map(slotId => [slotId, preferenceScenarios.filter(scenario => scenario.slotId === slotId)[index].title]));
+const titlesOf = (index: number) => Object.fromEntries(Object.keys(pairs).map(slotId => [slotId, scenarios.filter(scenario => scenario.slotId === slotId)[index].title]));
 
-// The preview draws one variant per slot with Math.random; fixed values reach each of the three variants in turn.
+// Each run draws one variant per slot with Math.random; fixed values reach each of the three variants in turn.
 for (const [index, scenarioRandom] of [0, 0.5, 0.99].entries()) {
   test.describe(`第 ${index + 1} 個變體`, () => {
     test.use({ scenarioRandom });
@@ -51,10 +47,10 @@ for (const [index, scenarioRandom] of [0, 0.5, 0.99].entries()) {
       const choose = async (lean: Lean) => { await page.getByRole('radio', { name: lean, exact: true }).click(); await confirm.click(); };
       const evidence = (title: string) => page.getByRole('article').filter({ has: heading(title) });
 
-      await page.goto('/?experience=preference');
+      await page.goto('/');
       await classifyAndRankValues(page);
       await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-      // Earlier slots come first in the preview; they stay neutral here.
+      // Earlier slots come first; they stay neutral here.
       const current = page.locator('.scenario-card h1');
       while (await current.textContent() !== titles.slot11) {
         const title = (await current.textContent())!;

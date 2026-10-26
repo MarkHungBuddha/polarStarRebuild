@@ -1,70 +1,64 @@
-import type { ReactNode } from 'react';
 import { evidenceId } from './ResultEvidence';
-import { act1TopThree, byPosition, chosenCountText, differsFromFirstAct, scenarioTallies, scenarioTopThree } from './valueRanking';
+import { act1TopThree, byPosition, differsFromFirstAct } from './valueRanking';
 import type { Session } from './types';
-import { isPreferenceSession, preferenceScores, preferenceScoreText, preferenceTopThree } from './preferenceRanking';
+import { preferenceScores, preferenceScoreText, preferenceScoringNote, preferenceTopThree } from './preferenceRanking';
 
-const counted = (row: { items: readonly { chosen: number; directional: number }[] }) => chosenCountText(row.items[0], row.items.length > 1);
-
-/** One position in a top-three column: the words sharing it and, in the second act, how often they were chosen. */
+/** One position in a top-three column: the words sharing it and, in the second act, its score or legacy count. */
 export interface ColumnRow { position: number; words: string[]; count?: string }
 
-/** The two top-three columns as shown, whoever's they are; `statedNote` sits under the first column. */
-export function ConclusionColumns({ titles, stated, chosen, statedNote, preference = false }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; statedNote?: ReactNode; preference?: boolean }) {
+/**
+ * The two top-three columns as shown, whoever's they are. The second column shows preference scores, or with `legacy`
+ * the counts a format version 1 result link was shared with.
+ */
+export function ConclusionColumns({ titles, stated, chosen, legacy = false }: { titles: [string, string]; stated: ColumnRow[]; chosen: ColumnRow[]; legacy?: boolean }) {
   const label = (row: ColumnRow) => (row.words.length > 1 ? '並列第 ' : '第 ') + row.position;
   return <div className="conclusion-columns">
     <div><h3>{titles[0]}</h3><p className="caption">第一幕的分類與排序</p>
-      <ol>{stated.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong></li>)}</ol>
-      {statedNote}</div>
-    <div><h3>{titles[1]}</h3><p className="caption">{preference ? '第二幕的偏向分數' : '第二幕有偏向一邊的答案'}</p>
-      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>{preference ? '這次作答沒有明確偏向' : '這次沒有偏向一邊的答案，所以沒有排名。'}</p>}</div>
+      <ol>{stated.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong></li>)}</ol></div>
+    <div><h3>{titles[1]}</h3><p className="caption">{legacy ? '第二幕有偏向一邊的答案' : '第二幕的偏向分數'}</p>
+      {chosen.length ? <ol>{chosen.map(row => <li key={row.position}><span>{label(row)}</span><strong>{row.words.join('、')}</strong><small>{row.count}</small></li>)}</ol> : <p>{legacy ? '這次沒有偏向一邊的答案，所以沒有排名。' : '這次作答沒有明確偏向'}</p>}</div>
   </div>;
 }
 
 /** The two top-three columns, one row per position; shared by the result cover and the detailed conclusion. */
-export function TopThreeColumns({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
-  const statedRows = byPosition(act1TopThree(session.values));
-  if (isPreferenceSession(session)) return <ConclusionColumns preference titles={['你最重視的', '情境中的偏向分數']}
-    stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
+export function TopThreeColumns({ session }: { session: Session }) {
+  return <ConclusionColumns titles={['你最重視的', '情境中的偏向分數']}
+    stated={byPosition(act1TopThree(session.values)).map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
     chosen={byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ position: row.position, words: row.items.map(item => item.value.word), count: preferenceScoreText(row.items[0].score, row.items.length > 1) }))} />;
-  const chosenRows = byPosition(scenarioTopThree(scenarioTallies(session)));
-  return <ConclusionColumns titles={['你最重視的', '你在情境中最常選的']}
-    stated={statedRows.map(row => ({ position: row.position, words: row.items.map(value => value.word) }))}
-    chosen={chosenRows.map(row => ({ position: row.position, words: row.items.map(tally => tally.value.word), count: counted(row) }))}
-    statedNote={statedRows.some(row => row.items.length > 1) && <p className="caption">有些價值你沒有排出先後。<button className="text-button" onClick={onRevisitFirstAct}>回第一幕調整</button></p>} />;
 }
 
-/** The conclusion: the first act's top three beside the values chosen most in the scenarios, one row per position, with what to take away. */
-export function ValueConclusion({ session, onRevisitFirstAct }: { session: Session; onRevisitFirstAct: () => void }) {
+/** The conclusion: the first act's top three beside the values with the highest preference scores, one row per position, with what to take away. */
+export function ValueConclusion({ session }: { session: Session }) {
   const stated = act1TopThree(session.values);
-  const tallies = scenarioTallies(session);
-  const chosen = scenarioTopThree(tallies);
-  const tallyOf = (id: string) => tallies.find(tally => tally.value.id === id)!;
-  const chosenIds = new Set(chosen.map(placed => placed.item.value.id));
+  const scores = preferenceScores(session);
+  const scored = preferenceTopThree(scores);
+  const scoreOf = (id: string) => scores.find(item => item.value.id === id)!.score;
+  const scoredIds = new Set(scored.map(placed => placed.item.value.id));
   const statedIds = new Set(stated.map(placed => placed.item.id));
-  const onlyChosen = chosen.filter(placed => !statedIds.has(placed.item.value.id));
+  const onlyScored = scored.filter(placed => !statedIds.has(placed.item.value.id));
   const allDiffering = session.scenarios.map((scenario, index) => ({ scenario, position: index + 1 })).filter(({ scenario }) => session.answers[scenario.id] && differsFromFirstAct(scenario, session.answers[scenario.id], session.values));
   // Only the differing scenarios that touch the stated top three are linked; the rest stay in the evidence below.
   const differing = allDiffering.filter(({ scenario }) => scenario.pair.some(id => statedIds.has(id)));
   const otherDiffering = allDiffering.length - differing.length;
   return <section className="conclusion paper-card" aria-labelledby="conclusion-title">
     <h2 id="conclusion-title">你的前三名</h2>
-    <TopThreeColumns session={session} onRevisitFirstAct={onRevisitFirstAct} />
+    <TopThreeColumns session={session} />
+    <p>{preferenceScoringNote}</p>
     <h3>對照你最重視的前三名</h3>
     <ul className="conclusion-checks">{stated.map(({ item }) => {
-      const tally = tallyOf(item.id);
-      const detail = !tally.directional ? '這次沒有偏向一邊的題目。' : `在情境中選了 ${tally.chosen} 次／共 ${tally.directional} 題，${chosenIds.has(item.id) ? '也排進情境中的前三名。' : '沒有排進情境中的前三名。'}`;
+      const score = scoreOf(item.id);
+      const detail = !score ? '這次沒有偏向它的答案，是 0 分。' : `在情境中得到 ${score} 分，${scoredIds.has(item.id) ? '也排進情境中的前三名。' : '沒有排進情境中的前三名。'}`;
       return <li key={item.id}><strong>{item.word}</strong>：{detail}</li>;
     })}
-    {onlyChosen.length > 0 && <li>另外在情境中常選的：{byPosition(onlyChosen).map(row => `${row.items.map(tally => tally.value.word).join('、')}（${counted(row)}）`).join('；')}。</li>}</ul>
+    {onlyScored.length > 0 && <li>另外在情境中分數較高的：{byPosition(onlyScored).map(row => `${row.items.map(entry => entry.value.word).join('、')}（${preferenceScoreText(row.items[0].score, row.items.length > 1)}）`).join('；')}。</li>}</ul>
     <h3>還可以想想</h3>
     <ol className="conclusion-questions">
-      <li>{onlyChosen.length ? '兩份前三名不完全一樣。接下來一年，你希望生活更接近哪一份？' : '兩份前三名一致。你現在的時間與精力，有分給這三件事嗎？'}</li>
+      <li>{onlyScored.length ? '兩份前三名不完全一樣。接下來一年，你希望生活更接近哪一份？' : '兩份前三名一致。你現在的時間與精力，有分給這三件事嗎？'}</li>
       <li>從你最重視的前三名挑一個：下個月，你可以為它安排一件什麼事？</li>
-      <li>{differing.length ? <>回頭看與你最重視的前三名有關、又與第一幕不同的題目：是什麼條件讓你選了另一邊？那個條件在你的生活裡常出現嗎？
-        <ul className="conclusion-differing">{differing.map(({ scenario, position }) => <li key={scenario.id}><a href={`#${evidenceId(scenario)}`}>第 {position} 題 · {scenario.title}</a></li>)}</ul></> : allDiffering.length ? '與你最重視的前三名有關的題目，都與第一幕相符。挑一題回頭看：在什麼條件下，你會選另一邊？' : '這次沒有與第一幕不同的題目。挑一題回頭看：在什麼條件下，你會選另一邊？'}
+      <li>{differing.length ? <>回頭看與你最重視的前三名有關、又與第一幕不同的題目：是什麼條件讓你偏向另一邊？那個條件在你的生活裡常出現嗎？
+        <ul className="conclusion-differing">{differing.map(({ scenario, position }) => <li key={scenario.id}><a href={`#${evidenceId(scenario)}`}>第 {position} 題 · {scenario.title}</a></li>)}</ul></> : allDiffering.length ? '與你最重視的前三名有關的題目，都與第一幕相符。挑一題回頭看：在什麼條件下，你會偏向另一邊？' : '這次沒有與第一幕不同的題目。挑一題回頭看：在什麼條件下，你會偏向另一邊？'}
         {otherDiffering > 0 && <p className="caption">其餘 {otherDiffering} 題與第一幕不同的題目，可以在下方逐題查看。</p>}</li>
     </ol>
-    <p className="sticky-note" role="note">每個價值這次只出現在約三題，改一題就可能換名次。接受條件落在中間範圍，或時間平均分配的答案，都不計入次數。這些排名可以幫你回顧答案，不能當作測驗分數或人格判定。</p>
+    <p className="sticky-note" role="note">每個價值這次只出現在三題，改一題就可能換名次。選兩者相當的題目，兩側都不加分。這些分數和名次可以幫你回顧答案，不是測驗成績，也不是人格判定。</p>
   </section>;
 }

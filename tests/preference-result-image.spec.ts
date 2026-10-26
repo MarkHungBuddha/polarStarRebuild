@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAll } from './support/experience';
-import { scoreColumn, type Lean } from './support/preference';
-import { reachShare, shareRegion } from './support/result-share';
+import { answerByTitle, scoreColumn, type Lean } from './support/preference';
+import { shareRegion } from './support/result-share';
 
 /** What the image draws as text: every `fillText` of one canvas, with its box on the 1080 × 1350 image, in drawing order. */
 interface DrawnText { text: string; left: number; right: number; top: number; bottom: number }
@@ -30,7 +30,7 @@ async function recordImageText(page: Page) {
     };
   });
 }
-/** The text of the image the preview shows now: the last one encoded once the preview is ready. */
+/** The text of the image the share block shows now: the last one encoded once its preview is ready. */
 async function drawnImage(page: Page): Promise<DrawnText[]> {
   await expect(shareRegion(page).getByRole('img')).toBeVisible();
   return page.evaluate(() => (window as unknown as { drawnImages: DrawnText[][] }).drawnImages.at(-1)!);
@@ -63,11 +63,11 @@ const sharerScores = '情境中的偏向分數';
 const statedColumn = (page: Page) => page.getByRole('heading', { name: '你最重視的', exact: true }).locator('..');
 
 /**
- * PREVIEW ONLY (until #56): the preview asks the first variant of each slot in slot order. Listed questions get their lean,
+ * With the fixed randomness the run asks the first variant of each slot in slot order. Listed questions get their lean,
  * the rest 兩者相當. Custom values are added first; every value goes in「這就是我」and keeps list order.
  */
 async function reachPreferenceShare(page: Page, leans: Record<string, Lean>, customWords: readonly string[] = []) {
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   for (const word of customWords) {
     await page.getByRole('textbox', { name: '自訂價值' }).fill(word);
@@ -76,14 +76,7 @@ async function reachPreferenceShare(page: Page, leans: Record<string, Lean>, cus
   await classifyAll(page, 'core');
   await page.getByRole('button', { name: '下一步：排出順序' }).click();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  const result = page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
-  const heading = page.locator('.scenario-card h1');
-  while (!await result.isVisible()) {
-    const title = (await heading.textContent())!;
-    await page.getByRole('radio', { name: leans[title] ?? '兩者相當', exact: true }).click();
-    await page.getByRole('button', { name: '確認答案', exact: true }).click();
-    await expect(page.getByRole('heading', { name: title, exact: true })).toHaveCount(0);
-  }
+  await answerByTitle(page, leans);
   return shareRegion(page);
 }
 
@@ -167,15 +160,4 @@ test('新版結果可以下載結果圖，也能把圖和結果連結交給系�
   await share.getByRole('button', { name: '分享結果' }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { shareCalls: unknown[] }).shareCalls)).toEqual([{ url: link, type: 'image/png', width: 1080, height: 1350 }]);
   await expect(share.getByRole('status')).toHaveText('');
-});
-
-test('舊版結果圖仍畫選了幾次，不畫偏向分數或計分說明', async ({ page }) => {
-  await recordImageText(page);
-  await reachShare(page);
-  const drawn = await drawnImage(page);
-  const text = allText(drawn);
-  expect(text).toContain('我在情境中最常選的');
-  expect(text).toMatch(/選了 \d+ 次／共 \d+ 題/);
-  expect(text).not.toContain('偏向分數');
-  expect(text).not.toContain(scoringRule);
 });

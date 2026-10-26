@@ -1,15 +1,10 @@
 import { expect, type Page } from '@playwright/test';
-import { catalogVersion } from '../../src/questionPlan';
 import { answerRemainingScenarios, classifyAll, classifyAndRankValues } from './experience';
-import { resultLinksV1Catalog } from './result-links-v1';
 
 export const corruptHeading = '這條結果連結不完整';
 export const unsupportedHeading = '這條結果連結目前無法顯示';
 
-/** A published link opened against today's catalog, so its question set is still reproducible. */
-export const current = (fragment: string) => fragment.replace(`.${resultLinksV1Catalog}.`, `.${catalogVersion}.`);
-
-/** The recipient page's two top-three columns, found by their headings. */
+/** The recipient page's top-three columns, found by their headings: the first act, and a legacy (format version 1) link's counts. */
 export const statedColumn = (page: Page) => page.getByRole('heading', { name: '分享者最重視的' }).locator('..');
 export const chosenColumn = (page: Page) => page.getByRole('heading', { name: '分享者在情境中最常選的' }).locator('..');
 
@@ -23,7 +18,7 @@ export async function expectUnreadable(page: Page, fragment: string, heading = c
 /** The sharer's「分享結果」block on the result page. */
 export const shareRegion = (page: Page) => page.getByRole('region', { name: '分享結果' });
 
-/** The fixed-randomness flow behind `resultLinksV1.fixedFlow`: core values ranked in list order, every scenario answered the same way. */
+/** The fixed-randomness flow: core values ranked in list order, every scenario answered 強烈偏向 A. */
 export async function reachShare(page: Page) {
   await page.goto('/');
   await classifyAndRankValues(page);

@@ -1,6 +1,6 @@
 import type { Session } from './types';
 import { baseValues, categoryOrder } from './data';
-import { publishedCatalog, type QuestionCatalog } from './questionCatalog';
+import { catalog } from './questionCatalog';
 import { storageReadFailedNotice } from './storageNotices';
 
 const schemaVersion = 1;
@@ -12,27 +12,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolean {
-  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== scenario.kind) return false;
-  if (answer.kind === 'preference') return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
-  if (answer.kind === 'choice' || answer.kind === 'strike') {
-    return Array.isArray(scenario.options) && scenario.options.some(option => isRecord(option) && option.id === answer.optionId);
-  }
-  if (answer.kind === 'slider') {
-    const { value } = answer;
-    const { min, max, step } = scenario;
-    if (typeof value !== 'number' || !Number.isFinite(value) || typeof min !== 'number' || typeof max !== 'number' || typeof step !== 'number' || step <= 0) return false;
-    const steps = (value - min) / step;
-    return value >= min && value <= max && Math.abs(steps - Math.round(steps)) < 1e-7;
-  }
-  if (answer.kind === 'allocate') {
-    const amounts = answer.allocations;
-    if (answer.placements !== undefined && (!Array.isArray(answer.placements) || answer.placements.length !== scenario.total || !answer.placements.every(item => item === 0 || item === 1) || !Array.isArray(amounts) || answer.placements.filter(item => item === 0).length !== amounts[0])) return false;
-    return Array.isArray(amounts) && amounts.length === 2 && amounts.every(amount => typeof amount === 'number' && Number.isInteger(amount) && amount >= 0) && typeof scenario.total === 'number' && amounts[0] + amounts[1] === scenario.total;
-  }
-  return false;
+  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== 'preference' || scenario.kind !== 'preference') return false;
+  return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
 }
 
-function validSession(value: unknown, catalog: QuestionCatalog): value is Session {
+function validSession(value: unknown): value is Session {
   if (!isRecord(value) || typeof value.screen !== 'string' || !['intro', 'classify', 'rank', 'scenario', 'result'].includes(value.screen)) return false;
   if (!Array.isArray(value.values) || value.values.length < baseValues.length || !Array.isArray(value.scenarios) || !value.scenarios.length || !isRecord(value.answers)) return false;
   const values = value.values;
@@ -68,28 +52,28 @@ function validSession(value: unknown, catalog: QuestionCatalog): value is Sessio
   });
 }
 
-/** `legacy` is set when only an earlier bank's record exists: it is never resumed, and clearing the session removes it. */
-export function loadSavedSession(catalog = publishedCatalog): { session?: Session; notice?: string; legacy?: boolean } {
+/** `legacy` is set when only the mixed-mechanism bank's record exists: it is never resumed, and clearing the session removes it. */
+export function loadSavedSession(): { session?: Session; notice?: string; legacy?: boolean } {
   try {
     const raw = localStorage.getItem(catalog.sessionKey);
     if (!raw) return catalog.legacySessionKeys.some(key => localStorage.getItem(key) !== null) ? { notice: legacySessionNotice, legacy: true } : {};
     let saved: unknown;
     try { saved = JSON.parse(raw); } catch { return { notice: incompatibleNotice }; }
-    if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session, catalog)) return { notice: incompatibleNotice };
+    if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session)) return { notice: incompatibleNotice };
     return { session: saved.session };
   } catch {
     return { notice: storageReadFailedNotice };
   }
 }
 
-export function saveSession(session: Session, catalog = publishedCatalog): boolean {
+export function saveSession(session: Session): boolean {
   try {
     localStorage.setItem(catalog.sessionKey, JSON.stringify({ schemaVersion, session }));
     return true;
   } catch { return false; }
 }
 
-export function clearSavedSession(catalog = publishedCatalog): boolean {
+export function clearSavedSession(): boolean {
   try {
     for (const key of [catalog.sessionKey, ...catalog.legacySessionKeys]) localStorage.removeItem(key);
     return true;

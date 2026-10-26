@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { ScenarioFrame } from './ScenarioFrame';
-import type { PreferenceAnswer, PreferenceScenario, PreferenceStrength } from './types';
+import type { Answer, Scenario, PreferenceStrength } from './types';
 import './preference.css';
 
 export const preferenceLabels: Record<PreferenceStrength, string> = {
@@ -9,7 +9,7 @@ export const preferenceLabels: Record<PreferenceStrength, string> = {
 const strengths: readonly PreferenceStrength[] = [-2, -1, 0, 1, 2];
 
 export function PreferenceQuestion({ scenario, answer, onConfirm, onBack, onReview }: {
-  scenario: PreferenceScenario; answer?: PreferenceAnswer; onConfirm: (answer: PreferenceAnswer) => void; onBack: () => void; onReview?: () => void;
+  scenario: Scenario; answer?: Answer; onConfirm: (answer: Answer) => void; onBack: () => void; onReview?: () => void;
 }) {
   const group = useId();
   const [draft, setDraft] = useState<PreferenceStrength | null>(answer?.strength ?? null);

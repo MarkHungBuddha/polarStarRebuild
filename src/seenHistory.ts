@@ -1,8 +1,8 @@
-import { publishedCatalog } from './questionCatalog';
+import { catalog } from './questionCatalog';
 import { storageReadFailedNotice } from './storageNotices';
 
-/** Variants of `catalog` this browser has shown; a record from another catalog version counts as empty. */
-export function loadSeenHistory(catalog = publishedCatalog): { ids: Set<string>; notice?: string } {
+/** Variants of the catalog this browser has shown; a record from another catalog version counts as empty. */
+export function loadSeenHistory(): { ids: Set<string>; notice?: string } {
   try {
     const raw = localStorage.getItem(catalog.historyKey);
     if (!raw) return { ids: new Set() };
@@ -13,9 +13,9 @@ export function loadSeenHistory(catalog = publishedCatalog): { ids: Set<string>;
   } catch { return { ids: new Set(), notice: storageReadFailedNotice }; }
 }
 
-export function markQuestionSeen(id: string, catalog = publishedCatalog): boolean {
+export function markQuestionSeen(id: string): boolean {
   try {
-    const history = loadSeenHistory(catalog);
+    const history = loadSeenHistory();
     if (history.notice) return false;
     history.ids.add(id);
     localStorage.setItem(catalog.historyKey, JSON.stringify({ catalogVersion: catalog.version, ids: [...history.ids] }));
@@ -23,7 +23,8 @@ export function markQuestionSeen(id: string, catalog = publishedCatalog): boolea
   } catch { return false; }
 }
 
-export function clearSeenHistory(catalog = publishedCatalog): boolean {
-  try { localStorage.removeItem(catalog.historyKey); return true; }
+/** Clears this catalog's seen history and the one the mixed-mechanism bank left. */
+export function clearSeenHistory(): boolean {
+  try { for (const key of [catalog.historyKey, ...catalog.legacyHistoryKeys]) localStorage.removeItem(key); return true; }
   catch { return false; }
 }

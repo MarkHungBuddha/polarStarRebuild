@@ -1,90 +1,48 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
-import { sliderLeans } from '../src/scenarios/slider-leans';
-import { preferenceScenarios } from '../src/scenarios/preference';
 
-// The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog.
-const blueprint: Record<string, [string, string, string]> = {
-  slot01: ['autonomy', 'security', 'slider'],
-  slot02: ['autonomy', 'rules', 'strike'],
-  slot03: ['autonomy', 'care', 'allocate'],
-  slot04: ['stimulation', 'security', 'choice'],
-  slot05: ['stimulation', 'tradition', 'choice'],
-  slot06: ['stimulation', 'achievement', 'allocate'],
-  slot07: ['hedonism', 'achievement', 'slider'],
-  slot08: ['hedonism', 'care', 'choice'],
-  slot09: ['hedonism', 'rules', 'strike'],
-  slot10: ['achievement', 'fairness', 'slider'],
-  slot11: ['influence', 'fairness', 'choice'],
-  slot12: ['influence', 'care', 'strike'],
-  slot13: ['influence', 'tradition', 'choice'],
-  slot14: ['security', 'fairness', 'allocate'],
-  slot15: ['rules', 'tradition', 'choice'],
+// The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog: option A leans to the first value.
+const blueprint: Record<string, [string, string]> = {
+  slot01: ['autonomy', 'security'],
+  slot02: ['autonomy', 'rules'],
+  slot03: ['autonomy', 'care'],
+  slot04: ['stimulation', 'security'],
+  slot05: ['stimulation', 'tradition'],
+  slot06: ['stimulation', 'achievement'],
+  slot07: ['hedonism', 'achievement'],
+  slot08: ['hedonism', 'care'],
+  slot09: ['hedonism', 'rules'],
+  slot10: ['achievement', 'fairness'],
+  slot11: ['influence', 'fairness'],
+  slot12: ['influence', 'care'],
+  slot13: ['influence', 'tradition'],
+  slot14: ['security', 'fairness'],
+  slot15: ['rules', 'tradition'],
 };
 
-test('題庫變體識別唯一，槽位 4 有兩個可分辨的二選一變體', () => {
+test('題庫依藍圖有十五槽、每槽三個五段偏向變體共 45 題，識別唯一，十個核心價值各出現三次', () => {
+  expect(scenarios).toHaveLength(45);
   const ids = scenarios.map(scenario => scenario.id);
   expect(new Set(ids).size).toBe(ids.length);
-  const slot04 = scenarios.filter(scenario => scenario.slotId === 'slot04');
-  expect(slot04.map(scenario => [scenario.id, scenario.kind])).toEqual([['slot04-work', 'choice'], ['slot04-weekend', 'choice']]);
-  expect(new Set(slot04.map(scenario => scenario.title)).size).toBe(2);
-});
-
-test('完整題庫依藍圖有十五槽、每槽至少兩個同機制變體，十個核心價值各出現三次', () => {
-  expect(scenarios.length).toBeGreaterThanOrEqual(30);
   expect([...new Set(scenarios.map(scenario => scenario.slotId))].sort()).toEqual(Object.keys(blueprint));
-  for (const [slotId, [first, second, kind]] of Object.entries(blueprint)) {
+  for (const [slotId, pair] of Object.entries(blueprint)) {
     const variants = scenarios.filter(scenario => scenario.slotId === slotId);
-    expect(variants.length, slotId).toBeGreaterThanOrEqual(2);
-    for (const variant of variants) expect([variant.id, variant.pair, variant.kind]).toEqual([variant.id, [first, second], kind]);
-    expect(new Set(variants.map(variant => variant.title)).size, slotId).toBe(variants.length);
+    expect(variants.map(variant => [variant.kind, ...variant.pair]), slotId).toEqual(Array(3).fill(['preference', ...pair]));
+    expect(new Set(variants.map(variant => variant.title)).size, slotId).toBe(3);
   }
   const appearances = new Map<string, number>();
-  for (const [first, second] of Object.values(blueprint)) for (const value of [first, second]) appearances.set(value, (appearances.get(value) ?? 0) + 1);
+  for (const value of Object.values(blueprint).flat()) appearances.set(value, (appearances.get(value) ?? 0) + 1);
   expect(appearances.size).toBe(10);
   expect([...appearances.values()].every(count => count === 3)).toBe(true);
 });
 
-test('每個變體都有完整題意、雙方代價與結果文案，方向只來自價值對內的明確選項', () => {
-  const filled = (text: unknown) => typeof text === 'string' && text.trim().length > 0;
+test('每個變體都有完整題意與雙方代價，A／B 依序偏向價值對的兩邊，題面不寫出價值名稱', () => {
+  const filled = (text: string) => text.trim().length > 0;
   for (const scenario of scenarios) {
     expect([scenario.title, scenario.setup, scenario.domain].every(filled), scenario.id).toBe(true);
     expect(scenario.setup, scenario.id).not.toMatch(/自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/);
-    if (scenario.kind === 'slider') {
-      expect([scenario.question, scenario.unit, scenario.resultPrefix].every(filled), scenario.id).toBe(true);
-      expect(scenario.min < scenario.max && scenario.step > 0 && scenario.initial >= scenario.min && scenario.initial <= scenario.max, scenario.id).toBe(true);
-      continue;
-    }
-    if (scenario.kind === 'allocate') expect(Number.isInteger(scenario.total) && scenario.total > 0 && filled(scenario.unit), scenario.id).toBe(true);
     expect(scenario.options.every(option => filled(option.label) && filled(option.consequence)), scenario.id).toBe(true);
     expect(scenario.options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
-    expect(new Set(scenario.options.map(option => option.id)).size, scenario.id).toBe(2);
-  }
-});
-
-test('每題滑桿都有作者門檻：兩門檻分屬價值對的兩邊，初始位置落在不算偏向的中間', () => {
-  for (const scenario of scenarios) {
-    if (scenario.kind !== 'slider') continue;
-    const lean = sliderLeans[scenario.id];
-    expect(lean, scenario.id).toBeDefined();
-    expect([lean.lowValue, lean.highValue].sort(), scenario.id).toEqual([...scenario.pair].sort());
-    expect(scenario.min <= lean.atMost && lean.atMost < scenario.initial && scenario.initial < lean.atLeast && lean.atLeast <= scenario.max, scenario.id).toBe(true);
-  }
-  expect(Object.keys(sliderLeans).sort()).toEqual(scenarios.filter(scenario => scenario.kind === 'slider').map(scenario => scenario.id).sort());
-});
-
-test('五段偏向題沿用藍圖的價值配對，識別不和現行題庫重複，雙方選項與代價完整', () => {
-  const filled = (text: string) => text.trim().length > 0;
-  const published = new Set(scenarios.map(scenario => scenario.id));
-  const ids = preferenceScenarios.map(scenario => scenario.id);
-  expect(ids.length).toBeGreaterThan(0);
-  expect(new Set(ids).size).toBe(ids.length);
-  for (const scenario of preferenceScenarios) {
-    expect(published.has(scenario.id), scenario.id).toBe(false);
-    expect([scenario.kind, ...scenario.pair], scenario.id).toEqual(['preference', ...blueprint[scenario.slotId].slice(0, 2)]);
-    expect([scenario.title, scenario.setup, scenario.domain].every(filled), scenario.id).toBe(true);
-    expect(scenario.options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
-    expect(scenario.options.every(option => filled(option.label) && filled(option.consequence)), scenario.id).toBe(true);
     expect(new Set(scenario.options.map(option => option.id)).size, scenario.id).toBe(2);
   }
 });

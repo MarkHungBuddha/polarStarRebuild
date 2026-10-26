@@ -25,7 +25,6 @@
   --marker: var(--tape);
   --sticky: #fff6d6;
   --track: #e3dacb;
-  --piggy: #edc8b6;
   --opt-bg: rgba(255, 253, 248, .7);
   --opt-bg-selected: #fffdf8;
   --opt-border: #dcd2c0;
@@ -68,7 +67,6 @@
   --marker: rgba(237, 188, 175, .35);
   --sticky: #3a3426;
   --track: #3a362f;
-  --piggy: #5c4339;
   --opt-bg: rgba(42, 39, 35, .85);
   --opt-bg-selected: #2a2723;
   --opt-border: #4a443c;
