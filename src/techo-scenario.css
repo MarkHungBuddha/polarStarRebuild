@@ -1,7 +1,6 @@
 /*
  * Scenario frame (第二幕) in the notebook look, built only from the tokens in techo.css.
- * Shared by every mechanic: progress, the situation's paper card, the mechanic's board, caption and actions.
- * Mechanic-specific controls (scene, piggy bank, clock, calendar, planner) keep their own rules.
+ * Progress, the situation's paper card, the answer controls, caption and actions.
  */
 /* clip keeps the entering card's slide from widening the page on narrow screens. */
 .screen-scenario { max-width: 640px; overflow-x: clip; }
@@ -24,29 +23,12 @@
 .setup-question { margin: 14px 0 0; padding-top: 12px; border-top: 1.5px dashed var(--rule); color: var(--text); font-size: 16px; font-weight: 700; line-height: 1.7; }
 @keyframes scenario-card-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 
-/* The mechanic's board: an option-like panel, not a second paper card. */
-.scenario-page .game-board, .scenario-page .planner-board { margin: 0; padding: 18px 16px; border: 1.5px solid var(--opt-border); border-radius: var(--radius-control); background: var(--opt-bg); }
-.scenario-page .game-instruction { color: var(--text); font-size: 15px; }
-.scenario-page .scene-key { border-top: 1.5px dashed var(--rule); }
-.scenario-page .scene-key b { color: var(--text); }
-.scenario-page .scene-key p { color: var(--text-2); }
-.scenario-page .scene-feedback { border-top: 1.5px dashed var(--rule); color: var(--text); font: 500 15px/1.75 var(--font-sans); }
-
 .scenario-page .caption { margin: 14px 0 0; color: var(--text-2); font-size: 13px; line-height: 1.7; }
 .scenario-page .actions { gap: 12px; margin: 18px 0 20px; padding-top: 18px; border-top: 1.5px dashed var(--rule); }
 .scenario-page .actions .primary { flex: 1 1 160px; order: 2; }
 .scenario-page .actions .secondary { flex: 0 1 auto; order: 1; padding-inline: 18px; }
 .scenario-page .actions .text-button { flex-basis: 100%; order: 3; text-align: center; }
 
-/* The planner needs room on desktop, so its screen widens; the situation text keeps a readable line length. */
-@media (min-width: 900px) {
-  .screen-scenario:has(.planner-board) { max-width: 960px; }
-  .scenario-page .setup, .setup-question { max-width: 42em; }
-}
-@media (max-width: 640px) {
-  .scenario-page .game-board, .scenario-page .planner-board { padding: 16px 10px; margin-inline: 0; }
-  .scenario-page .game-instruction { padding-inline: 4px; }
-}
 @media (max-width: 360px) {
   .scenario-card { padding-inline: 18px; }
   .scenario-page h1 { font-size: 24px; }

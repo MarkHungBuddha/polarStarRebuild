@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { amountFeedback, classifyAll, completeRemainingScenarios, goToScenario, openDetailedReport, rankValuesInListedOrder, sceneOption, expectPosition, pressOnHandle, rankRow, setAmount } from './support/experience';
+import { classifyAll, completeRemainingScenarios, confirmCurrentScenario, goToScenario, openDetailedReport, rankValuesInListedOrder, expectPosition, pressOnHandle, rankRow } from './support/experience';
 
 async function beginAndClassify(page: Page) {
   await page.goto('/');
@@ -29,7 +29,7 @@ test('重新開啟後可續答，保留第一幕順序、自訂價值與相同�
 
 // Stored blobs below are opaque stand-ins for a damaged record or one written by another app version; they do not mirror the session format.
 test('損壞的本機紀錄不會被當成可續答的答案', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('polarstar.session.v1', 'damaged{'));
+  await page.addInitScript(() => localStorage.setItem('polarstar.session.v2', 'damaged{'));
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
   await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
@@ -41,18 +41,18 @@ test('未確認的修改不會覆寫重新開啟後的已確認答案', async ({
   await beginAndClassify(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).click();
-  await page.getByRole('button', { name: '確認答案' }).click();
+  await confirmCurrentScenario(page, '強烈偏向 B');
   await completeRemainingScenarios(page);
   const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '下週，照原計畫嗎？' }) });
   await evidence.getByRole('button', { name: '修改這題' }).click();
-  await sceneOption(page, /去新團隊試兩週/).click();
+  await page.getByRole('radio', { name: '強烈偏向 A', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: '繼續上次作答' }).click();
-  await expect(sceneOption(page, /留在原團隊/)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('radio', { name: '強烈偏向 B', exact: true })).toBeChecked();
   await page.getByRole('button', { name: '返回已確認結果' }).click();
   await openDetailedReport(page);
-  await expect(page.getByText('你把安全穩定放在探索刺激之前；在這題，你選擇了「留在原團隊」。')).toBeVisible();
+  await expect(evidence.getByText('已確認答案：強烈偏向 B。安全穩定加 2 分。')).toBeVisible();
+  await expect(evidence.locator('.evidence-label')).toHaveText('與第一幕相符');
 });
 
 test('清除紀錄後可重新開始，重新開啟不會沿用舊分類', async ({ page }) => {
@@ -72,9 +72,6 @@ test('儲存寫入失敗時告知無法保存，仍能完成當次作答', async
   await beginAndClassify(page);
   await expect(page.getByRole('status')).toContainText('目前無法保存本機紀錄');
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '下週，照原計畫嗎？');
-  await sceneOption(page, /留在原團隊/).click();
-  await page.getByRole('button', { name: '確認答案' }).click();
   await completeRemainingScenarios(page);
   await expect(page.getByRole('heading', { name: '這一次，你的選擇。' })).toBeVisible();
 });
@@ -89,28 +86,28 @@ test('無法讀取本機儲存時仍可開始，不會卡在續答入口', async
   await expect(page.getByRole('group', { name: /的重要性$/ })).toHaveCount(10);
 });
 
-test('滑桿已確認的原始條件可續答，未確認的新刻度不覆寫它', async ({ page }) => {
-  await beginAndClassify(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await goToScenario(page, '先準備多少，再換一種工作？');
-  await setAmount(page, 12);
-  await page.getByRole('button', { name: '確認答案', exact: true }).click();
-  await completeRemainingScenarios(page);
-  const evidence = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '先準備多少，再換一種工作？', exact: true }) });
-  await evidence.getByRole('button', { name: '修改這題' }).click();
-  await setAmount(page, 'max');
-  await page.reload();
-  await page.getByRole('button', { name: '繼續上次作答' }).click();
-  await expect(amountFeedback(page)).toContainText(' 12 ');
-  await page.getByRole('button', { name: '返回已確認結果' }).click();
-  await openDetailedReport(page);
-  await expect(evidence.getByText('你希望先準備 12 個月生活費，再考慮轉為接案。', { exact: true })).toBeVisible();
-});
-
 test('其他版本留下的本機紀錄不會把舊答案套用到目前題目', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('polarstar.session.v1', JSON.stringify({ writtenBy: 'another app version', answers: ['opaque'] })));
+  await page.addInitScript(() => localStorage.setItem('polarstar.session.v2', JSON.stringify({ writtenBy: 'another app version', answers: ['opaque'] })));
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('先前的本機紀錄無法讀取或版本不相容');
   await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '開始這次反思' })).toBeVisible();
+});
+
+test('清除本機作答紀錄時，也刪除舊版題庫留下的作答與已看紀錄', async ({ page }) => {
+  // Opaque stand-ins for what the mixed-mechanism bank left; they do not mirror any record format.
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('seeded')) return;
+    localStorage.setItem('polarstar.session.v1', 'earlier bank');
+    localStorage.setItem('polarstar.seen.v1', 'earlier bank');
+    sessionStorage.setItem('seeded', '1');
+  });
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('上次的作答來自舊版題目');
+  await page.getByRole('button', { name: '清除本機作答紀錄' }).click();
+  const keys = await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('polarstar.')));
+  expect(keys.filter(key => key.endsWith('.v1'))).toEqual([]);
+  await page.reload();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '開始這次反思' })).toBeEnabled();
 });

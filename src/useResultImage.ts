@@ -1,6 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { createResultImage, imageCustomLimit, type ImageTheme } from './resultImage';
-import type { SharedResult } from './resultLink';
+import type { PreferenceSharedResult } from './resultLink';
 
 export const imagePreparing = '正在準備結果圖……';
 export const imageFailed = '結果圖沒有產生成功，請再試一次。結果連結仍然可以複製。';
@@ -13,7 +13,7 @@ const siteTheme = (): ImageTheme => document.documentElement.dataset.theme === '
  * Own the generated URL and discard completions belonging to previous selections/themes.
  * A failure is reported in the share block's status; a later success silently clears the failure or preparing line it left there.
  */
-export function useResultImage(result: SharedResult | undefined, setStatus: Dispatch<SetStateAction<string>>) {
+export function useResultImage(result: PreferenceSharedResult | undefined, setStatus: Dispatch<SetStateAction<string>>) {
   const [theme, setTheme] = useState<ImageTheme>(siteTheme);
   const [attempt, setAttempt] = useState(0);
   const [generated, setGenerated] = useState<Generated>();
@@ -28,7 +28,7 @@ export function useResultImage(result: SharedResult | undefined, setStatus: Disp
   useEffect(() => {
     if (!serialized) return;
     let active = true; let url: string | undefined;
-    createResultImage(JSON.parse(serialized) as SharedResult, theme).then(file => {
+    createResultImage(JSON.parse(serialized) as PreferenceSharedResult, theme).then(file => {
       if (!active) return;
       url = URL.createObjectURL(file); setGenerated({ key, file, url });
       setStatus(current => current === imagePreparing || current === imageFailed ? '' : current);

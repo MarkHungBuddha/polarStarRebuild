@@ -1,20 +1,16 @@
-import { scenarios } from './scenarios';
+import { catalog, hash } from './questionCatalog';
 import type { Scenario } from './types';
-
-function hash(text: string): number {
-  let value = 2166136261;
-  for (let index = 0; index < text.length; index += 1) value = Math.imul(value ^ text.charCodeAt(index), 16777619);
-  return value >>> 0;
-}
-
-export const catalogVersion = `c${hash(JSON.stringify(scenarios)).toString(36)}`;
 
 function groups(): Scenario[][] {
   const slots = new Map<string, Scenario[]>();
-  for (const scenario of scenarios) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
+  for (const scenario of catalog.scenarios) slots.set(scenario.slotId, [...(slots.get(scenario.slotId) ?? []), scenario]);
   return [...slots.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([, variants]) => variants);
 }
 
+/**
+ * One variant per slot, in slot order. A seed reproduces a question set and ignores `seen`; without one, each slot
+ * draws from its variants not in `seen`, and from all of them once every variant has been seen.
+ */
 export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: string): Scenario[] {
   const slots = groups();
   if (seed?.startsWith('p.')) {
@@ -36,15 +32,17 @@ export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: st
   });
 }
 
+const outdatedQuestionLinkNotice = '這份題目連結建立後，題目已經改版，無法重現原本的題組。你可以用目前題目開始。';
+
 export function requestedQuestions(search: string): { questions?: Scenario[]; notice?: string; specified: boolean } {
   const params = new URLSearchParams(search);
   const seed = params.get('seed');
   if (seed === null) return { specified: false };
-  if (params.get('v') !== catalogVersion) return { specified: true, notice: '這份分享題目的版本目前無法使用。你可以改用目前的版本重新開始。' };
+  if (params.get('v') !== catalog.version) return { specified: true, notice: outdatedQuestionLinkNotice };
   try {
     if (!seed || seed.length > 1024) throw new Error('Invalid seed');
     return { specified: true, questions: selectQuestions(new Set(), seed) };
-  } catch { return { specified: true, notice: '這份分享連結的題目資料無法使用。你可以改用目前的版本重新開始。' }; }
+  } catch { return { specified: true, notice: '這份題目連結的題目資料無法使用。你可以用目前題目開始。' }; }
 }
 
 /** The variant chosen in each slot, in slot order and base36; a question link's seed is `p.` followed by these joined with dots. */
@@ -68,6 +66,6 @@ export function questionShareLink(questions: readonly Scenario[], location: Pick
   if (!selectors) return undefined;
   const url = new URL(location.pathname, location.origin);
   url.searchParams.set('seed', `p.${selectors.join('.')}`);
-  url.searchParams.set('v', catalogVersion);
+  url.searchParams.set('v', catalog.version);
   return url.href;
 }

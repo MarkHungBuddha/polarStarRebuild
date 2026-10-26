@@ -66,9 +66,7 @@
 .evidence-label::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1.5px solid var(--stamp); border-radius: 99px; transform: rotate(-2deg); }
 /* The answer can run several lines on a phone, so it uses the body font in bold rather than the handwriting font. */
 .evidence-quote { padding-left: 14px; border-left: 3px solid var(--tape); color: var(--text); font: 700 17px/1.75 var(--font-sans); }
-.kept-reply { margin: 12px 0; padding: 12px 16px; border: 1.5px dashed var(--rule); border-radius: var(--radius-paper); color: var(--text); }
 .evidence p { max-width: 46em; line-height: 1.8; }
-.kept-reply { max-width: 46em; }
 .evidence .text-button { margin-top: 8px; }
 
 @media (max-width: 640px) {

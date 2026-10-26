@@ -1,34 +1,19 @@
 import type { Session } from './types';
 import { baseValues, categoryOrder } from './data';
-import { scenarios } from './scenarios';
+import { catalog } from './questionCatalog';
 import { storageReadFailedNotice } from './storageNotices';
 
-const sessionKey = 'polarstar.session.v1';
 const schemaVersion = 1;
 const incompatibleNotice = '先前的本機紀錄無法讀取或版本不相容，請重新開始。';
+const legacySessionNotice = '上次的作答來自舊版題目，無法繼續作答，也不會換算成新版答案。請重新開始。';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolean {
-  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== scenario.kind) return false;
-  if (answer.kind === 'choice' || answer.kind === 'strike') {
-    return Array.isArray(scenario.options) && scenario.options.some(option => isRecord(option) && option.id === answer.optionId);
-  }
-  if (answer.kind === 'slider') {
-    const { value } = answer;
-    const { min, max, step } = scenario;
-    if (typeof value !== 'number' || !Number.isFinite(value) || typeof min !== 'number' || typeof max !== 'number' || typeof step !== 'number' || step <= 0) return false;
-    const steps = (value - min) / step;
-    return value >= min && value <= max && Math.abs(steps - Math.round(steps)) < 1e-7;
-  }
-  if (answer.kind === 'allocate') {
-    const amounts = answer.allocations;
-    if (answer.placements !== undefined && (!Array.isArray(answer.placements) || answer.placements.length !== scenario.total || !answer.placements.every(item => item === 0 || item === 1) || !Array.isArray(amounts) || answer.placements.filter(item => item === 0).length !== amounts[0])) return false;
-    return Array.isArray(amounts) && amounts.length === 2 && amounts.every(amount => typeof amount === 'number' && Number.isInteger(amount) && amount >= 0) && typeof scenario.total === 'number' && amounts[0] + amounts[1] === scenario.total;
-  }
-  return false;
+  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== 'preference') return false;
+  return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
 }
 
 function validSession(value: unknown): value is Session {
@@ -51,12 +36,12 @@ function validSession(value: unknown): value is Session {
   const slotIds = new Set<string>();
   for (const snapshot of snapshots) {
     if (!isRecord(snapshot) || typeof snapshot.id !== 'string' || typeof snapshot.slotId !== 'string' || variantIds.has(snapshot.id) || slotIds.has(snapshot.slotId)) return false;
-    const current = scenarios.find(scenario => scenario.id === snapshot.id);
+    const current = catalog.scenarios.find(scenario => scenario.id === snapshot.id);
     // A stored answer must never be applied to a rewritten or unknown question.
     if (!current || JSON.stringify(snapshot) !== JSON.stringify(current)) return false;
     variantIds.add(snapshot.id); slotIds.add(snapshot.slotId);
   }
-  const currentSlots = new Set(scenarios.map(scenario => scenario.slotId));
+  const currentSlots = new Set(catalog.scenarios.map(scenario => scenario.slotId));
   if (slotIds.size !== currentSlots.size || [...currentSlots].some(slot => !slotIds.has(slot))) return false;
   // A result is only shown for a fully answered question set.
   if (value.screen === 'result' && !snapshots.every(snapshot => isRecord(snapshot) && typeof snapshot.id === 'string' && isRecord(value.answers) && value.answers[snapshot.id] !== undefined)) return false;
@@ -67,10 +52,11 @@ function validSession(value: unknown): value is Session {
   });
 }
 
-export function loadSavedSession(): { session?: Session; notice?: string } {
+/** `legacy` is set when only the mixed-mechanism bank's record exists: it is never resumed, and clearing the session removes it. */
+export function loadSavedSession(): { session?: Session; notice?: string; legacy?: boolean } {
   try {
-    const raw = localStorage.getItem(sessionKey);
-    if (!raw) return {};
+    const raw = localStorage.getItem(catalog.sessionKey);
+    if (!raw) return catalog.legacySessionKeys.some(key => localStorage.getItem(key) !== null) ? { notice: legacySessionNotice, legacy: true } : {};
     let saved: unknown;
     try { saved = JSON.parse(raw); } catch { return { notice: incompatibleNotice }; }
     if (!isRecord(saved) || saved.schemaVersion !== schemaVersion || !validSession(saved.session)) return { notice: incompatibleNotice };
@@ -82,12 +68,15 @@ export function loadSavedSession(): { session?: Session; notice?: string } {
 
 export function saveSession(session: Session): boolean {
   try {
-    localStorage.setItem(sessionKey, JSON.stringify({ schemaVersion, session }));
+    localStorage.setItem(catalog.sessionKey, JSON.stringify({ schemaVersion, session }));
     return true;
   } catch { return false; }
 }
 
 export function clearSavedSession(): boolean {
-  try { localStorage.removeItem(sessionKey); return true; }
+  try {
+    for (const key of [catalog.sessionKey, ...catalog.legacySessionKeys]) localStorage.removeItem(key);
+    return true;
+  }
   catch { return false; }
 }
