@@ -98,7 +98,7 @@ export default function InteractivePreview() {
       <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />
       <InteractiveQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={back} onReview={complete ? () => go('result') : undefined} onConfirm={confirm} />
     </>}
-    {session.screen === 'result' && complete && <InteractiveResult session={session} onRestart={restart} onEdit={index => { setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
+    {session.screen === 'result' && complete && <InteractiveResult session={session} onRestart={restart} onReflect={reflection => setSession(current => ({ ...current, reflection }))} onEdit={index => { setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
     <ShareFooter onClearRecords={clearLocalRecords} />
   </main>;
 }
