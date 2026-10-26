@@ -41,7 +41,9 @@ for (const width of [320, 390, 1280]) {
       await expectLongParagraphsInSans(page.locator('main'));
       await page.locator('details.decision-records summary').click();
       await page.locator('details.counting-rules summary').click();
-      await expect(page.getByText(longCustomValue)).toBeVisible();
+      // Listed with the custom values and offered in the share block.
+      await expect(page.getByText(longCustomValue)).toHaveCount(2);
+      for (const item of await page.getByText(longCustomValue).all()) await expect(item).toBeVisible();
       await expectNoHorizontalScroll(page);
       await expectNoClippedText(page.locator('main'));
       await expectTouchTargets(page.locator('main'));

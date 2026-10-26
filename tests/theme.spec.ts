@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
 import { classifyAndRankValues } from './support/experience';
-import { confirmDecision } from './support/interactive';
+import { confirmDecision, reopenAndContinue } from './support/interactive';
 
 const themeButton = (page: Page, name: '淺色' | '深色') => page.getByRole('group', { name: '顯示主題' }).getByRole('button', { name, exact: true });
 
@@ -59,7 +59,7 @@ test('作答中切換主題，不改變作答位置與已確認答案', async ({
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回上一頁' }).click();
   await expect(page.getByRole('button', { name: '目前無法決定', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
 });
