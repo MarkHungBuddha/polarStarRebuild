@@ -1,4 +1,4 @@
-import type { Session } from './types';
+import type { Screen, Session, ValueItem } from './types';
 import { baseValues, categoryOrder } from './data';
 import { catalog } from './questionCatalog';
 import { storageReadFailedNotice } from './storageNotices';
@@ -16,11 +16,12 @@ function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolea
   return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
 }
 
-function validSession(value: unknown): value is Session {
-  if (!isRecord(value) || typeof value.screen !== 'string' || !['intro', 'classify', 'rank', 'scenario', 'result'].includes(value.screen)) return false;
-  if (!Array.isArray(value.values) || value.values.length < baseValues.length || !Array.isArray(value.scenarios) || !value.scenarios.length || !isRecord(value.answers)) return false;
-  const values = value.values;
-  const snapshots = value.scenarios;
+const screens = ['intro', 'classify', 'rank', 'scenario', 'result'];
+export const isScreen = (screen: unknown): screen is Screen => typeof screen === 'string' && screens.includes(screen);
+
+/** Whether stored first-act values are the ten core values plus valid custom ones, categorized once the screen is past classifying. */
+export function validValues(values: unknown, screen: Screen): values is ValueItem[] {
+  if (!Array.isArray(values) || values.length < baseValues.length) return false;
   const ids = new Set<string>();
   const words = new Set<string>();
   for (const item of values) {
@@ -28,10 +29,16 @@ function validSession(value: unknown): value is Session {
     const base = baseValues.find(core => core.id === item.id);
     if (base ? item.custom === true || item.word !== base.word || item.description !== base.description : item.custom !== true || !item.id.startsWith('custom-') || item.word.length > 24) return false;
     if (item.category !== undefined && !categoryOrder.some(category => category === item.category)) return false;
-    if (!['intro', 'classify'].includes(value.screen) && item.category === undefined) return false;
+    if (!['intro', 'classify'].includes(screen) && item.category === undefined) return false;
     ids.add(item.id); words.add(item.word);
   }
-  if (!baseValues.every(core => ids.has(core.id))) return false;
+  return baseValues.every(core => ids.has(core.id));
+}
+
+function validSession(value: unknown): value is Session {
+  if (!isRecord(value) || !isScreen(value.screen) || !validValues(value.values, value.screen)) return false;
+  if (!Array.isArray(value.scenarios) || !value.scenarios.length || !isRecord(value.answers)) return false;
+  const snapshots = value.scenarios;
   const variantIds = new Set<string>();
   const slotIds = new Set<string>();
   for (const snapshot of snapshots) {

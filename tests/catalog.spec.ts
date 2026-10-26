@@ -1,25 +1,7 @@
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
 import { catalog } from '../src/questionCatalog';
-
-// The blueprint table from docs/scenario-feature-spec.md, written out independently of the catalog: option A leans to the first value.
-const blueprint: Record<string, [string, string]> = {
-  slot01: ['autonomy', 'security'],
-  slot02: ['autonomy', 'rules'],
-  slot03: ['autonomy', 'care'],
-  slot04: ['stimulation', 'security'],
-  slot05: ['stimulation', 'tradition'],
-  slot06: ['stimulation', 'achievement'],
-  slot07: ['hedonism', 'achievement'],
-  slot08: ['hedonism', 'care'],
-  slot09: ['hedonism', 'rules'],
-  slot10: ['achievement', 'fairness'],
-  slot11: ['influence', 'fairness'],
-  slot12: ['influence', 'care'],
-  slot13: ['influence', 'tradition'],
-  slot14: ['security', 'fairness'],
-  slot15: ['rules', 'tradition'],
-};
+import { blueprint } from './support/blueprint';
 
 test('題庫依藍圖有十五槽、每槽三個五段偏向變體共 45 題，識別唯一，十個核心價值各出現三次', () => {
   expect(scenarios).toHaveLength(45);

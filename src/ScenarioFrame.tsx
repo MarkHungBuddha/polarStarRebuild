@@ -20,9 +20,9 @@ function splitClosingQuestion(setup: string) {
   return match ? { body: match[1], question: match[2] } : { body: setup, question: undefined };
 }
 
-/** The question layout: a paper card with the situation, the answer control, then back / confirm / return-to-result. */
+/** The question layout: a paper card with the situation, the answer control, then back / confirm / return-to-result. Five-step and interactive questions share it. */
 export function ScenarioFrame({ scenario, caption, canConfirm, onConfirm, onBack, onReview, children }: {
-  scenario: Scenario; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
+  scenario: Pick<Scenario, 'domain' | 'title' | 'setup'>; caption: string; canConfirm: boolean; onConfirm: () => void; onBack: () => void; onReview?: () => void; children: ReactNode;
 }) {
   const { body, question } = splitClosingQuestion(scenario.setup);
   return <section className="scenario-page">
