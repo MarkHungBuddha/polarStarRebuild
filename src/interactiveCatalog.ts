@@ -8,13 +8,16 @@ function fnv1a(text: string): number {
   return value >>> 0;
 }
 
+/** Version of any question bank: a hash of every text, order and variant in it. */
+export const bankVersion = (scenarios: readonly InteractiveScenario[]) => `c${fnv1a(JSON.stringify(scenarios)).toString(36)}`;
+
 /**
  * The question bank and its version. Drawing a round, seen history, question links, the saved session and format version 4
  * result links all use it; records and links made under another version never apply to it (docs/scenario-feature-spec.md「本機保存」).
  */
 export const interactiveCatalog = {
   /** Hash of the full registry: any text, order or variant change makes a new version. */
-  version: `c${fnv1a(JSON.stringify(interactiveScenarios)).toString(36)}`,
+  version: bankVersion(interactiveScenarios),
   scenarios: interactiveScenarios,
 } as const;
 
