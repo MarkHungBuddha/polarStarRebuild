@@ -7,9 +7,10 @@ export { confirmButton, questionHeading, resultHeading };
 /**
  * One interactive decision, applied to whichever question carries the title it is listed under.
  * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells.
- * Later interactions add their own members here (選 A／選 B, 維持初始安排, 目前無法決定) so every spec keeps answering by title.
+ * '選 A'／'選 B' picks the first or second card of a 選方案 question.
+ * Later interactions add their own members here (維持初始安排, 目前無法決定) so every spec keeps answering by title.
  */
-export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配';
+export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配' | '選 A' | '選 B';
 
 /** The development preview of the interactive second act; it only exists on the dev server. */
 export const interactivePreviewPath = '/?preview=interactive';
@@ -24,8 +25,15 @@ export async function startInteractiveScenarios(page: Page) {
 /** The allocation cells of the current question, each a group named by its label (for example 第一週・週二). */
 export const allocationCells = (page: Page) => page.locator('.allocation-cells').getByRole('group');
 
+/** The plan cards of the current 選方案 question, A then B, each a radio named by its whole card. */
+export const choiceCards = (page: Page) => page.locator('.choice-cards').getByRole('radio');
+
 /** Sets the current question to `decision` without confirming it. */
 export async function applyDecision(page: Page, decision: InteractiveDecision) {
+  if (decision === '選 A' || decision === '選 B') {
+    await choiceCards(page).nth(decision === '選 A' ? 0 : 1).check();
+    return;
+  }
   const cells = await allocationCells(page).all();
   const [a, b] = decision === '平均分配' ? [cells.length / 2, cells.length / 2] : decision.allocate;
   expect(a + b, 'an allocation fills every cell').toBe(cells.length);

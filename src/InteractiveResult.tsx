@@ -1,5 +1,5 @@
 import { columnRows } from './columnRows';
-import type { InteractiveSession } from './interactiveTypes';
+import type { InteractiveAnswer, InteractiveScenario, InteractiveSession } from './interactiveTypes';
 import { PageHeader } from './PageHeader';
 import { priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
 import { act1TopThree, byPosition } from './valueRanking';
@@ -8,6 +8,12 @@ import './techo-result.css';
 
 /** What the second column says above 優先保留次數, and when no confirmed answer has a direction (no ranking then). */
 export const priorityColumnText = { caption: '第二幕的優先保留次數', empty: '這次的決策都沒有偏向哪一邊，不產生排名。' };
+
+/** A 選方案 question's record: which card was picked. Other interactions' records join with the full per-question list (#64). */
+function choiceRecord({ interaction }: InteractiveScenario, answer?: InteractiveAnswer) {
+  const picked = interaction.kind === 'choose' && answer?.kind === 'choose' ? interaction.options.find(option => option.id === answer.optionId) : undefined;
+  return picked ? `：選了「${picked.label}」` : '';
+}
 
 /**
  * The interactive result: the first act's top three beside the values kept first most often, then every question with a way back
@@ -24,7 +30,7 @@ export function InteractiveResult({ session, onEdit, onRestart }: { session: Int
     </section>
     <p className="sticky-note" role="note">每題最多讓一個價值多 1 次：分得多的一側記 1 次，平均分配兩邊都不加，分配差距也不加權。次數只描述這一輪的選擇，不代表偏好強度。</p>
     <section className="result-evidence"><h2>這次的情境</h2>
-      <ol>{session.scenarios.map((scenario, index) => <li key={scenario.id}>第 {index + 1} 題 · {scenario.title} <button className="text-button" onClick={() => onEdit(index)}>修改這題</button></li>)}</ol>
+      <ol>{session.scenarios.map((scenario, index) => <li key={scenario.id}>第 {index + 1} 題 · {scenario.title}{choiceRecord(scenario, session.answers[scenario.id])} <button className="text-button" onClick={() => onEdit(index)}>修改這題</button></li>)}</ol>
     </section>
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;

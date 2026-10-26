@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { AllocationQuestion } from './AllocationQuestion';
+import { ChoiceQuestion } from './ChoiceQuestion';
 import { baseValues } from './data';
 import { withCategory, withStrictOrder } from './firstAct';
 import { ClassifyScreen, RankScreen } from './FirstActScreens';
 import { HomeIntro } from './HomeIntro';
 import { interactiveScenarios } from './interactiveScenarios';
 import { clearInteractiveSession, loadInteractiveSession, saveInteractiveSession } from './interactiveSessionStorage';
-import type { InteractiveScenario, InteractiveSession } from './interactiveTypes';
+import type { InteractiveAnswer, InteractiveScenario, InteractiveSession } from './interactiveTypes';
 import { InteractiveResult } from './InteractiveResult';
 import { ScenarioProgress } from './ScenarioFrame';
 import { ShareFooter } from './ShareFooter';
@@ -22,6 +23,16 @@ function drawQuestions(): InteractiveScenario[] {
     const variants = interactiveScenarios.filter(scenario => scenario.slotId === slot);
     return variants[Math.floor(Math.random() * variants.length)];
   });
+}
+
+/** The question for `scenario`'s interaction, reopened with its confirmed answer when that answer has the same kind. */
+function InteractiveQuestion({ scenario, answer, ...actions }: {
+  scenario: InteractiveScenario; answer?: InteractiveAnswer; onConfirm: (answer: InteractiveAnswer) => void; onBack: () => void; onReview?: () => void;
+}) {
+  const { interaction } = scenario;
+  return interaction.kind === 'choose'
+    ? <ChoiceQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'choose' ? answer : undefined} {...actions} />
+    : <AllocationQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'allocate' ? answer : undefined} {...actions} />;
 }
 
 const createSession = (): InteractiveSession => ({ screen: 'intro', values: baseValues.map(value => ({ ...value })), scenarios: drawQuestions(), answers: {}, scenarioIndex: 0 });
@@ -74,7 +85,7 @@ export default function InteractivePreview() {
     {session.screen === 'rank' && <RankScreen values={session.values} onArrange={arrange => setSession(current => ({ ...current, values: arrange(current.values) }))} onBack={() => go('classify')} onNext={() => { setSession(current => ({ ...current, values: withStrictOrder(current.values) })); go('scenario'); }} />}
     {session.screen === 'scenario' && scenario && <>
       <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />
-      <AllocationQuestion key={scenario.id} scenario={scenario} interaction={scenario.interaction} answer={session.answers[scenario.id]} onBack={back} onReview={complete ? () => go('result') : undefined} onConfirm={confirm} />
+      <InteractiveQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={back} onReview={complete ? () => go('result') : undefined} onConfirm={confirm} />
     </>}
     {session.screen === 'result' && complete && <InteractiveResult session={session} onRestart={restart} onEdit={index => { setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
     <ShareFooter onClearRecords={restart} />
