@@ -1,7 +1,5 @@
-import { decisionText, firstActComparison } from './interactiveAnswers';
+import { comparisonLabel, decisionText, firstActComparison } from './interactiveAnswers';
 import { reflectionNoteLimit, type InteractiveSession, type Reflection } from './interactiveTypes';
-
-const comparisonText = { 一致: '這次情境選擇與原先排序一致', 不同: '這次情境選擇與原先排序不同' };
 
 /**
  * The skippable reflection after the result: the user picks one question, sees its situation and raw decision again, and may
@@ -28,7 +26,7 @@ export function ReflectionStep({ session, onChange }: { session: InteractiveSess
       <h3>{scenario.title}</h3>
       <p>{scenario.setup}</p>
       <p className="evidence-quote">你當時的決策：{decisionText(scenario, session.answers[scenario.id])}</p>
-      {comparison && <span className="evidence-label">{comparisonText[comparison]}</span>}
+      <span className="evidence-label">{comparisonLabel(comparison)}</span>
       <ul className="reflection-prompts">
         <li>是這題的情境條件，讓你做了這個決定嗎？</li>
         <li>原先的排序，是不是需要調整？</li>

@@ -38,17 +38,19 @@ test('逐題記錄可以展開，列出原始決策，方向明確的題目與�
   await expect(changed).toContainText('這次情境選擇與原先排序不同');
 });
 
-test('平均分配與目前無法決定照原樣記錄，不判一致或不同', async ({ page }) => {
+test('平均分配與目前無法決定照原樣記錄，標成無法對照，不判一致或不同', async ({ page }) => {
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [trip]: '目前無法決定' });
   const record = await decisionRecord(page, trip);
   await expect(record).toContainText('目前無法決定');
+  await expect(record.locator('.evidence-label')).toHaveText('無法對照');
   await expect(record).not.toContainText(/一致|不同/);
 
   await record.getByRole('button', { name: '修改這題' }).click();
   await answerInteractiveByTitle(page, { [trip]: '平均分配' });
   const even = await decisionRecord(page, trip);
   await expect(even).toContainText('平均分配：自己排行程 3 天、跟一日團 3 天');
+  await expect(even.locator('.evidence-label')).toHaveText('無法對照');
   await expect(even).not.toContainText(/一致|不同/);
 });
 

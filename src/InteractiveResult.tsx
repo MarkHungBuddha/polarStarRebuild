@@ -1,5 +1,5 @@
 import { columnRows } from './columnRows';
-import { decisionText, firstActComparison } from './interactiveAnswers';
+import { comparisonLabel, decisionText, firstActComparison } from './interactiveAnswers';
 import type { InteractiveSession, Reflection } from './interactiveTypes';
 import { InteractiveShare } from './InteractiveShare';
 import { PageHeader } from './PageHeader';
@@ -19,8 +19,6 @@ export function DecidedCount({ decided, total }: { decided: number; total: numbe
     {decided < total && <p className="caption">平均分配和目前無法決定的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
   </>;
 }
-
-const comparisonText = { 一致: '這次情境選擇與原先排序一致', 不同: '這次情境選擇與原先排序不同' };
 
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
@@ -49,12 +47,11 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
       <details className="decision-records"><summary>展開全部 {total} 題的決策</summary>
         <ol>{session.scenarios.map((scenario, index) => {
           const answer = session.answers[scenario.id];
-          const comparison = comparisons[index];
           return <li className="evidence" key={scenario.id}>
             <p className="eyebrow">第 {index + 1} 題 · {scenario.domain}</p>
             <h3>{scenario.title}</h3>
             <p className="evidence-quote">{decisionText(scenario, answer)}</p>
-            {comparison && <span className="evidence-label">{comparisonText[comparison]}</span>}
+            <span className="evidence-label">{comparisonLabel(comparisons[index])}</span>
             <button className="text-button" onClick={() => onEdit(index)}>修改這題</button>
           </li>;
         })}</ol>

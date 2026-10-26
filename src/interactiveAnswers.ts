@@ -56,6 +56,9 @@ export function firstActComparison(scenario: InteractiveScenario, answer: Intera
   return direction === ahead.id ? '一致' : '不同';
 }
 
+/** A comparison as the result and the reflection step label it; an even split or 目前無法決定 reads 無法對照. */
+export const comparisonLabel = (comparison: '一致' | '不同' | undefined) => comparison ? `這次情境選擇與原先排序${comparison}` : '無法對照';
+
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0;
 
