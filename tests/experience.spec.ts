@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
-import { classifyAll, expectPosition, pressOnHandle, setCategory } from './support/experience';
-import { questionHeading } from './support/interactive';
+import { classifyAll, expectNoHorizontalScroll, expectPosition, pressOnHandle, rankValuesInListedOrder, setCategory } from './support/experience';
+import { answerInteractiveByTitle, questionHeading } from './support/interactive';
 
 test('使用者能分類十個共同價值，並在進入情境前排出順序、保留自訂價值', async ({ page }) => {
   await page.goto('/');
@@ -41,4 +41,22 @@ test('排序只在同一類別內，換類別的價值排到新類別最後', as
   await expectPosition(page, '傳承', 1);
   await expectPosition(page, '自主', 2);
   await expectPosition(page, '成就', 1);
+});
+
+test('自訂價值在結果獨立列出分類與位置，不列入次數或兩幕對照', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: '開始這次反思' }).click();
+  await page.getByRole('textbox', { name: '自訂價值' }).fill('創作');
+  await page.getByRole('button', { name: '新增價值' }).click();
+  await classifyAll(page, 'core');
+  await page.getByRole('button', { name: '下一步：排出順序' }).click();
+  await rankValuesInListedOrder(page);
+  await pressOnHandle(page, '創作', 'End');
+  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
+  await answerInteractiveByTitle(page);
+  await expect(page.getByRole('heading', { name: '你的自訂價值' })).toBeVisible();
+  await expect(page.getByText('創作 · 這就是我 · 位置 11')).toBeVisible();
+  await expect(page.getByRole('list', { name: '全部價值的優先保留次數' })).not.toContainText('創作');
+  await expectNoHorizontalScroll(page);
 });

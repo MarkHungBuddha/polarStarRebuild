@@ -1,4 +1,5 @@
 import { columnRows } from './columnRows';
+import { categoryLabels, categoryOrder } from './data';
 import { comparisonLabel, decisionText, firstActComparison } from './interactiveAnswers';
 import type { InteractiveSession, Reflection } from './interactiveTypes';
 import { InteractiveShare } from './InteractiveShare';
@@ -35,7 +36,8 @@ export const countingRules = {
 
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
- * count, then the question-by-question comparison with each raw decision. The counting rules sit in 結果怎麼整理, folded away.
+ * count, then the question-by-question comparison with each raw decision, and custom values on their own. The counting rules sit in
+ * 結果怎麼整理, folded away.
  * Then the skippable reflection step, and 分享結果 with the result image and format version 3 result link (never the notes).
  */
 export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
@@ -47,6 +49,9 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
   const chosen = byPosition(priorityTopThree(counts)).map(row => ({ ids: row.items.map(item => item.value.id), count: row.items[0].count }));
   const comparisons = session.scenarios.map(scenario => firstActComparison(scenario, session.answers[scenario.id], session.values));
   const same = comparisons.filter(item => item === '一致').length;
+  // Custom values are listed as the first act left them; they never meet a question, so they are never counted or compared (ADR 0001).
+  const customValues = session.values.filter(value => value.custom)
+    .sort((left, right) => categoryOrder.indexOf(left.category!) - categoryOrder.indexOf(right.category!) || left.rank - right.rank);
   return <section className="result-page result-cover">
     <PageHeader eyebrow="本次反思 · 兩幕對照" title="這一次，你的選擇。" description="對照你原先的排序，看看這次情境中你優先保留了什麼。" />
     <section className="conclusion paper-card" aria-labelledby="interactive-top-three"><h2 id="interactive-top-three">你的前三名</h2>
@@ -74,6 +79,8 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
       <ul className="priority-counts" aria-label="全部價值的優先保留次數">{[...counts].sort((left, right) => right.count - left.count).map(({ value, count }) =>
         <li key={value.id}><span>{value.word}</span><b>{fullListCountText(count)}</b></li>)}</ul>
     </section>
+    {customValues.length > 0 && <section className="custom-results"><h2>你的自訂價值</h2><p>這裡保留你自訂的價值、分類和順序。情境題與兩幕對照不包含這些項目。</p>
+      <ul>{customValues.map(value => <li key={value.id}><strong>{value.word}</strong> · {categoryLabels[value.category!]} · 位置 {value.rank}</li>)}</ul></section>}
     <details className="counting-rules"><summary>結果怎麼整理</summary>
       <ul>{Object.values(countingRules).map(rule => <li key={rule}>{rule}</li>)}</ul>
     </details>
