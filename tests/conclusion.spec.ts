@@ -13,7 +13,7 @@ test('結果以兩份前三名開頭：第一幕自述的前三名，以及情�
   const stated = conclusion.getByRole('list').first();
   await expect(stated.getByRole('listitem')).toHaveText(['第 1自主', '第 2探索刺激', '第 3享受生活']);
   await expect(conclusion.getByRole('list').nth(1).getByRole('listitem')).toHaveText(['並列第 1傳承、照顧身邊的人、普遍關懷各 3 分']);
-  await expect(conclusion.getByText('自主：這次沒有偏向它的答案，是 0 分。', { exact: true })).toBeVisible();
+  await expect(conclusion.getByText('自主：這次沒有答案偏向它，得 0 分。', { exact: true })).toBeVisible();
   await expect(conclusion.getByText(/改一題就可能換名次/)).toBeVisible();
   await expect(conclusion.getByText('另外在情境中分數較高的：傳承、照顧身邊的人、普遍關懷（各 3 分）。', { exact: true })).toBeVisible();
   await expect(conclusion.getByText(/選了 \d+ 次/)).toHaveCount(0);

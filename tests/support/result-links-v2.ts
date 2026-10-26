@@ -6,7 +6,7 @@ export const resultLinksV2Catalog = 'c1oezm4';
 
 export interface PublishedPreferenceLink { fragment: string; stated: string[]; scored: string[]; custom?: string[] }
 
-export const noScores = '這次作答沒有明確偏向';
+export const noScores = '這次作答沒有明確偏向。';
 
 export const resultLinksV2 = {
   // What the fixed flow in preference-result-link.spec.ts shares: core values ranked in list order, the first variant of each of the

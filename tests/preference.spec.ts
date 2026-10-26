@@ -15,6 +15,7 @@ test('五段可點選也可用鍵盤，初始未選，兩者相當也要主動�
   await startScenarios(page);
   const options = page.getByRole('radio');
   await expect(options).toHaveCount(5);
+  await expect(page.getByText('選擇你的偏向程度，再按確認答案。覺得兩者相當，也請選它。')).toBeVisible();
   for (const option of await options.all()) await expect(option).not.toBeChecked();
   await expect(confirm(page)).toBeDisabled();
   await page.getByText('稍微偏向 B', { exact: true }).click();
@@ -31,7 +32,7 @@ test('五段可點選也可用鍵盤，初始未選，兩者相當也要主動�
 test('全部兩者相當時沒有排名，也不算相符或不同', async ({ page }) => {
   await startScenarios(page);
   await answer(page, {});
-  await expect(page.getByText('這次作答沒有明確偏向', { exact: true })).toBeVisible();
+  await expect(page.getByText('這次作答沒有明確偏向。', { exact: true })).toBeVisible();
   await expect(page.getByText('強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。', { exact: false }).first()).toBeVisible();
   await expect(page.getByText('這次沒有明確偏向原先排序較後的價值。')).toBeVisible();
   await openDetailedReport(page);

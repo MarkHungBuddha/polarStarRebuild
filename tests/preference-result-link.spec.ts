@@ -9,7 +9,7 @@ import { catalog } from '../src/questionCatalog';
 
 const sharerScores = '情境中的偏向分數';
 const recipientScores = '分享者在情境中的偏向分數';
-const scoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這是產品計分約定，不表示偏好強度具有兩倍關係，也不是百分比。';
+const scoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這只是計分方式，2 分不代表偏好多一倍，也不是百分比。';
 const legacyScoring = '這份結果使用舊版計分：第二幕依偏向一邊的答案次數排名，不是偏向分數。';
 // Slots 1–4 (自主／安全穩定, 自主／遵守規範, 自主／照顧身邊的人, 探索刺激／安全穩定); every later question is 兩者相當.
 const fixedLeans = ['強烈偏向 B', '強烈偏向 A', '稍微偏向 B', '稍微偏向 B'] as const;

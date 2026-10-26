@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { act1Precedence, type Act1Pair } from './firstAct';
 import { leaningValue } from './valueRanking';
-import { preferenceLabels } from './PreferenceQuestion';
+import { preferenceLabels } from './preferenceLabels';
 import type { Answer, Scenario, ValueItem } from './types';
 
 export const evidenceId = (scenario: Scenario) => `evidence-${scenario.id}`;
@@ -11,16 +11,16 @@ export function ResultEvidence({ scenario, answer, values, position, onEdit }: {
   const pair = act1Precedence(values, scenario.pair);
   const leaning = leaningValue(scenario, answer);
   const label = !leaning ? '無明確偏向' : pair?.ahead ? comparisonLabel(pair, leaning) : '第一幕並列 · 只描述本次答案';
-  return <EvidenceArticle scenario={scenario} position={position} topic="偏向程度" label={label} onEdit={onEdit}>
+  return <EvidenceArticle scenario={scenario} position={position} label={label} onEdit={onEdit}>
     {scenario.options.map((option, index) => <p key={option.id}>{index === 0 ? 'A' : 'B'} · {option.label}：{option.consequence}</p>)}
     <p className="evidence-quote">已確認答案：{preferenceLabels[answer.strength]}。{leaning && pair ? `${leanWord(pair, leaning)}加 ${Math.abs(answer.strength)} 分。` : '兩側都不加分。'}</p>
-    {pair && <p>{act1Statement(pair)}。兩幕比較只看偏向方向，不以程度推論差異大小。</p>}
+    {pair && <p>{act1Statement(pair)}。比較兩幕時只看偏向哪一邊，不看偏向多少。</p>}
   </EvidenceArticle>;
 }
 
-function EvidenceArticle({ scenario, position, topic, label, onEdit, children }: { scenario: Scenario; position: number; topic: string; label: string; onEdit: () => void; children: ReactNode }) {
+function EvidenceArticle({ scenario, position, label, onEdit, children }: { scenario: Scenario; position: number; label: string; onEdit: () => void; children: ReactNode }) {
   return <article className="evidence" id={evidenceId(scenario)} tabIndex={-1}>
-    <p className="eyebrow">第 {position} 題 · {scenario.domain} · {topic}</p>
+    <p className="eyebrow">第 {position} 題 · {scenario.domain} · 偏向程度</p>
     <h3>{scenario.title}</h3>
     <p className="evidence-setup">{scenario.setup}</p>
     <span className="evidence-label">{label}</span>

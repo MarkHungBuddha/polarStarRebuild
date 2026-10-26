@@ -139,7 +139,7 @@ test('舊版留下的未完成作答提示重新開始，不會沿用或換算',
   // An opaque stand-in for a record the earlier question bank left; it does not mirror any session format.
   await page.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('polarstar.session.v1', JSON.stringify({ writtenBy: 'earlier question bank' })); sessionStorage.setItem('seeded', '1'); } });
   await page.goto('/');
-  await expect(page.getByRole('status')).toContainText('上次的作答來自舊版題目，不能接著做，也不會換算成新版答案。請重新開始。');
+  await expect(page.getByRole('status')).toContainText('上次的作答來自舊版題目，無法繼續作答，也不會換算成新版答案。請重新開始。');
   await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
   await page.getByRole('button', { name: '重新開始', exact: true }).click();
   await expect(page.getByRole('status')).toHaveCount(0);
@@ -148,12 +148,12 @@ test('舊版留下的未完成作答提示重新開始，不會沿用或換算',
   await expect(page.getByRole('button', { name: '開始這次反思' })).toBeEnabled();
 });
 
-test('不相容的舊題目連結說明原因，並提供新版測驗入口', async ({ page }) => {
+test('不相容的舊題目連結說明原因，並提供用目前題目開始的入口', async ({ page }) => {
   await page.goto('/?seed=p.1.0.1.0.1.0.1.0.1.0.1.0.1.0.1&v=cearlier');
-  await expect(page.getByRole('status')).toContainText('這份題目連結建立時用的題庫和目前不同，題目已經改過，無法重現原本的題組。');
+  await expect(page.getByRole('status')).toContainText('這份題目連結建立後，題目已經改版，無法重現原本的題組。');
   await expect(page.getByRole('button', { name: '開始這次反思' })).toBeDisabled();
   await expect(page.getByRole('button', { name: '分享這份題目', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: '開始新版測驗' }).click();
+  await page.getByRole('button', { name: '用目前題目開始' }).click();
   expect(new URL(page.url()).search).toBe('');
   await enterScenarios(page);
   expect(await answer(page, 1)).toEqual([variant('slot01', 0)]);

@@ -128,9 +128,10 @@ test('新版結果圖完整畫出十個並列的價值', async ({ page }) => {
 test('新版結果全部零分時，結果圖寫沒有明確偏向並附計分說明', async ({ page }) => {
   await recordImageText(page);
   await reachPreferenceShare(page, {});
-  await expect(scoreColumn(page, sharerScores).getByText('這次作答沒有明確偏向', { exact: true })).toBeVisible();
+  await expect(scoreColumn(page, sharerScores).getByText('這次作答沒有明確偏向。', { exact: true })).toBeVisible();
   const drawn = await drawnImage(page);
   expect(allText(drawn)).toContain('這次作答沒有明確偏向');
+  expect(allText(drawn)).not.toContain('這次作答沒有明確偏向。');
   expect(allText(drawn)).toContain(scoringRule);
   expect(allText(drawn)).not.toContain('這次沒有偏向一邊的答案');
   expectFullyLegible(drawn);

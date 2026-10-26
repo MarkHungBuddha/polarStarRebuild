@@ -72,12 +72,12 @@ test('開啟不同題目的分享連結時，仍可選擇繼續本機進度，�
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(sharedTitle!);
 });
 
-test('版本不相容時說明原因並明確選擇新版測驗，不能悄悄換題開始', async ({ page }) => {
+test('版本不相容時說明原因並明確選擇用目前題目開始，不能悄悄換題開始', async ({ page }) => {
   await page.goto('/?seed=example&v=unavailable');
-  await expect(page.getByRole('status')).toContainText('這份題目連結建立時用的題庫和目前不同');
+  await expect(page.getByRole('status')).toContainText('這份題目連結建立後，題目已經改版');
   await expect(page.getByRole('button', { name: '開始這次反思' })).toBeDisabled();
   await expect(page.getByRole('button', { name: '分享這份題目', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: '開始新版測驗' }).click();
+  await page.getByRole('button', { name: '用目前題目開始' }).click();
   expect(new URL(page.url()).search).toBe('');
   await classifyValues(page);
   await expect(page.getByRole('button', { name: '進入情境中的取捨' })).toBeVisible();

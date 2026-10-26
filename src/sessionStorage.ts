@@ -5,14 +5,14 @@ import { storageReadFailedNotice } from './storageNotices';
 
 const schemaVersion = 1;
 const incompatibleNotice = '先前的本機紀錄無法讀取或版本不相容，請重新開始。';
-const legacySessionNotice = '上次的作答來自舊版題目，不能接著做，也不會換算成新版答案。請重新開始。';
+const legacySessionNotice = '上次的作答來自舊版題目，無法繼續作答，也不會換算成新版答案。請重新開始。';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function validAnswer(answer: unknown, scenario: Record<string, unknown>): boolean {
-  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== 'preference' || scenario.kind !== 'preference') return false;
+  if (!isRecord(answer) || answer.variantId !== scenario.id || answer.kind !== 'preference') return false;
   return typeof answer.strength === 'number' && Number.isInteger(answer.strength) && answer.strength >= -2 && answer.strength <= 2;
 }
 

@@ -18,7 +18,7 @@ export function ResultReport({ session, onEdit, onRevisitFirstAct, onRestart, in
     <PageHeader eyebrow="本次反思 · 一頁摘要" title="這一次，你的選擇。" description="對照你原先的排序，回顧這次情境中的偏向。" />
     <section className="conclusion paper-card" aria-labelledby="cover-top-three"><h2 id="cover-top-three">你的前三名</h2><TopThreeColumns session={session} /></section>
     <p className="summary-takeaway"><span className="marker">{differing ? '有些情境裡，你先顧了原本排在後面的事。' : '這次沒有明確偏向原先排序較後的價值。'}</span></p>
-    <p>{differing ? `在 ${differing} 個情境裡，你偏向原先排序較後的價值。可以從其中一題開始，看看當時有哪些條件影響你的選擇。` : '挑一個最猶豫的場景想想：如果條件改變，你還會做同樣的安排嗎？'}</p>
+    <p>{differing ? `在 ${differing} 個情境裡，你偏向原先排序較後的價值。可以從其中一題開始，看看當時有哪些條件影響你的選擇。` : '挑一個最猶豫的情境想想：如果條件改變，你還會偏向同一邊嗎？'}</p>
     <p className="sticky-note" role="note">這裡只整理本次答案，不是人格判定。沒有偏向任何一邊的答案，不算在差異裡。</p>
     <p className="sticky-note">{preferenceScoringNote}</p>
     <ResultShare session={session} />

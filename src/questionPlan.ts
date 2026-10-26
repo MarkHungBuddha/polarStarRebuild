@@ -32,7 +32,7 @@ export function selectQuestions(seen: ReadonlySet<string> = new Set(), seed?: st
   });
 }
 
-export const outdatedQuestionLinkNotice = '這份題目連結建立時用的題庫和目前不同，題目已經改過，無法重現原本的題組。你可以開始新版測驗。';
+const outdatedQuestionLinkNotice = '這份題目連結建立後，題目已經改版，無法重現原本的題組。你可以用目前題目開始。';
 
 export function requestedQuestions(search: string): { questions?: Scenario[]; notice?: string; specified: boolean } {
   const params = new URLSearchParams(search);
@@ -42,7 +42,7 @@ export function requestedQuestions(search: string): { questions?: Scenario[]; no
   try {
     if (!seed || seed.length > 1024) throw new Error('Invalid seed');
     return { specified: true, questions: selectQuestions(new Set(), seed) };
-  } catch { return { specified: true, notice: '這份題目連結的題目資料無法使用。你可以開始新版測驗。' }; }
+  } catch { return { specified: true, notice: '這份題目連結的題目資料無法使用。你可以用目前題目開始。' }; }
 }
 
 /** The variant chosen in each slot, in slot order and base36; a question link's seed is `p.` followed by these joined with dots. */
