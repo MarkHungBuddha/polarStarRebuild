@@ -1,0 +1,7 @@
+import { redesignCalendar } from './scenarios/redesign-calendar';
+import type { InteractiveScenario } from './interactiveTypes';
+
+/** Development review bank. Each completed mechanism contributes its own scenarios here. */
+export const redesignScenarios: InteractiveScenario[] = [
+  redesignCalendar,
+];

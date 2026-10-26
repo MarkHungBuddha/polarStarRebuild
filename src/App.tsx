@@ -17,6 +17,8 @@ import { StarIcon } from './StarIcon';
 import { storageClearFailedNotice, storageSaveFailedNotice } from './storageNotices';
 import { ThemeControl } from './ThemeControl';
 import type { Screen } from './types';
+import { RedesignQuestion } from './RedesignQuestion';
+import { redesignScenarios } from './redesignRegistry';
 
 /** The question for `scenario`'s interaction, reopened with its confirmed answer when that answer has the same kind or is 目前無法決定. */
 function InteractiveQuestion({ scenario, answer, ...actions }: {
@@ -24,6 +26,7 @@ function InteractiveQuestion({ scenario, answer, ...actions }: {
 }) {
   const { interaction } = scenario;
   const undecided = answer?.kind === 'undecided' ? answer : undefined;
+  if (interaction.kind !== 'choose' && interaction.kind !== 'allocate' && interaction.kind !== 'adjust') return <RedesignQuestion scenario={scenario} answer={answer} {...actions} />;
   return interaction.kind === 'choose'
     ? <ChoiceQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'choose' ? answer : undecided} {...actions} />
     : <AllocationQuestion scenario={scenario} interaction={interaction} answer={answer?.kind === 'allocate' || answer?.kind === 'adjust' ? answer : undecided} {...actions} />;
@@ -38,34 +41,38 @@ const sameQuestions = (left: readonly InteractiveScenario[], right: readonly Int
  * is never replaced without the user's choice.
  */
 export function App() {
+  const redesign = import.meta.env.DEV && window.location.pathname === '/dev/interactions';
+  const reviewId = new URLSearchParams(window.location.search).get('question');
+  const reviewQuestions = reviewId ? redesignScenarios.filter(question => question.id === reviewId) : redesignScenarios;
+  const developmentQuestions = reviewQuestions.length ? reviewQuestions : redesignScenarios;
   const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
-  const [initial] = useState(() => loadInteractiveSession(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids))));
+  const [initial] = useState(() => redesign ? {} : loadInteractiveSession(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids))));
   // A saved session waits on the home page until the user continues it or starts over; replacing it is always the user's choice.
   const [resumable, setResumable] = useState(initial.session);
   // A record that cannot be used stays until the user chooses 重新開始; starting a new round must not overwrite it unannounced.
   const [unusableRecord, setUnusableRecord] = useState(Boolean(initial.unusable));
-  const [session, setSession] = useState<InteractiveSession>(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids)));
+  const [session, setSession] = useState<InteractiveSession>(() => createSession(redesign ? developmentQuestions : request.questions ?? drawInteractiveQuestions(initialHistory.ids)));
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState(initial.notice ?? initialHistory.notice ?? '');
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   useEffect(() => {
-    if (saveEnabled && !resumable && !saveInteractiveSession(session)) setStorageNotice(storageSaveFailedNotice);
-  }, [session, saveEnabled, resumable]);
+    if (!redesign && saveEnabled && !resumable && !saveInteractiveSession(session)) setStorageNotice(storageSaveFailedNotice);
+  }, [session, saveEnabled, resumable, redesign]);
   useEffect(() => {
-    if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
-  }, [session.screen, session.scenarioIndex, session.scenarios]);
+    if (!redesign && session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
+  }, [session.screen, session.scenarioIndex, session.scenarios, redesign]);
   const go = (screen: Screen) => { setSaveEnabled(true); setSession(current => ({ ...current, screen })); window.scrollTo({ top: 0 }); };
   // The question set comes from the link unless the user leaves it; leaving drops the link from the address bar.
   const leaveRequest = () => { leaveQuestionLink(); setRequest({ specified: false }); };
   const startOver = ({ clearHistory = false, useCurrentVersion = false } = {}) => {
-    const sessionCleared = clearInteractiveSession();
-    const historyCleared = !clearHistory || clearSeenHistory();
+    const sessionCleared = redesign || clearInteractiveSession();
+    const historyCleared = redesign || !clearHistory || clearSeenHistory();
     const history = loadSeenHistory();
     if (useCurrentVersion) leaveRequest();
     setSaveEnabled(false); setResumable(undefined); setUnusableRecord(false);
-    setSession(createSession(!useCurrentVersion && request.questions ? request.questions : drawInteractiveQuestions(history.ids)));
+    setSession(createSession(redesign ? developmentQuestions : !useCurrentVersion && request.questions ? request.questions : drawInteractiveQuestions(history.ids)));
     setCustomWord(''); setNotice('');
     setStorageNotice(sessionCleared && historyCleared ? history.notice ?? '' : storageClearFailedNotice);
     window.scrollTo({ top: 0 });
@@ -119,7 +126,7 @@ export function App() {
       <ScenarioProgress current={session.scenarioIndex + 1} total={session.scenarios.length} />
       <InteractiveQuestion key={scenario.id} scenario={scenario} answer={session.answers[scenario.id]} onBack={back} onReview={complete ? () => go('result') : undefined} onConfirm={confirm} />
     </>}
-    {session.screen === 'result' && complete && <InteractiveResult session={session} onRestart={restart} onReflect={reflection => setSession(current => ({ ...current, reflection }))} onEdit={index => { setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
+    {session.screen === 'result' && complete && <InteractiveResult session={session} reviewOnly={redesign} onRestart={restart} onReflect={reflection => setSession(current => ({ ...current, reflection }))} onEdit={index => { setSession(current => ({ ...current, screen: 'scenario', scenarioIndex: index })); window.scrollTo({ top: 0 }); }} />}
     <ShareFooter key={shareLink ?? 'unavailable'} questionShare={{ link: shareLink, disabled: Boolean(request.notice) }} onClearRecords={clearLocalRecords} />
   </main>;
 }

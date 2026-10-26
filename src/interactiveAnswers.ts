@@ -1,6 +1,7 @@
 import { act1Precedence } from './firstAct';
 import type { AdjustInteraction, AllocationInteraction, InteractiveAnswer, InteractiveScenario } from './interactiveTypes';
 import type { ValueId, ValueItem } from './types';
+import { isRedesignAnswer, redesignDirection, redesignText } from './redesignAnswers';
 
 /**
  * The value a confirmed answer keeps first (優先保留), or undefined when it has no direction.
@@ -12,11 +13,17 @@ export function answerDirection(scenario: InteractiveScenario, answer: Interacti
   if (!answer || answer.variantId !== scenario.id) return undefined;
   const { interaction } = scenario;
   switch (answer.kind) {
+    case 'calendar':
+    case 'resources':
+    case 'scene':
+    case 'message':
+    case 'priority':
+    case 'linked': return redesignDirection(scenario, answer);
     case 'undecided': return undefined;
     case 'choose': return interaction.kind === 'choose' ? interaction.options.find(option => option.id === answer.optionId)?.valueId : undefined;
     case 'allocate':
     case 'adjust': {
-      if (interaction.kind === 'choose') return undefined;
+      if (interaction.kind !== 'allocate' && interaction.kind !== 'adjust') return undefined;
       const [a, b] = answer.counts;
       return a === b ? undefined : interaction.sides[a > b ? 0 : 1].valueId;
     }
@@ -29,8 +36,15 @@ export function answerDirection(scenario: InteractiveScenario, answer: Interacti
  * one that was changed reads as its counts, also when it ends back on the initial counts.
  * Only called with an answer to this very question (`isAnswerTo`).
  */
-export function decisionText({ interaction }: InteractiveScenario, answer: InteractiveAnswer): string {
+export function decisionText(scenario: InteractiveScenario, answer: InteractiveAnswer): string {
+  const { interaction } = scenario;
   switch (answer.kind) {
+    case 'calendar':
+    case 'resources':
+    case 'scene':
+    case 'message':
+    case 'priority':
+    case 'linked': return redesignText(scenario, answer);
     case 'undecided': return '目前無法決定';
     case 'choose': {
       if (interaction.kind !== 'choose') return '';
@@ -76,6 +90,7 @@ export function isAnswerTo(answer: unknown, scenario: InteractiveScenario): answ
   if (answer.kind === 'undecided') return Object.keys(answer).length === 2;
   if (answer.kind !== interaction.kind) return false;
   if (interaction.kind === 'choose') return interaction.options.some(option => option.id === answer.optionId);
+  if (interaction.kind !== 'allocate' && interaction.kind !== 'adjust') return isRedesignAnswer(answer, scenario);
   const counts = answer.counts;
   if (!Array.isArray(counts) || counts.length !== 2 || !counts.every(isCount) || counts[0] + counts[1] !== interaction.cells.length) return false;
   if (interaction.kind !== 'adjust') return true;

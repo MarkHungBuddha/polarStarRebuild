@@ -1,0 +1,18 @@
+import type { AllocationSide } from './interactiveTypes';
+
+/** Raw decisions, independent of their eventual direction. Kept alongside the legacy answer shapes. */
+export interface CalendarInteraction { kind: 'calendar'; slots: readonly string[]; sides: readonly [AllocationSide, AllocationSide] }
+export interface ResourceInteraction { kind: 'resources'; objects: readonly string[]; unit: string; sides: readonly [AllocationSide, AllocationSide] }
+export interface SceneInteraction { kind: 'scene'; object: string; locations: readonly { id: string; label: string; consequence: string; valueId?: AllocationSide['valueId'] }[] }
+export interface MessageInteraction { kind: 'message'; sentences: readonly { id: string; text: string }[] }
+export interface PriorityInteraction { kind: 'priority'; capacity: number; items: readonly { id: string; label: string; detail: string; valueId?: AllocationSide['valueId'] }[] }
+export interface LinkedInteraction { kind: 'linked'; min: number; max: number; step: number; initial: number; unit: string; label: string; consequence: string; resourceSides?: readonly [AllocationSide, AllocationSide] }
+export type RedesignInteraction = CalendarInteraction | ResourceInteraction | SceneInteraction | MessageInteraction | PriorityInteraction | LinkedInteraction;
+
+export interface CalendarAnswer { kind: 'calendar'; variantId: string; placements: readonly (0 | 1)[] }
+export interface ResourceAnswer { kind: 'resources'; variantId: string; placements: readonly (0 | 1)[] }
+export interface SceneAnswer { kind: 'scene'; variantId: string; locationId: string }
+export interface MessageAnswer { kind: 'message'; variantId: string; keptIds: readonly string[]; sent: boolean }
+export interface PriorityAnswer { kind: 'priority'; variantId: string; order: readonly string[]; kept: boolean }
+export interface LinkedAnswer { kind: 'linked'; variantId: string; value: number; kept: boolean }
+export type RedesignAnswer = CalendarAnswer | ResourceAnswer | SceneAnswer | MessageAnswer | PriorityAnswer | LinkedAnswer;

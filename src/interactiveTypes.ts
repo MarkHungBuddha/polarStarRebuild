@@ -1,4 +1,5 @@
 import type { Screen, ValueId, ValueItem } from './types';
+import type { RedesignAnswer, RedesignInteraction } from './redesignTypes';
 
 /*
  * The interactive second act's question and answer contracts (docs/interactive-scenario-spec.md, ADR 0007).
@@ -41,7 +42,7 @@ export interface ChoiceInteraction {
   options: readonly [ChoiceOption, ChoiceOption];
 }
 
-export type Interaction = AllocationInteraction | AdjustInteraction | ChoiceInteraction;
+export type Interaction = AllocationInteraction | AdjustInteraction | ChoiceInteraction | RedesignInteraction;
 
 /** An interactive question variant. Slot, pair and three variants per slot work as in the five-step bank; `interaction` replaces its `kind: 'preference'`. */
 export interface InteractiveScenario {
@@ -74,7 +75,7 @@ export interface ChoiceAnswer { kind: 'choose'; variantId: string; optionId: str
 export interface UndecidedAnswer { kind: 'undecided'; variantId: string }
 
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
-export type InteractiveAnswer = AllocationAnswer | AdjustAnswer | ChoiceAnswer | UndecidedAnswer;
+export type InteractiveAnswer = AllocationAnswer | AdjustAnswer | ChoiceAnswer | UndecidedAnswer | RedesignAnswer;
 
 /** The three directions the reflection step offers to think from: 情境條件, 原先排序, 下次做法. */
 export const reflectionDirections = ['conditions', 'order', 'next'] as const;

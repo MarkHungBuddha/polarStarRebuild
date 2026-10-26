@@ -40,8 +40,8 @@ export const countingRules = {
  * 結果怎麼整理, folded away.
  * Then the skippable reflection step, and 分享結果 with the result image and format version 3 result link (never the notes).
  */
-export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
-  session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void;
+export function InteractiveResult({ session, onEdit, onReflect, onRestart, reviewOnly = false }: {
+  session: InteractiveSession; onEdit: (index: number) => void; onReflect: (reflection: Reflection | undefined) => void; onRestart: () => void; reviewOnly?: boolean;
 }) {
   const counts = priorityCounts(session);
   const decided = decidedCount(session);
@@ -54,10 +54,10 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
     .sort((left, right) => categoryOrder.indexOf(left.category!) - categoryOrder.indexOf(right.category!) || left.rank - right.rank);
   return <section className="result-page result-cover">
     <PageHeader eyebrow="本次反思 · 兩幕對照" title="這一次，你的選擇。" description="對照你原先的排序，看看這次情境中你優先保留了什麼。" />
-    <section className="conclusion paper-card" aria-labelledby="interactive-top-three"><h2 id="interactive-top-three">你的前三名</h2>
-      <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
+    <section className="conclusion paper-card" aria-labelledby="interactive-top-three"><h2 id="interactive-top-three">{reviewOnly ? '本次操作紀錄' : '你的前三名'}</h2>
+      {reviewOnly ? <p>這是開發審閱題組，各價值出現次數不同，不產生完整十價值排名。已確認的具體安排可在下方回看與修改。</p> : <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
         stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
-        chosen={columnRows(chosen, row => priorityCountText(row.count))} />
+        chosen={columnRows(chosen, row => priorityCountText(row.count))} />}
       <DecidedCount decided={decided} total={total} />
     </section>
     <section className="result-evidence"><h2>逐題對照</h2>
@@ -75,18 +75,18 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
         })}</ol>
       </details>
     </section>
-    <section className="result-values"><h2>全部價值的優先保留次數</h2>
+    {!reviewOnly && <section className="result-values"><h2>全部價值的優先保留次數</h2>
       <ul className="priority-counts" aria-label="全部價值的優先保留次數">{[...counts].sort((left, right) => right.count - left.count).map(({ value, count }) =>
         <li key={value.id}><span>{value.word}</span><b>{fullListCountText(count)}</b></li>)}</ul>
-    </section>
+    </section>}
     {customValues.length > 0 && <section className="custom-results"><h2>你的自訂價值</h2><p>這裡保留你自訂的價值、分類和順序。情境題與兩幕對照不包含這些項目。</p>
       <ul>{customValues.map(value => <li key={value.id}><strong>{value.word}</strong> · {categoryLabels[value.category!]} · 位置 {value.rank}</li>)}</ul></section>}
-    <details className="counting-rules"><summary>結果怎麼整理</summary>
+    {!reviewOnly && <details className="counting-rules"><summary>結果怎麼整理</summary>
       <ul>{Object.values(countingRules).map(rule => <li key={rule}>{rule}</li>)}</ul>
-    </details>
+    </details>}
     <p className="sticky-note" role="note">這些次數和名次只用來回顧這一輪的選擇，不是測驗成績，也不是人格判定。題目與解讀尚未驗證。</p>
     <ReflectionStep session={session} onChange={onReflect} />
-    <InteractiveShare session={session} />
+    {!reviewOnly && <InteractiveShare session={session} />}
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>
   </section>;
 }
