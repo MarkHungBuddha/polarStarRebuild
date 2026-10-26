@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
+import { reopenAndContinue } from './support/interactive';
 import { classifyAll, expectFocusRing, expectFullyShown, expectNoHorizontalScroll, expectPosition, expectTouchTargets, pressOnHandle, rankHandle, rankRow, setCategory } from './support/experience';
 
 // Near the 24-character limit for custom values; one unbroken word is the hardest case to fit at 320px.
@@ -102,7 +103,7 @@ test('進入第二幕、返回調整與重新開啟後，都保留分類、名�
   await expectFirstAct();
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   // Reopening resumes the saved session where it was.
-  await page.reload();
+  await reopenAndContinue(page);
   await page.getByRole('button', { name: '返回上一頁' }).click();
   await expectFirstAct();
 });

@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { classifyAll, expectNoHorizontalScroll, expectNoLoneLastCharacter, expectTouchTargets, rankValuesInListedOrder } from './support/experience';
-import { confirmDecision, decideWithKeyboard, questionHeading, resultHeading, startInteractiveScenarios } from './support/interactive';
+import { confirmDecision, decideWithKeyboard, questionHeading, resultHeading, startInteractiveScenarios, reopenAndContinue } from './support/interactive';
 
 test('開場說明完整體驗共十五個情境與約十五分鐘的設計目標，不再宣稱是原型', async ({ page }) => {
   await page.goto('/');
@@ -23,7 +23,7 @@ test('情境頁顯示目前題序與總題數，返回上一題時進度跟著�
 test('只答了部分題目時，重新開啟後回到作答而不是結果', async ({ page }) => {
   await startInteractiveScenarios(page);
   await confirmDecision(page, '目前無法決定');
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await expect(resultHeading(page)).toHaveCount(0);
 });

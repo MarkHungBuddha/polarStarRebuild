@@ -52,9 +52,9 @@ function validSession(value: unknown): value is InteractiveSession {
   return value.screen !== 'result' || current.every(scenario => answers[scenario!.id] !== undefined);
 }
 
-const unusableNotice = '先前的作答紀錄無法讀取或題目已改版，這次從頭開始；重新作答後會取代它。';
-const keptFirstActNotice = '已沿用你上次的價值分類、排序與自訂價值。第二幕已經改版，舊版的答案不會換算成新版，請重新作答第二幕。';
-const unusableLegacyNotice = '上次留下的作答紀錄來自舊版或已經損壞，無法沿用，這次從頭開始。舊版的答案不會換算成新版。';
+const unusableNotice = '先前的作答紀錄無法讀取或題目已改版，無法續答。按「重新開始」會刪除這份紀錄，從頭作答。';
+const keptFirstActNotice = '上次的價值分類、排序與自訂價值可以沿用。第二幕已經改版，舊版的答案不會換算成新版，繼續後請重新作答第二幕。';
+const unusableLegacyNotice = '上次留下的作答紀錄來自舊版或已經損壞，無法沿用，舊版的答案也不會換算成新版。按「重新開始」會刪除這份紀錄，從頭作答。';
 
 /**
  * The five-step record's first act, or `undefined` when it cannot be used. Its second-act answers are never read: a first act
@@ -72,11 +72,11 @@ function fiveStepFirstAct(raw: string): Pick<InteractiveSession, 'screen' | 'val
 }
 
 /**
- * The saved session; a record that cannot be used is reported, never resumed, and replaced only once the user answers again.
- * Without an interactive record, an earlier version's record is reported too, and a five-step first act is carried into a
- * session started by `start` (its fresh questions and no answers), which is returned to be saved under the interactive key.
+ * The saved session, offered to the user to continue; a record that cannot be used is reported as `unusable`, never resumed,
+ * and stays until the user chooses 重新開始. Without an interactive record, an earlier version's record is reported too, and a
+ * five-step first act is carried into a session started by `start` (its fresh questions and no answers), offered like a saved one.
  */
-export function loadInteractiveSession(start: () => InteractiveSession): { session?: InteractiveSession; notice?: string } {
+export function loadInteractiveSession(start: () => InteractiveSession): { session?: InteractiveSession; notice?: string; unusable?: boolean } {
   let raw: string | null; let fiveStep: string | null; let unusable: boolean;
   try {
     raw = localStorage.getItem(interactiveSessionKey);
@@ -86,17 +86,17 @@ export function loadInteractiveSession(start: () => InteractiveSession): { sessi
   if (raw) {
     try {
       const saved: unknown = JSON.parse(raw);
-      return validSession(saved) ? { session: saved } : { notice: unusableNotice };
-    } catch { return { notice: unusableNotice }; }
+      return validSession(saved) ? { session: saved } : { notice: unusableNotice, unusable: true };
+    } catch { return { notice: unusableNotice, unusable: true }; }
   }
   if (fiveStep !== null) {
     const firstAct = fiveStepFirstAct(fiveStep);
-    if (!firstAct) return { notice: unusableLegacyNotice };
+    if (!firstAct) return { notice: unusableLegacyNotice, unusable: true };
     // A five-step record still on the home page holds nothing to carry.
     if (firstAct.screen === 'intro') return {};
     return { session: { ...start(), ...firstAct }, notice: keptFirstActNotice };
   }
-  return unusable ? { notice: unusableLegacyNotice } : {};
+  return unusable ? { notice: unusableLegacyNotice, unusable: true } : {};
 }
 
 export function saveInteractiveSession(session: InteractiveSession): boolean {

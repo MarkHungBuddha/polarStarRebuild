@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
-import { answerInteractiveByTitle, priorityRows, resultHeading, startInteractiveScenarios } from './support/interactive';
+import { answerInteractiveByTitle, priorityRows, resultHeading, startInteractiveScenarios, reopenAndContinue } from './support/interactive';
 
 // Questions of the round Math.random 0 draws: six days of a trip, each planned by oneself (A, 自主) or spent on a fixed day tour
 // (B, 安全穩定), and four weekend afternoons that open on a current plan (3 走自己的路線, 1 陪長輩整理相片). Every other question
@@ -44,7 +44,7 @@ test('反思筆記存在本機，重新整理後還在，不改寫原始紀錄�
   await pickQuestion(page, trip);
   await noteField(page).fill('臨時狀況不多，所以我多排了幾天自己走。');
 
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(resultHeading(page)).toBeVisible();
   await expect(questionPicker(page)).toHaveValue(/.+/);
   await expect(noteField(page)).toHaveValue('臨時狀況不多，所以我多排了幾天自己走。');

@@ -20,6 +20,12 @@ export const undecidedButton = (page: Page) => page.getByRole('button', { name: 
 /** The 維持這個安排 button an adjust question offers; it still needs 確認答案. */
 export const keepButton = (page: Page) => page.getByRole('button', { name: '維持這個安排', exact: true });
 
+/** Reloads the site and continues the saved session from the home page's 上次的進度已保留 panel. */
+export async function reopenAndContinue(page: Page) {
+  await page.reload();
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
+}
+
 /** Opens the site, ranks the core values in list order and enters the scenarios. */
 export async function startInteractiveScenarios(page: Page) {
   await page.goto('/');

@@ -41,16 +41,18 @@ export function App() {
   const [request, setRequest] = useState(() => requestedQuestions(window.location.search));
   const [initialHistory] = useState(loadSeenHistory);
   const [initial] = useState(() => loadInteractiveSession(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids))));
-  // A saved session under a link for other questions waits on the home page until the user continues it or takes the link's questions.
-  const [resumable, setResumable] = useState(() => initial.session && request.questions && !sameQuestions(initial.session.scenarios, request.questions) ? initial.session : undefined);
-  const [session, setSession] = useState<InteractiveSession>(() => (!resumable && initial.session) || createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids)));
-  const [saveEnabled, setSaveEnabled] = useState(Boolean(initial.session && !resumable));
+  // A saved session waits on the home page until the user continues it or starts over; replacing it is always the user's choice.
+  const [resumable, setResumable] = useState(initial.session);
+  // A record that cannot be used stays until the user chooses 重新開始; starting a new round must not overwrite it unannounced.
+  const [unusableRecord, setUnusableRecord] = useState(Boolean(initial.unusable));
+  const [session, setSession] = useState<InteractiveSession>(() => createSession(request.questions ?? drawInteractiveQuestions(initialHistory.ids)));
+  const [saveEnabled, setSaveEnabled] = useState(false);
   const [storageNotice, setStorageNotice] = useState(initial.notice ?? initialHistory.notice ?? '');
   const [customWord, setCustomWord] = useState('');
   const [notice, setNotice] = useState('');
   useEffect(() => {
-    if (saveEnabled && !saveInteractiveSession(session)) setStorageNotice(storageSaveFailedNotice);
-  }, [session, saveEnabled]);
+    if (saveEnabled && !resumable && !saveInteractiveSession(session)) setStorageNotice(storageSaveFailedNotice);
+  }, [session, saveEnabled, resumable]);
   useEffect(() => {
     if (session.screen === 'scenario' && !markQuestionSeen(session.scenarios[session.scenarioIndex].id)) setStorageNotice(storageSaveFailedNotice);
   }, [session.screen, session.scenarioIndex, session.scenarios]);
@@ -62,7 +64,7 @@ export function App() {
     const historyCleared = !clearHistory || clearSeenHistory();
     const history = loadSeenHistory();
     if (useCurrentVersion) leaveRequest();
-    setSaveEnabled(false); setResumable(undefined);
+    setSaveEnabled(false); setResumable(undefined); setUnusableRecord(false);
     setSession(createSession(!useCurrentVersion && request.questions ? request.questions : drawInteractiveQuestions(history.ids)));
     setCustomWord(''); setNotice('');
     setStorageNotice(sessionCleared && historyCleared ? history.notice ?? '' : storageClearFailedNotice);
@@ -74,10 +76,11 @@ export function App() {
   const restartWithCurrentVersion = () => startOver({ useCurrentVersion: true });
   const resume = () => {
     if (!resumable) return;
-    // Continuing keeps the saved questions, so the link for other questions no longer applies.
-    leaveRequest();
+    // Continuing keeps the saved questions, so a question link no longer applies.
+    if (request.specified) leaveRequest();
     setSession(resumable); setResumable(undefined); setSaveEnabled(true);
   };
+  const linkDiffers = Boolean(resumable && request.questions && !sameQuestions(resumable.scenarios, request.questions));
   const addCustom = () => {
     const word = customWord.trim();
     if (!word) return;
@@ -100,13 +103,16 @@ export function App() {
   return <main className={`app-shell screen-${session.screen}`}>
     <header className="masthead"><a href="./" onClick={event => { event.preventDefault(); go('intro'); }}><StarIcon />北極星</a><span className="notebook-stamp">反思筆記</span></header>
     <ThemeControl />
-    {storageNotice && <p role="status" className="storage-notice">{storageNotice}</p>}
+    {storageNotice && (unusableRecord
+      ? <section className="storage-notice"><p role="status">{storageNotice}</p><button className="secondary" onClick={restart}>重新開始</button></section>
+      : <p role="status" className="storage-notice">{storageNotice}</p>)}
     {request.notice && <section className="storage-notice"><p role="status">{request.notice}</p><button className="secondary" onClick={restartWithCurrentVersion}>用目前題目開始</button></section>}
     {session.screen === 'intro' && <HomeIntro actions={resumable
       ? <section className="resume-panel" aria-labelledby="resume-title"><h2 id="resume-title">上次的進度已保留。</h2>
-        <p>這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。</p>
-        <nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button><button className="secondary" onClick={restart}>改做分享的題目</button></nav></section>
-      : <button className="primary" disabled={Boolean(request.notice)} onClick={() => go('classify')}>開始這次反思</button>} />}
+        <p>繼續原本的題目與已確認答案，或重新開始。</p>
+        {linkDiffers && <p>這份題目連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做這份連結的題目則會取代上次的進度。</p>}
+        <nav className="actions"><button className="primary" onClick={resume}>繼續上次作答</button>{!request.notice && <button className="secondary" onClick={restart}>{linkDiffers ? '改做這份連結的題目' : '重新開始'}</button>}</nav></section>
+      : <button className="primary" disabled={Boolean(request.notice) || unusableRecord} onClick={() => go('classify')}>開始這次反思</button>} />}
     {session.screen === 'classify' && <ClassifyScreen values={session.values} customWord={customWord} notice={notice} onCustomWordChange={setCustomWord} onAddCustom={addCustom} onCategory={(id, category) => setSession(current => ({ ...current, values: withCategory(current.values, id, category) }))} onBack={() => go('intro')} onNext={() => go('rank')} />}
     {session.screen === 'rank' && <RankScreen values={session.values} onArrange={arrange => setSession(current => ({ ...current, values: arrange(current.values) }))} onBack={() => go('classify')} onNext={() => { setSession(current => ({ ...current, values: withStrictOrder(current.values) })); go('scenario'); }} />}
     {session.screen === 'scenario' && scenario && <>

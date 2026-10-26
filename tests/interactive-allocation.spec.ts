@@ -1,5 +1,5 @@
 import { expect, test } from './support/fixtures';
-import { allocationCells, answerInteractiveByTitle, applyDecision, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios } from './support/interactive';
+import { allocationCells, answerInteractiveByTitle, applyDecision, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios, reopenAndContinue } from './support/interactive';
 
 // The round's first question at Math.random 0: six days of a trip, each planned by oneself (A, 自主) or spent on a fixed day tour
 // (B, 安全穩定). Every other question is answered 目前無法決定, so the counts come from this one.
@@ -69,11 +69,11 @@ test('返回修改要重新確認才覆蓋；重新整理保留上次已確認�
 
   await editQuestion(page, trip);
   await applyDecision(page, { allocate: [1, 5] });
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(totals).toHaveText(/自己排行程\s*4 天.*跟一日團\s*2 天/);
   await confirmDecision(page, { allocate: [1, 5] });
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
-  await page.reload();
+  await reopenAndContinue(page);
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
 });
 

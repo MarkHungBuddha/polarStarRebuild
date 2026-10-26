@@ -52,7 +52,7 @@ test.describe('題目連結', () => {
     }
   });
 
-  test('開啟不同題目的連結時仍可繼續本機進度；改做分享的題目才取代它', async ({ page }) => {
+  test('開啟不同題目的連結時仍可繼續本機進度；改做這份連結的題目才取代它', async ({ page }) => {
     await page.goto('/');
     const own = new URL(await questionLink(page));
     const other = new URL(own);
@@ -62,17 +62,18 @@ test.describe('題目連結', () => {
     await confirmDecision(page, '目前無法決定');
     const savedTitle = await questionHeading(page).textContent();
     await page.goto(other.href);
-    await expect(page.getByText('這份分享連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做分享的題目則會取代上次的進度。')).toBeVisible();
+    await expect(page.getByText('這份題目連結的題目與你上次作答的不同；繼續會沿用上次的題目，改做這份連結的題目則會取代上次的進度。')).toBeVisible();
     await expect(page.getByRole('button', { name: '開始這次反思' })).toHaveCount(0);
     await page.getByRole('button', { name: '繼續上次作答' }).click();
     await expect(questionHeading(page)).toHaveText(savedTitle!);
     await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
     await page.goto(other.href);
-    await page.getByRole('button', { name: '改做分享的題目' }).click();
+    await page.getByRole('button', { name: '改做這份連結的題目' }).click();
     const shared = await roundTitles(page);
     expect(shared).not.toContain(savedTitle);
-    // The shared round is now the saved one: reopening the site resumes it.
+    // The shared round is now the saved one: reopening the site offers it.
     await page.goto('/');
+    await page.getByRole('button', { name: '繼續上次作答' }).click();
     await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
   });
 });

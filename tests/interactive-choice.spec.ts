@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { expectFullyShown, expectNoClippedText, expectNoHorizontalScroll, expectNoLoneLastCharacter } from './support/experience';
-import { answerInteractiveByTitle, applyDecision, choiceCards, confirmButton, confirmDecision, decisionRecord, editQuestion, priorityRows, startInteractiveScenarios, undecidedButton } from './support/interactive';
+import { answerInteractiveByTitle, applyDecision, choiceCards, confirmButton, confirmDecision, decisionRecord, editQuestion, priorityRows, startInteractiveScenarios, undecidedButton, reopenAndContinue } from './support/interactive';
 
 // Math.random 0.99 draws every slot's third variant; slot 1's is the round's first question, a 選方案 question between two homes.
 // Card A moves to a place one can arrange oneself (自主), card B renews a three-year lease with fixed rent (安全穩定). Every other
@@ -64,11 +64,11 @@ test('返回修改要重新確認才覆蓋；重新整理保留上次已確認�
 
   await editQuestion(page, lease);
   await applyDecision(page, '選 B');
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(choiceCards(page).first()).toBeChecked();
   await confirmDecision(page, '選 B');
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
-  await page.reload();
+  await reopenAndContinue(page);
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
   await expect(await decisionRecord(page, lease)).toContainText('選了「續簽三年不調租的現住處」');
 });

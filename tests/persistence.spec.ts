@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test';
 import { classifyAll, expectPosition, pressOnHandle, rankRow, rankValuesInListedOrder } from './support/experience';
 import { answerInteractiveByTitle, questionHeading, resultHeading } from './support/interactive';
 
+const unusableNotice = '先前的作答紀錄無法讀取或題目已改版，無法續答。按「重新開始」會刪除這份紀錄，從頭作答。';
+
 async function beginAndClassify(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
@@ -14,11 +16,15 @@ async function beginAndClassify(page: Page) {
   await pressOnHandle(page, '安全穩定', 'Home');
 }
 
-test('重新開啟後回到同一題續答，保留第一幕順序、自訂價值與相同題目', async ({ page }) => {
+test('重新開啟時先問要繼續還是重新開始；繼續回到同一題，保留第一幕順序、自訂價值與相同題目', async ({ page }) => {
   await beginAndClassify(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   const title = await questionHeading(page).textContent();
   await page.reload();
+  await expect(page.getByRole('heading', { name: '上次的進度已保留。' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '重新開始', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '開始這次反思' })).toHaveCount(0);
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(questionHeading(page)).toHaveText(title!);
   await page.getByRole('button', { name: '返回上一頁' }).click();
   await expectPosition(page, '安全穩定', 1);
@@ -27,10 +33,14 @@ test('重新開啟後回到同一題續答，保留第一幕順序、自訂價�
 });
 
 // The stored blob is an opaque stand-in for a record written by another app version; it does not mirror the session format.
-test('其他版本留下的互動紀錄不會把舊答案套用到目前題目', async ({ page }) => {
+test('其他版本留下的互動紀錄不會把舊答案套用到目前題目，也不會在開始作答時被悄悄蓋掉', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('polarstar.session.v3', JSON.stringify({ writtenBy: 'another app version', answers: ['opaque'] })));
   await page.goto('/');
-  await expect(page.getByRole('status')).toHaveText('先前的作答紀錄無法讀取或題目已改版，這次從頭開始；重新作答後會取代它。');
+  await expect(page.getByRole('status')).toHaveText(unusableNotice);
+  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '開始這次反思' })).toBeDisabled();
+  await page.getByRole('button', { name: '重新開始', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveCount(0);
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('group', { name: /的重要性$/ }).getByRole('button', { pressed: true })).toHaveCount(0);
 });
@@ -39,6 +49,7 @@ test('清除紀錄後可重新開始，重新開啟不會沿用舊分類', async
   await beginAndClassify(page);
   await page.getByRole('button', { name: '清除本機作答紀錄' }).click();
   await page.reload();
+  await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await expect(page.getByRole('group', { name: /的重要性$/ })).toHaveCount(10);
   await expect(page.getByRole('group', { name: /的重要性$/ }).getByRole('button', { pressed: true })).toHaveCount(0);

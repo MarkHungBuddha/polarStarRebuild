@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { allocationCells, answerInteractiveByTitle, confirmButton, confirmDecision, decisionRecord, editQuestion, keepButton, priorityRows, questionHeading, startInteractiveScenarios, undecidedButton } from './support/interactive';
+import { allocationCells, answerInteractiveByTitle, confirmButton, confirmDecision, decisionRecord, editQuestion, keepButton, priorityRows, questionHeading, startInteractiveScenarios, undecidedButton, reopenAndContinue } from './support/interactive';
 
 // Math.random 0.5 draws every slot's second variant; slot 1's is the round's first question, an adjust question: next year's four
 // quarters, each on a fixed salary (B, 安全穩定) or freelancing (A, 自主). Its draft puts the third quarter on A and the rest on B.
@@ -66,7 +66,7 @@ test('調整後再改回初始配置，計數跟直接維持相同，但紀錄�
   await confirmButton(page).click();
   await expect(await decisionRecord(page, quarters)).toContainText('維持原本安排');
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(await decisionRecord(page, quarters)).toContainText('維持原本安排');
 
   await editQuestion(page, quarters);
@@ -84,7 +84,7 @@ test('調整後再改回初始配置，計數跟直接維持相同，但紀錄�
 test('沒確認就離開或重新整理，初始安排不會算成答案', async ({ page }) => {
   await openQuarters(page);
   await keepButton(page).click();
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(questionHeading(page)).toHaveText(quarters);
   await expect(confirmButton(page)).toBeDisabled();
   await page.getByRole('button', { name: '返回上一頁' }).click();

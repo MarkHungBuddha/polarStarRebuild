@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { allocationCells, answerInteractiveByTitle, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios, undecidedButton } from './support/interactive';
+import { allocationCells, answerInteractiveByTitle, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios, undecidedButton, reopenAndContinue } from './support/interactive';
 
 // The round's first question at Math.random 0: six days of a trip, each planned by oneself (A, 自主) or spent on a fixed day tour
 // (B, 安全穩定). The round's other questions are answered 目前無法決定 unless a test says otherwise.
@@ -31,7 +31,7 @@ test('目前無法決定也要確認才算數，兩側都不加次數，也不�
 test('重新整理保留已確認的目前無法決定，回到題目時仍標示；改去安排格子就取消它', async ({ page }) => {
   await startInteractiveScenarios(page);
   const titles = await answerInteractiveByTitle(page, { [trip]: '目前無法決定' });
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(page.getByText(`明確決策 0 / ${titles.length} 題`)).toBeVisible();
   await editQuestion(page, trip);
   await expect(undecidedButton(page)).toHaveAttribute('aria-pressed', 'true');
