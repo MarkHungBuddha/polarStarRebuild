@@ -141,7 +141,7 @@ test('反思筆記不會進入結果連結', async ({ page }) => {
   await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
   const linkBox = shareRegion(page).getByRole('textbox', { name: '結果連結' });
   const before = await linkBox.inputValue();
-  await page.getByRole('combobox', { name: '選一題有感的情境' }).selectOption({ label: `第 1 題：${trip}` });
+  await page.getByRole('combobox', { name: '選一題想再看一次的情境' }).selectOption({ label: `第 1 題：${trip}` });
   await page.getByRole('textbox', { name: '反思筆記（可不填）' }).fill('朋友那邊其實更急');
   await expect(linkBox).toHaveValue(before);
   expect(decodeURIComponent(before)).not.toContain('朋友那邊');

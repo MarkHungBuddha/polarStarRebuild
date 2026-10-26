@@ -103,7 +103,7 @@ test('結果圖和結果連結都不含逐題決策和反思筆記', async ({ pa
 
   const note = '朋友那邊其實更急';
   const reflection = page.getByRole('region', { name: '回想一題（可略過）' });
-  const picker = reflection.getByLabel('選一題有感的情境');
+  const picker = reflection.getByLabel('選一題想再看一次的情境');
   const option = await picker.getByRole('option').filter({ hasText: trip }).textContent();
   await picker.selectOption({ label: option! });
   await reflection.getByLabel('反思筆記（可不填）').fill(note);

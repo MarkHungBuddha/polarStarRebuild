@@ -1,6 +1,6 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import { isAnswerTo, isRecord } from './interactiveAnswers';
-import { reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
+import { reflectionDirections, reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
 import { baseValues, categoryOrder } from './data';
 import { storageReadFailedNotice } from './storageNotices';
 import type { Screen, ValueItem } from './types';
@@ -31,10 +31,11 @@ function validValues(values: unknown, screen: Screen): values is ValueItem[] {
   return baseValues.every(core => ids.has(core.id));
 }
 
-/** A reflection names one of the session's questions and holds a note of at most `reflectionNoteLimit` characters. */
+/** A reflection names one of the session's questions, holds a note of at most `reflectionNoteLimit` characters and maybe a direction. */
 function validReflection(value: unknown, scenarioIds: string[]): boolean {
-  return isRecord(value) && Object.keys(value).length === 2 && typeof value.variantId === 'string' && scenarioIds.includes(value.variantId)
-    && typeof value.note === 'string' && value.note.length <= reflectionNoteLimit;
+  if (!isRecord(value) || !Object.keys(value).every(key => ['variantId', 'note', 'direction'].includes(key))) return false;
+  return typeof value.variantId === 'string' && scenarioIds.includes(value.variantId) && typeof value.note === 'string' && value.note.length <= reflectionNoteLimit
+    && (!('direction' in value) || reflectionDirections.some(direction => direction === value.direction));
 }
 
 function validSession(value: unknown): value is InteractiveSession {
