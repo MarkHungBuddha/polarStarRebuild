@@ -1,7 +1,8 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import type { InteractiveScenario } from './interactiveTypes';
 
-export function hash(text: string): number {
+/** 32-bit FNV-1a of `text`; the bank version is this hash of the registry. */
+function fnv1a(text: string): number {
   let value = 2166136261;
   for (let index = 0; index < text.length; index += 1) value = Math.imul(value ^ text.charCodeAt(index), 16777619);
   return value >>> 0;
@@ -13,7 +14,7 @@ export function hash(text: string): number {
  */
 export const interactiveCatalog = {
   /** Hash of the full registry: any text, order or variant change makes a new version. */
-  version: `c${hash(JSON.stringify(interactiveScenarios)).toString(36)}`,
+  version: `c${fnv1a(JSON.stringify(interactiveScenarios)).toString(36)}`,
   scenarios: interactiveScenarios,
 } as const;
 

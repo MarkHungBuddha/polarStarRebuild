@@ -1,5 +1,5 @@
 import { interactiveScenarios } from './interactiveScenarios';
-import { isAnswerTo } from './interactiveAnswers';
+import { isAnswerTo, isRecord } from './interactiveAnswers';
 import { reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
 import { baseValues, categoryOrder } from './data';
 import { storageReadFailedNotice } from './storageNotices';
@@ -11,8 +11,6 @@ export const interactiveSessionKey = 'polarstar.session.v3';
 const fiveStepSessionKey = 'polarstar.session.v2';
 /** The mixed-mechanism bank's record: nothing can be carried from it. */
 const unusableSessionKeys = ['polarstar.session.v1'];
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const screens = ['intro', 'classify', 'rank', 'scenario', 'result'];
 const isScreen = (screen: unknown): screen is Screen => typeof screen === 'string' && screens.includes(screen);

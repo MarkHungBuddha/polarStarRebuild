@@ -2,7 +2,7 @@ import { baseValues } from './data';
 import { act1TopThree, byPosition } from './valueRanking';
 import { interactiveCatalog, interactivePlan, questionsOfPlan } from './interactiveCatalog';
 import type { InteractiveScenario, InteractiveSession } from './interactiveTypes';
-import { decidedCount, priorityCounts, priorityTopThree } from './priorityRanking';
+import { appearancesPerValue, decidedCount, priorityCounts, priorityTopThree } from './priorityRanking';
 
 /** A legacy second-act row: the values sharing one position, with the leans and leaning appearances they share. */
 export interface SharedChosenRow { ids: string[]; chosen: number; directional: number }
@@ -174,9 +174,6 @@ function readVersion2(fields: readonly string[]): ResultLinkOutcome {
   return { kind: 'result', result: { scoring: 'preference-score', stated, scored, custom, catalog, plan } };
 }
 
-/** Each value meets this many questions in a round, so no row of a version 3 link counts more. */
-const maxPriorityCount = 3;
-
 /**
  * Format version 3: seven fields, rows `<count>-<id>…` with 1 ≤ count ≤ 3 strictly falling, then 明確決策題數 (≤ questions). Each
  * decided question adds 1 to one value, so the listed counts never add up to more than it, and rows exist exactly when it is not 0.
@@ -195,7 +192,8 @@ function readVersion3(fields: readonly string[]): ResultLinkOutcome {
     const [count, ...ids] = row.split('-');
     if (!positiveBase36.test(count) || !knownIds(ids)) return undefined;
     const value = parseInt(count, 36);
-    return value <= maxPriorityCount ? { ids, count: value } : undefined;
+    // Each value meets `appearancesPerValue` questions in a round, so no row counts more.
+    return value <= appearancesPerValue ? { ids, count: value } : undefined;
   });
   if (rows.some(row => !row)) return { kind: 'corrupt' };
   const counted = rows as SharedCountRow[];
