@@ -11,45 +11,6 @@ export async function classifyAll(page: Page, category: Category) {
   for (const group of await page.getByRole('group', { name: /的重要性$/ }).all()) await group.getByRole('button', { name: categoryLabels[category], exact: true }).click();
 }
 
-/** The two destinations of a choice or strike scene; for strike, the destination is the reply that is kept. */
-export const sceneOptions = (page: Page) => page.locator('.play-scene .scene-action');
-export const sceneOption = (page: Page, name: string | RegExp) => page.locator('.play-scene').getByRole('button', { name });
-
-/** Sets a slider scenario's amount with whichever physical control it uses: piggy bank, clock or desk calendar. */
-export async function setAmount(page: Page, value: number | 'max') {
-  const coin = page.getByRole('button', { name: '放入一個月生活費', exact: true });
-  const clock = page.getByRole('slider', { name: '拖曳時針安排休閒時間' });
-  if (await coin.count()) {
-    await page.getByRole('button', { name: '不準備備用金', exact: true }).click();
-    for (let count = 0; value === 'max' ? await coin.getAttribute('aria-disabled') !== 'true' : count < value; count += 1) await coin.click();
-  } else if (await clock.count()) {
-    await clock.focus();
-    await page.keyboard.press(value === 'max' ? 'End' : 'Home');
-    for (let count = 0; value !== 'max' && count < value; count += 1) await page.keyboard.press('ArrowRight');
-  } else {
-    const back = page.getByRole('button', { name: '往前翻一頁' });
-    const next = page.getByRole('button', { name: '往後翻一頁' });
-    while (await back.isEnabled()) await back.click();
-    const target = page.getByRole('button', { name: value === 'max' ? /^選定 / : new RegExp(`^選定 ${value} `) });
-    while (value === 'max' ? await next.isEnabled() : !await target.count()) await next.click();
-    await target.click();
-  }
-}
-
-/** The live readout under a slider scenario's control. */
-export const amountFeedback = (page: Page) => page.locator('.scene-feedback');
-
-/** Puts the first activity in the first `firstAmount` planner slots and the second activity in the rest. */
-export async function allocate(page: Page, firstAmount: number) {
-  const slots = page.locator('[data-planner-slot]');
-  const activities = page.locator('.planner-activities button');
-  const total = await slots.count();
-  await activities.nth(0).click();
-  for (let index = 0; index < firstAmount; index += 1) await slots.nth(index).click();
-  await activities.nth(1).click();
-  for (let index = firstAmount; index < total; index += 1) await slots.nth(index).click();
-}
-
 export async function classifyValues(page: Page) {
   await page.getByRole('button', { name: '開始這次反思' }).click();
   await classifyAll(page, 'core');
@@ -94,38 +55,37 @@ export async function classifyAndRankValues(page: Page) {
   await rankValuesInListedOrder(page);
 }
 
-/** Gives the current question any valid answer with its own control, then confirms it. */
-export async function confirmCurrentScenario(page: Page) {
-  const confirm = page.getByRole('button', { name: '確認答案', exact: true });
-  if (await confirm.isDisabled()) {
-    // Planner slots, then the slider scenes (piggy bank, clock, calendar), then a choice or strike scene.
-    if (await page.locator('[data-planner-slot]').count()) {
-      await allocate(page, 0);
-    } else if (await page.locator('.piggy-scene, .real-clock, .desk-calendar').count()) {
-      await setAmount(page, 1);
-    } else {
-      await page.locator('.play-scene .scene-action').first().click();
-    }
-  }
-  await confirm.click();
+/** A five-step answer, as its option is named on the page. */
+export type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
+
+/** Picks `lean` on the current question and confirms it. */
+export async function confirmCurrentScenario(page: Page, lean: Lean = '強烈偏向 A') {
+  await page.getByRole('radio', { name: lean, exact: true }).click();
+  await page.getByRole('button', { name: '確認答案', exact: true }).click();
 }
 
-export async function goToScenario(page: Page, title: string) {
+/** Answers every question before the one titled `title` with `lean`, stopping on it. */
+export async function goToScenario(page: Page, title: string, lean: Lean = '強烈偏向 A') {
   for (let count = 0; count < 30; count += 1) {
     if (await page.getByRole('heading', { name: title, exact: true }).count()) return;
     if (!await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
-    await confirmCurrentScenario(page);
+    const current = await page.locator('.scenario-card h1').textContent();
+    await confirmCurrentScenario(page, lean);
+    if (current) await expect(page.getByRole('heading', { name: current, exact: true })).toHaveCount(0);
   }
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
 }
 
-/** Answers every remaining scenario and stops on the result page as it first opens (the cover after a full run). */
-export async function answerRemainingScenarios(page: Page) {
+/** Answers every remaining scenario with `lean` and stops on the result page as it first opens (the cover after a full run). */
+export async function answerRemainingScenarios(page: Page, lean: Lean = '強烈偏向 A') {
+  const result = page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
   for (let count = 0; count < 30; count += 1) {
-    if (!await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
-    await confirmCurrentScenario(page);
+    if (await result.isVisible() || !await page.getByRole('button', { name: '確認答案', exact: true }).count()) break;
+    const current = await page.locator('.scenario-card h1').textContent();
+    await confirmCurrentScenario(page, lean);
+    if (current) await expect(page.getByRole('heading', { name: current, exact: true })).toHaveCount(0);
   }
-  await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();
+  await expect(result).toBeVisible();
 }
 
 /** Opens the detailed report from the result cover; already on the report, it does nothing. */
@@ -135,8 +95,8 @@ export async function openDetailedReport(page: Page) {
 }
 
 /** Answers every remaining scenario and opens the detailed report, where the evidence is. */
-export async function completeRemainingScenarios(page: Page) {
-  await answerRemainingScenarios(page);
+export async function completeRemainingScenarios(page: Page, lean: Lean = '強烈偏向 A') {
+  await answerRemainingScenarios(page, lean);
   await openDetailedReport(page);
 }
 

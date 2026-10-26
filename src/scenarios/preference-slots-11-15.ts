@@ -1,4 +1,4 @@
-import type { PreferenceScenario } from '../types';
+import type { Scenario } from '../types';
 
 /**
  * Slots 11–15, three preference variants each (#52). AI-drafted content, reviewed per variant against the slot's
@@ -8,7 +8,7 @@ import type { PreferenceScenario } from '../types';
  * two short options with their costs; slot 14 replaces the six-hour allocation with one slot that fits only
  * one of the two tasks, so the answer is a lean rather than an amount.
  */
-export const preferenceSlots11To15: PreferenceScenario[] = [{
+export const preferenceSlots11To15: Scenario[] = [{
   id: 'preference-slot11-fund', slotId: 'slot11', pair: ['influence', 'fairness'], kind: 'preference', domain: '社群',
   title: '這筆活動預算，誰來決定？',
   setup: '假設你替社區爭取到一筆小額活動預算，可以自行規劃，也有權獨自定案。你已經想好完整方案。你也可以交出一部分預算，讓不同年齡、語言和行動需求的居民代表一起決定，補進原方案沒顧到的需求。兩種做法都公開透明，也都符合規定。',

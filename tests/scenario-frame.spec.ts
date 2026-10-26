@@ -1,7 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
 import { scenarios } from '../src/scenarios';
-import { classifyAndRankValues, confirmCurrentScenario, expectHorizontalText, expectLongParagraphsInSans, expectNoHorizontalScroll, expectTouchTargets, goToScenario } from './support/experience';
+import { classifyAndRankValues, confirmCurrentScenario, expectHorizontalText, expectLongParagraphsInSans, expectNoHorizontalScroll, expectTouchTargets } from './support/experience';
 
 async function openFirstScenario(page: Page) {
   await page.goto('/');
@@ -50,16 +50,6 @@ test('每題情境照作者原文顯示，標籤只寫領域，畫面沒有英�
   }
 });
 
-test('桌面上時間分配題有較寬的操作空間，情境文字仍維持易讀的行長', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await openFirstScenario(page);
-  await goToScenario(page, '六個晚上，留給哪些事？');
-  const board = (await page.locator('.planner-board').boundingBox())!;
-  expect(board.width, '分配題寬於一般情境欄').toBeGreaterThan(720);
-  expect((await page.locator('.scenario-card .setup').boundingBox())!.width, '情境內文行長').toBeLessThanOrEqual(680);
-  expect(await page.locator('[data-planner-slot]').evaluateAll(slots => new Set(slots.map(slot => Math.round(slot.getBoundingClientRect().left))).size), '桌面行程至少三欄').toBeGreaterThanOrEqual(3);
-});
-
 test('減少動態效果時情境卡不位移，裝飾不遮住任何控制項', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openFirstScenario(page);
@@ -67,7 +57,7 @@ test('減少動態效果時情境卡不位移，裝飾不遮住任何控制項',
     const card = page.locator('.scenario-card');
     expect(await card.evaluate(element => getComputedStyle(element).animationName)).toBe('none');
     // Every visible control, scrolled into view, receives a click at its center rather than a decoration on top of it.
-    const covered = await page.locator('main').evaluate(main => [...main.querySelectorAll<HTMLElement | SVGElement>('button, [role="button"], [role="slider"]')].filter(element => {
+    const covered = await page.locator('main').evaluate(main => [...main.querySelectorAll<HTMLElement>('button, .preference-scale label')].filter(element => {
       const box = element.getBoundingClientRect();
       if (!box.width || !box.height) return false;
       element.scrollIntoView({ block: 'center' });
@@ -81,29 +71,32 @@ test('減少動態效果時情境卡不位移，裝飾不遮住任何控制項',
   }
 });
 
+const leans = ['強烈偏向 A', '稍微偏向 A', '兩者相當', '稍微偏向 B', '強烈偏向 B'] as const;
+
 /** Walks all fifteen questions, checking each screen before and after it has a draft answer. */
 for (const width of [320, 390, 1280]) {
   for (const colorScheme of ['light', 'dark'] as const) {
-    test(`情境畫面在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下，未選與已選都不橫向捲動，二選一與刪稿的點擊區至少 44 × 44px`, async ({ page }) => {
+    test(`情境畫面在 ${width}px ${colorScheme === 'light' ? '淺色' : '深色'}下，未選與已選都不橫向捲動，五段選項的點擊區至少 44 × 44px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ colorScheme });
       await openFirstScenario(page);
       const confirm = page.getByRole('button', { name: '確認答案', exact: true });
-      const frameControls = page.locator('.scenario-page .actions');
       for (let question = 0; question < 15; question += 1) {
-        const choiceScene = page.locator('.play-scene .scene-action');
         await expectNoHorizontalScroll(page);
-        await expectTouchTargets(frameControls);
+        await expectTouchTargets(page.locator('.scenario-page .actions'));
         await expectHorizontalText(page.locator('.scenario-page'));
         await expectLongParagraphsInSans(page.locator('.scenario-page'));
-        if (await choiceScene.count()) {
-          await expectTouchTargets(page.locator('.play-scene'));
-          await expect(confirm).toBeDisabled();
-          await choiceScene.nth(question % 2).click();
-          await expect(choiceScene.nth(question % 2)).toHaveAttribute('aria-pressed', 'true');
-          await expectNoHorizontalScroll(page);
+        for (const option of await page.locator('.preference-scale label').all()) {
+          const box = (await option.boundingBox())!;
+          expect(box.width, await option.textContent() ?? '').toBeGreaterThanOrEqual(44);
+          expect(box.height, await option.textContent() ?? '').toBeGreaterThanOrEqual(44);
         }
-        await confirmCurrentScenario(page);
+        await expect(confirm).toBeDisabled();
+        const lean = leans[question % 5];
+        await page.getByText(lean, { exact: true }).click();
+        await expect(page.getByRole('radio', { name: lean, exact: true })).toBeChecked();
+        await expectNoHorizontalScroll(page);
+        await confirm.click();
         if (!await confirm.count()) break;
       }
       await expect(page.getByRole('heading', { name: '這一次，你的選擇。', exact: true })).toBeVisible();

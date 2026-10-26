@@ -1,6 +1,7 @@
 // Published result links, format version 2 (preference scores). A published link is never edited, only added to: the site promises to keep reading every published format (ADR 0005).
-// `v` is the preference preview's catalog version these links were written against, and every plan is the first variant of each preview slot then
-// (PREVIEW ONLY until #56). Tests that need the original question set swap both for today's preview catalog.
+// `resultLinksV2Catalog` is the catalog version most of these links were written against: the thirteen-slot bank during development (#54),
+// so their plans have thirteen questions. `fixedFlowAtRelease` was written against the bank the site launched with (#56).
+// Tests that need the original question set swap `v` and the plan for today's catalog.
 export const resultLinksV2Catalog = 'c1oezm4';
 
 export interface PublishedPreferenceLink { fragment: string; stated: string[]; scored: string[]; custom?: string[] }
@@ -8,10 +9,16 @@ export interface PublishedPreferenceLink { fragment: string; stated: string[]; s
 export const noScores = '這次作答沒有明確偏向';
 
 export const resultLinksV2 = {
-  // What the fixed preview flow in preference-result-link.spec.ts shares: core values ranked in list order, the first variant of each of the
-  // thirteen preview slots, answered B strong, A strong, B slight, B slight, then 兩者相當 for the rest.
+  // What the fixed flow in preference-result-link.spec.ts shares: core values ranked in list order, the first variant of each of the
+  // thirteen slots of the development bank, answered B strong, A strong, B slight, B slight, then 兩者相當 for the rest.
   fixedFlow: {
     fragment: '#r=2.autonomy~stimulation~hedonism.3-security~2-autonomy~1-care..c1oezm4.0-0-0-0-0-0-0-0-0-0-0-0-0',
+    stated: ['第 1自主', '第 2探索刺激', '第 3享受生活'],
+    scored: ['第 1安全穩定3 分', '第 2自主2 分', '第 3照顧身邊的人1 分'],
+  },
+  // The same flow on the fifteen-slot bank the site launched with.
+  fixedFlowAtRelease: {
+    fragment: '#r=2.autonomy~stimulation~hedonism.3-security~2-autonomy~1-care..c2gdvoe.0-0-0-0-0-0-0-0-0-0-0-0-0-0-0',
     stated: ['第 1自主', '第 2探索刺激', '第 3享受生活'],
     scored: ['第 1安全穩定3 分', '第 2自主2 分', '第 3照顧身邊的人1 分'],
   },

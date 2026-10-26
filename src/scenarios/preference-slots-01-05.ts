@@ -1,4 +1,4 @@
-import type { PreferenceScenario } from '../types';
+import type { Scenario } from '../types';
 
 /**
  * Slots 1–5 for the five-step preference catalog (#50); the slot-4 work demo lives in ./preference.ts.
@@ -6,7 +6,7 @@ import type { PreferenceScenario } from '../types';
  * AI-drafted content, reviewed for matching trade-off conditions in docs/preference-content/slots-01-05.md;
  * not a human-authored or psychometrically validated item set.
  */
-export const preferenceSlots01To05: PreferenceScenario[] = [{
+export const preferenceSlots01To05: Scenario[] = [{
   id: 'preference-slot01-work', slotId: 'slot01', pair: ['autonomy', 'security'], kind: 'preference', domain: '工作',
   title: '固定薪水，還是自己接案？',
   setup: '假設你現在領固定薪水，工作時間和做法大多由公司安排。你也可以轉為接案，自己決定接什麼工作、怎麼排時間，但每月收入會有起伏。你已存好半年的生活費，兩種工作都能發揮你的能力。不用照你目前的處境回答。',

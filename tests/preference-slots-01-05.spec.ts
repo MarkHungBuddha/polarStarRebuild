@@ -1,8 +1,8 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { scenarios } from '../src/scenarios';
-import { preferenceScenarios } from '../src/scenarios/preference';
 import { classifyAndRankValues, openDetailedReport } from './support/experience';
+import { confirmButton as confirm, evidence, leanOption as lean, scoreRow as row, scoreRows, type Lean } from './support/preference';
 
 // Slots 1–5 of the blueprint in docs/scenario-feature-spec.md, written out independently of the catalog (#50).
 const pairs: Record<string, [string, string]> = {
@@ -15,8 +15,7 @@ const pairs: Record<string, [string, string]> = {
 
 test('第 1–5 組各恰有三個五段偏向情境，沿用原配對，生活情境可分辨，內容完整', () => {
   const filled = (text: string) => text.trim().length > 0;
-  const published = new Set(scenarios.map(scenario => scenario.id));
-  const covered = preferenceScenarios.filter(scenario => scenario.slotId in pairs);
+  const covered = scenarios.filter(scenario => scenario.slotId in pairs);
   expect(covered).toHaveLength(15);
   expect(covered.map(scenario => scenario.id)).toContain('preference-slot04-work');
   expect(new Set(covered.map(scenario => scenario.id)).size).toBe(15);
@@ -26,7 +25,6 @@ test('第 1–5 組各恰有三個五段偏向情境，沿用原配對，生活�
     expect(new Set(variants.map(scenario => scenario.title)).size, slotId).toBe(3);
     expect(new Set(variants.map(scenario => scenario.setup)).size, slotId).toBe(3);
     for (const scenario of variants) {
-      expect(published.has(scenario.id), scenario.id).toBe(false);
       expect([scenario.kind, ...scenario.pair], scenario.id).toEqual(['preference', ...pair]);
       expect(scenario.options.map(option => option.valueId), scenario.id).toEqual(pair);
       expect([scenario.title, scenario.setup, scenario.domain].every(filled), scenario.id).toBe(true);
@@ -36,7 +34,7 @@ test('第 1–5 組各恰有三個五段偏向情境，沿用原配對，生活�
   }
 });
 
-// Preview titles of slots 1–5 by variant position; scenarioRandom 0, 0.4 and 0.8 draw the first, second and third variant.
+// Titles of slots 1–5 by variant position; scenarioRandom 0, 0.4 and 0.8 draw the first, second and third variant.
 const slotTitles = [
   ['固定薪水，還是自己接案？', '這次租約，續住還是搬家？', '五天的旅程，誰來排？'],
   ['這份提案，用誰的方法？', '週末的打掃，照誰的時間？', '這週的共學，讀哪一章？'],
@@ -44,26 +42,14 @@ const slotTitles = [
   ['下週，照原計畫嗎？', '這次週末，要換條路嗎？', '晚上的課，選哪一門？'],
   ['同一天，兩場活動。', '這次連假，怎麼過？', '今年冬至，煮什麼？'],
 ] as const;
-type Lean = '強烈偏向 A' | '稍微偏向 A' | '兩者相當' | '稍微偏向 B' | '強烈偏向 B';
-const confirm = (page: Page) => page.getByRole('button', { name: '確認答案', exact: true });
-const lean = (page: Page, name: Lean) => page.getByRole('radio', { name, exact: true });
 const heading = (page: Page, title: string) => page.getByRole('heading', { name: title, exact: true });
-const evidence = (page: Page, title: string): Locator => page.getByRole('article').filter({ has: heading(page, title) });
-async function scoreRows(page: Page) {
-  const column = page.locator('.conclusion-columns > div').filter({ has: page.getByRole('heading', { name: '情境中的偏向分數' }) });
-  return Promise.all((await column.getByRole('listitem').all()).map(async item => {
-    const [position, words, score] = await Promise.all(['span', 'strong', 'small'].map(tag => item.locator(tag).textContent()));
-    return `${position}｜${words!.split('、').sort().join('、')}｜${score}`;
-  }));
-}
-const row = (position: string, words: string[], score: string) => `${position}｜${[...words].sort().join('、')}｜${score}`;
 
 for (const [position, scenarioRandom] of [0, 0.4, 0.8].entries()) {
   test.describe(`第 ${position + 1} 個情境變體`, () => {
     test.use({ scenarioRandom });
     test('第 1–5 組抽到的變體可確認、續答、修改，逐題依據與偏向分數跟著最新確認答案', async ({ page }) => {
       const titles = slotTitles.map(variants => variants[position]);
-      await page.goto('/?experience=preference');
+      await page.goto('/');
       // First act order: 自主, 探索刺激, 享受生活, 成就, 主導權, 安全穩定, 遵守規範, 傳承, 照顧身邊的人, 普遍關懷.
       await classifyAndRankValues(page);
       await page.getByRole('button', { name: '進入情境中的取捨' }).click();

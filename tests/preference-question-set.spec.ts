@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues } from './support/experience';
-import { preferenceScenarios } from '../src/scenarios/preference';
+import { scenarios } from '../src/scenarios';
 
 // Fifteen slots and their value pairs from docs/scenario-feature-spec.md, written out independently of the catalog.
 const blueprint: Record<string, [string, string]> = {
@@ -13,8 +13,8 @@ const blueprint: Record<string, [string, string]> = {
 };
 const slots = Object.keys(blueprint);
 /** The title of a slot's variant in authored order; the titles only identify what the page shows, they do not pick it. */
-const variant = (slot: string, index: number) => preferenceScenarios.filter(scenario => scenario.slotId === slot)[index].title;
-const slotOf = (title: string) => preferenceScenarios.find(scenario => scenario.title === title)?.slotId;
+const variant = (slot: string, index: number) => scenarios.filter(scenario => scenario.slotId === slot)[index].title;
+const slotOf = (title: string) => scenarios.find(scenario => scenario.title === title)?.slotId;
 
 const heading = (page: Page) => page.locator('.scenario-card h1');
 const resultHeading = (page: Page) => page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
@@ -48,16 +48,16 @@ async function questionLink(page: Page) {
 
 // The fixture fixes Math.random at 0, so any free draw takes the first candidate; which variants are candidates is what these tests control.
 test('完整題庫 45 題：每槽三個情境變體，每輪 15 題每槽一道，核心價值各出現三次', async ({ page }) => {
-  expect(preferenceScenarios).toHaveLength(45);
+  expect(scenarios).toHaveLength(45);
   for (const [slot, pair] of Object.entries(blueprint)) {
-    const variants = preferenceScenarios.filter(scenario => scenario.slotId === slot);
+    const variants = scenarios.filter(scenario => scenario.slotId === slot);
     expect(variants.map(scenario => scenario.pair), slot).toEqual([pair, pair, pair]);
   }
   const appearances = new Map<string, number>();
   for (const value of Object.values(blueprint).flat()) appearances.set(value, (appearances.get(value) ?? 0) + 1);
   expect([...appearances.values()]).toEqual(Array(10).fill(3));
 
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await enterScenarios(page);
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
   const titles = await answer(page);
@@ -66,7 +66,7 @@ test('完整題庫 45 題：每槽三個情境變體，每輪 15 題每槽一道
 
 test('一般重測每槽先出未看過的變體，同槽三個都看過才重複', async ({ page }) => {
   const early = ['slot01', 'slot02', 'slot03', 'slot04'];
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await enterScenarios(page);
   // Three questions answered and the fourth shown: only slots 1–4 have been seen before leaving.
   expect(await answer(page, 3)).toEqual([variant('slot01', 0), variant('slot02', 0), variant('slot03', 0)]);
@@ -86,7 +86,7 @@ test('一般重測每槽先出未看過的變體，同槽三個都看過才重�
 });
 
 test('返回、重新整理與續答都維持同一份題目與順序，只保存已確認答案', async ({ page }) => {
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await enterScenarios(page);
   const link = await questionLink(page);
   const [first, second] = await answer(page, 2);
@@ -109,9 +109,9 @@ test('返回、重新整理與續答都維持同一份題目與順序，只保�
 });
 
 test('題目連結在另一個瀏覽器重現題目與順序、不含答案，並優先於收件者的已看紀錄', async ({ page, browser }) => {
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   const link = await questionLink(page);
-  expect([...new URL(link).searchParams.keys()].sort()).toEqual(['experience', 'seed', 'v']);
+  expect([...new URL(link).searchParams.keys()].sort()).toEqual(['seed', 'v']);
   await enterScenarios(page);
   const shared = await answer(page);
   expect(await questionLink(page)).toBe(link);
@@ -120,7 +120,7 @@ test('題目連結在另一個瀏覽器重現題目與順序、不含答案，�
   const recipient = await context.newPage();
   await recipient.addInitScript(() => { Math.random = () => 0; });
   // The recipient has already seen the shared variants of slots 1–4, so a free draw there would bring new ones.
-  await recipient.goto('/?experience=preference');
+  await recipient.goto('/');
   await enterScenarios(recipient);
   await answer(recipient, 3);
   await recipient.reload();
@@ -138,7 +138,7 @@ test('題目連結在另一個瀏覽器重現題目與順序、不含答案，�
 test('舊版留下的未完成作答提示重新開始，不會沿用或換算', async ({ page }) => {
   // An opaque stand-in for a record the earlier question bank left; it does not mirror any session format.
   await page.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('polarstar.session.v1', JSON.stringify({ writtenBy: 'earlier question bank' })); sessionStorage.setItem('seeded', '1'); } });
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await expect(page.getByRole('status')).toContainText('上次的作答來自舊版題目，不能接著做，也不會換算成新版答案。請重新開始。');
   await expect(page.getByRole('button', { name: '繼續上次作答' })).toHaveCount(0);
   await page.getByRole('button', { name: '重新開始', exact: true }).click();
@@ -149,12 +149,12 @@ test('舊版留下的未完成作答提示重新開始，不會沿用或換算',
 });
 
 test('不相容的舊題目連結說明原因，並提供新版測驗入口', async ({ page }) => {
-  await page.goto('/?experience=preference&seed=p.1.0.1.0.1.0.1.0.1.0.1.0.1.0.1&v=cearlier');
+  await page.goto('/?seed=p.1.0.1.0.1.0.1.0.1.0.1.0.1.0.1&v=cearlier');
   await expect(page.getByRole('status')).toContainText('這份題目連結建立時用的題庫和目前不同，題目已經改過，無法重現原本的題組。');
   await expect(page.getByRole('button', { name: '開始這次反思' })).toBeDisabled();
   await expect(page.getByRole('button', { name: '分享這份題目', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '開始新版測驗' }).click();
-  expect(new URL(page.url()).search).toBe('?experience=preference');
+  expect(new URL(page.url()).search).toBe('');
   await enterScenarios(page);
   expect(await answer(page, 1)).toEqual([variant('slot01', 0)]);
 });
@@ -167,7 +167,7 @@ test('已看紀錄無法讀取時仍能完成作答，並告知無法保存', as
       return getItem.call(this, key);
     };
   });
-  await page.goto('/?experience=preference');
+  await page.goto('/');
   await expect(page.getByRole('status')).toContainText('目前無法讀取本機紀錄');
   await enterScenarios(page);
   await answer(page);

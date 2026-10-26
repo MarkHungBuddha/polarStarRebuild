@@ -1,8 +1,8 @@
 import { baseValues } from './data';
-import { catalogVersion, questionPlan, selectQuestions } from './questionPlan';
-import { act1TopThree, byPosition, scenarioTallies, scenarioTopThree } from './valueRanking';
-import { isPreferenceSession, preferenceScores, preferenceTopThree } from './preferenceRanking';
-import { preferencePreviewCatalog, preferencePreviewPlan, preferencePreviewVersion } from './preferencePreview';
+import { catalog as currentCatalog } from './questionCatalog';
+import { questionPlan, selectQuestions } from './questionPlan';
+import { act1TopThree, byPosition } from './valueRanking';
+import { preferenceScores, preferenceTopThree } from './preferenceRanking';
 import type { Scenario, Session } from './types';
 
 /** A legacy second-act row: the values sharing one position, with the leans and leaning appearances they share. */
@@ -17,7 +17,10 @@ interface SharedConclusion {
   catalog: string;
   plan: string[];
 }
-/** Format version 1, legacy scoring: second-act rows count leans. It is shown as shared and never turned into scores. */
+/**
+ * Format version 1, legacy scoring from the mixed-mechanism bank: second-act rows count leans. The site no longer writes it;
+ * a published link is shown as shared and never turned into scores.
+ */
 export interface LegacySharedResult extends SharedConclusion { scoring: 'legacy-count'; chosen: SharedChosenRow[] }
 /** Format version 2, preference scoring (2／1／0 per confirmed answer): no rows means every score was zero. */
 export interface PreferenceSharedResult extends SharedConclusion { scoring: 'preference-score'; scored: SharedScoreRow[] }
@@ -37,12 +40,9 @@ export function withPositions<T extends { ids: readonly string[] }>(rows: readon
   });
 }
 
-/**
- * A readable result offers its original question set when `questions` holds it: from today's catalog, or with `preview`
- * from the preference preview's catalog (PREVIEW ONLY until #56).
- */
+/** A readable result offers its original question set when `questions` holds it, which only today's catalog can reproduce. */
 export type ResultLinkOutcome =
-  | { kind: 'result'; result: SharedResult; questions?: Scenario[]; preview?: boolean }
+  | { kind: 'result'; result: SharedResult; questions?: Scenario[] }
   | { kind: 'corrupt' }
   | { kind: 'unsupported' };
 
@@ -52,39 +52,24 @@ const positiveBase36 = /^[1-9a-z][0-9a-z]*$/;
 const base36 = /^(0|[1-9a-z][0-9a-z]*)$/;
 
 /** The session's public conclusion, with the custom values the sharer chose to include (already in first-act order). */
-export function sharedResultOf(session: Session, custom: readonly string[]): SharedResult | undefined {
-  const stated = byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id));
-  if (isPreferenceSession(session)) {
-    // PREVIEW ONLY (until #56): every preference session is the preview run, so its plan is read against the preview catalog.
-    const plan = preferencePreviewPlan(session.scenarios);
-    if (!plan) return undefined;
-    const scored = byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ ids: row.items.map(item => item.value.id), score: row.items[0].score }));
-    return { scoring: 'preference-score', stated, scored, custom: [...custom], catalog: preferencePreviewVersion, plan };
-  }
-  // A mixed session has no published scoring; preference scores must never be encoded as legacy counts.
-  if (session.scenarios.some(scenario => scenario.kind === 'preference')) return undefined;
+export function sharedResultOf(session: Session, custom: readonly string[]): PreferenceSharedResult | undefined {
   const plan = questionPlan(session.scenarios);
   if (!plan) return undefined;
   return {
-    scoring: 'legacy-count',
-    stated,
-    chosen: byPosition(scenarioTopThree(scenarioTallies(session))).map(row => ({ ids: row.items.map(tally => tally.value.id), chosen: row.items[0].chosen, directional: row.items[0].directional })),
-    catalog: catalogVersion,
+    scoring: 'preference-score',
+    stated: byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id)),
+    scored: byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ ids: row.items.map(item => item.value.id), score: row.items[0].score })),
     custom: [...custom],
+    catalog: currentCatalog.version,
     plan,
   };
 }
 
-/**
- * Format version 1 (legacy counts): `r=1.<first act>.<N>-<M>-<id>….<custom values>.<v>.<plan>`;
- * format version 2 (preference scores): `r=2.<first act>.<score>-<id>….<custom values>.<v>.<plan>` (docs/result-share-spec.md).
- */
-export function resultLink(result: SharedResult, location: Pick<Location, 'origin' | 'pathname'>): string {
+/** Format version 2 (preference scores): `r=2.<first act>.<score>-<id>….<custom values>.<v>.<plan>` (docs/result-share-spec.md). */
+export function resultLink(result: PreferenceSharedResult, location: Pick<Location, 'origin' | 'pathname'>): string {
   const stated = result.stated.map(row => row.join('-')).join('~');
-  const [version, second] = result.scoring === 'legacy-count'
-    ? ['1', result.chosen.map(row => [row.chosen.toString(36), row.directional.toString(36), ...row.ids].join('-')).join('~')]
-    : ['2', result.scored.map(row => [row.score.toString(36), ...row.ids].join('-')).join('~')];
-  return `${new URL(location.pathname, location.origin).href}#r=${version}.${stated}.${second}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
+  const scored = result.scored.map(row => [row.score.toString(36), ...row.ids].join('-')).join('~');
+  return `${new URL(location.pathname, location.origin).href}#r=2.${stated}.${scored}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
 }
 
 function encodeCustom(word: string): string {
@@ -162,9 +147,8 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   const conclusion = { stated, custom, catalog, plan };
   const result = version === '1' ? readChosen(secondField, conclusion) : readScored(secondField, conclusion);
   if (!result) return { kind: 'corrupt' };
-  // PREVIEW ONLY (until #56): a preference result from the preview is answered again through the preview entry, never under today's catalog.
-  const preview = result.scoring === 'preference-score' && catalog === preferencePreviewVersion;
-  if (!preview && catalog !== catalogVersion) return { kind: 'result', result };
-  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`, preview ? preferencePreviewCatalog : undefined), ...(preview && { preview }) }; }
+  // Only a preference result made with today's catalog can be answered again; a version 1 result's questions are gone.
+  if (result.scoring !== 'preference-score' || catalog !== currentCatalog.version) return { kind: 'result', result };
+  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`) }; }
   catch { return { kind: 'corrupt' }; }
 }
