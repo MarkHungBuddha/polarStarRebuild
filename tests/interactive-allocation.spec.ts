@@ -7,7 +7,7 @@ const evenings = '六個晚上，留給誰？';
 
 test('開發預覽：分配題從第一幕走到結果，分得多的一側記 1 次並與第一幕並列', async ({ page }) => {
   await startInteractiveScenarios(page);
-  expect(await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } })).toEqual([evenings]);
+  expect(await answerInteractiveByTitle(page, { [evenings]: { allocate: [4, 2] } })).toContain(evenings);
   await expect(resultHeading(page)).toBeVisible();
   await expect(page.getByRole('heading', { name: '你最重視的', exact: true })).toBeVisible();
   expect(await priorityRows(page)).toEqual(['第 1｜自主｜1 次／3 題']);
@@ -52,7 +52,8 @@ test('只用鍵盤也能完成分配並確認', async ({ page }) => {
   }
   await confirmButton(page).focus();
   await page.keyboard.press('Enter');
-  await expect(resultHeading(page)).toBeVisible();
+  await expect(page.getByRole('heading', { name: evenings, exact: true })).toHaveCount(0);
+  await answerInteractiveByTitle(page);
   expect(await priorityRows(page)).toEqual(['第 1｜自主｜1 次／3 題']);
 });
 

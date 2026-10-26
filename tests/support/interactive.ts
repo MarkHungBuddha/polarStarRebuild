@@ -7,13 +7,16 @@ export { confirmButton, questionHeading, resultHeading };
 /**
  * One interactive decision, applied to whichever question carries the title it is listed under.
  * `{ allocate: [a, b] }` puts a cells on side A and b on side B; '平均分配' gives each side half the cells.
- * '選 A'／'選 B' picks the first or second card of a 選方案 question; '目前無法決定' presses the button every question offers.
- * Later interactions add their own members here (維持初始安排) so every spec keeps answering by title.
+ * '選 A'／'選 B' picks the first or second card of a 選方案 question; '維持初始安排' presses 維持這個安排 on a question that opens
+ * on a current arrangement; '目前無法決定' presses the button every question offers.
  */
-export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配' | '選 A' | '選 B' | '目前無法決定';
+export type InteractiveDecision = { allocate: readonly [number, number] } | '平均分配' | '選 A' | '選 B' | '維持初始安排' | '目前無法決定';
 
 /** The 目前無法決定 button every interactive question offers; it still needs 確認答案. */
 export const undecidedButton = (page: Page) => page.getByRole('button', { name: '目前無法決定', exact: true });
+
+/** The 維持這個安排 button an adjust question offers; it still needs 確認答案. */
+export const keepButton = (page: Page) => page.getByRole('button', { name: '維持這個安排', exact: true });
 
 /** The development preview of the interactive second act; it only exists on the dev server. */
 export const interactivePreviewPath = '/?preview=interactive';
@@ -34,6 +37,7 @@ export const choiceCards = (page: Page) => page.locator('.choice-cards').getByRo
 /** Sets the current question to `decision` without confirming it. */
 export async function applyDecision(page: Page, decision: InteractiveDecision) {
   if (decision === '目前無法決定') { await undecidedButton(page).click(); return; }
+  if (decision === '維持初始安排') { await keepButton(page).click(); return; }
   if (decision === '選 A' || decision === '選 B') {
     await choiceCards(page).nth(decision === '選 A' ? 0 : 1).check();
     return;

@@ -3,8 +3,9 @@ import type { Screen, ValueId, ValueItem } from './types';
 /*
  * The interactive second act's question and answer contracts (docs/interactive-scenario-spec.md, ADR 0007).
  * Each question declares one interaction; each confirmed answer is one of a few shapes whose direction needs no guessing
- * (interactiveAnswers.ts). Allocation (#61), 選方案 (#62) and 目前無法決定 (#64) exist so far: 初始安排 (#63) adds its members
- * to `Interaction` and `InteractiveAnswer`; every consumer switches on `kind` (`decisionText` included).
+ * (interactiveAnswers.ts). Interactions: allocation (#61), 從初始安排調整 (#63) and 選方案 (#62). Answers: one per interaction,
+ * plus 目前無法決定 (#64), which any question accepts. A new kind adds its members to `Interaction` and `InteractiveAnswer`;
+ * every consumer switches on `kind` (`answerDirection`, `decisionText`, `isAnswerTo`, the question dispatch in InteractivePreview.tsx).
  */
 
 /** One side of an allocation: what the cells given to it are spent on. Side A (first) and B lean to the slot's pair in order. */
@@ -21,6 +22,15 @@ export interface AllocationInteraction {
   sides: readonly [AllocationSide, AllocationSide];
 }
 
+/**
+ * 從初始安排調整: an allocation whose situation already has a current arrangement (現況), which may be uneven. `initial` names the
+ * side each cell is on now (0 = A, 1 = B), one entry per cell. The question opens on it; keeping it is an explicit choice.
+ */
+export interface AdjustInteraction extends Omit<AllocationInteraction, 'kind'> {
+  kind: 'adjust';
+  initial: readonly (0 | 1)[];
+}
+
 /** One card of a 選方案 question: what the plan does and what it costs. Option A (first) and B lean to the slot's pair in order. */
 export interface ChoiceOption { id: string; label: string; content: string; cost: string; valueId: ValueId }
 
@@ -30,7 +40,7 @@ export interface ChoiceInteraction {
   options: readonly [ChoiceOption, ChoiceOption];
 }
 
-export type Interaction = AllocationInteraction | ChoiceInteraction;
+export type Interaction = AllocationInteraction | AdjustInteraction | ChoiceInteraction;
 
 /** An interactive question variant. Slot, pair and three variants per slot work as in the five-step bank; `interaction` replaces its `kind: 'preference'`. */
 export interface InteractiveScenario {
@@ -49,6 +59,13 @@ export interface InteractiveScenario {
  */
 export interface AllocationAnswer { kind: 'allocate'; variantId: string; counts: readonly [number, number] }
 
+/**
+ * A confirmed answer to an adjust question: the counts it ends on, which give its direction as for an allocation. `kept` records
+ * that it was confirmed through 維持這個安排 with no cell changed afterwards; adjusting and changing back to the initial counts
+ * leans the same way but is not kept.
+ */
+export interface AdjustAnswer { kind: 'adjust'; variantId: string; counts: readonly [number, number]; kept: boolean }
+
 /** A confirmed 選方案 answer: the id of the card picked, which leans to that card's value. */
 export interface ChoiceAnswer { kind: 'choose'; variantId: string; optionId: string }
 
@@ -56,7 +73,7 @@ export interface ChoiceAnswer { kind: 'choose'; variantId: string; optionId: str
 export interface UndecidedAnswer { kind: 'undecided'; variantId: string }
 
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
-export type InteractiveAnswer = AllocationAnswer | ChoiceAnswer | UndecidedAnswer;
+export type InteractiveAnswer = AllocationAnswer | AdjustAnswer | ChoiceAnswer | UndecidedAnswer;
 
 /**
  * The optional 反思筆記 after the result: the question the user picked to look back on and what they wrote, possibly nothing.
