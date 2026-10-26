@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DecidedCount, priorityColumnText } from './InteractiveResult';
+import { countingRules, DecidedCount, priorityColumnText } from './InteractiveResult';
 import { clearInteractiveSession } from './interactiveSessionStorage';
 import { PageHeader } from './PageHeader';
 import { questionShareLink } from './interactiveQuestionLink';
@@ -18,8 +18,8 @@ import './techo-result.css';
 /** How a version 2 result was scored, as the five-step result said it. */
 const preferenceScoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這只是計分方式，2 分不代表偏好多一倍，也不是百分比。';
 
-/** How a version 3 result was put together, in the words of the sharer's own 結果怎麼整理. */
-const priorityCountingNote = '每題最多讓一個價值多 1 次：分得多或選擇的一側記 1 次，平均分配和目前無法決定都不加次數。每個價值這一輪出現在 3 題，最多 3 次；同次數並列。次數只描述這一輪情境中的選擇，不代表偏好強度。';
+/** How a version 3 result was put together: the counting rules of the sharer's own 結果怎麼整理 (the link has no per-question comparison). */
+const priorityCountingNote = [countingRules.counted, countingRules.undirected, countingRules.perValue, countingRules.scope].join('');
 
 /** The second column and its labels for each format version; versions never share their rows or wording. */
 function SharedConclusion({ result }: { result: SharedResult }) {

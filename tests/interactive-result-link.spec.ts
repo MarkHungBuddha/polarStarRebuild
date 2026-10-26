@@ -54,6 +54,8 @@ test('互動定版範例連結的並列、無排名、第一幕並列和自訂�
     await expect(page.getByText(link.decided, { exact: true })).toBeVisible();
     await expect(page.getByText(versionLabel)).toBeVisible();
     await expect(page.getByText(/平均分配和目前無法決定都不加次數/)).toBeVisible();
+    // The same counting rule the sharer's 結果怎麼整理 states.
+    await expect(page.getByText(/每題最多讓一個價值多 1 次：選定的方案，或分得較多的一側，記 1 次；分配差距不加權。/)).toBeVisible();
     await expect(page.getByText(/偏向分數|舊版計分/)).toHaveCount(0);
     const custom = page.getByRole('heading', { name: '分享者的自訂價值' }).locator('..').getByRole('listitem');
     await expect(custom).toHaveText('custom' in link ? link.custom : []);

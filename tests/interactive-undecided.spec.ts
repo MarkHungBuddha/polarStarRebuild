@@ -50,5 +50,5 @@ test('結果一律顯示明確決策題數；平均分配與目前無法決定�
   await editQuestion(page, trip);
   await answerInteractiveByTitle(page, { [trip]: '平均分配' });
   await expect(page.getByText(`明確決策 ${total - 1} / ${total} 題`, { exact: true })).toBeVisible();
-  await expect(page.getByText('平均分配和目前無法決定的 1 題沒有方向，不計入優先保留次數。')).toBeVisible();
+  await expect(page.getByText('平均分配或「目前無法決定」的 1 題沒有方向，不計入優先保留次數。')).toBeVisible();
 });

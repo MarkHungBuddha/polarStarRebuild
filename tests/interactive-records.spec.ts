@@ -61,6 +61,7 @@ test('整理規則收在可展開的「結果怎麼整理」，結果用語不�
   await expect(rule).toBeHidden();
   await page.getByText('結果怎麼整理', { exact: true }).click();
   await expect(rule).toBeVisible();
+  await expect(page.getByText('每題最多讓一個價值多 1 次：選定的方案，或分得較多的一側，記 1 次；分配差距不加權。', { exact: true })).toBeVisible();
   await page.getByText(`展開全部 ${titles.length} 題的決策`, { exact: true }).click();
   await expect(page.locator('.result-page')).not.toContainText(/言行|矛盾|真實行為/);
 });

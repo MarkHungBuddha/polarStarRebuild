@@ -4,7 +4,7 @@ import type { InteractiveSession, Reflection } from './interactiveTypes';
 import { InteractiveShare } from './InteractiveShare';
 import { PageHeader } from './PageHeader';
 import { ReflectionStep } from './ReflectionStep';
-import { decidedCount, fullListCountText, priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
+import { appearancesPerValue, decidedCount, fullListCountText, priorityCounts, priorityCountText, priorityTopThree } from './priorityRanking';
 import { act1TopThree, byPosition } from './valueRanking';
 import { ConclusionColumns } from './ValueConclusion';
 import './techo-result.css';
@@ -12,13 +12,26 @@ import './techo-result.css';
 /** What the second column says above 優先保留次數, and when no confirmed answer has a direction (no ranking then). */
 export const priorityColumnText = { caption: '第二幕的優先保留次數', empty: '這次沒有方向明確的決策，不產生第二幕排名。' };
 
-/** 明確決策 N / M 題, and why the rest add no count; the sharer's result and a version 3 result link show it the same way. */
+/**
+ * 明確決策 N / M 題, and why the rest add no count; the sharer's result and a version 3 result link show it the same way.
+ * The rest are exactly the even splits and 目前無法決定: the result opens, and a result link is made, only once every question has
+ * a confirmed answer, and every confirmed answer either has a direction or is one of those two.
+ */
 export function DecidedCount({ decided, total }: { decided: number; total: number }) {
   return <>
     <p className="decided-count"><strong>明確決策 {decided} / {total} 題</strong></p>
-    {decided < total && <p className="caption">平均分配和目前無法決定的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
+    {decided < total && <p className="caption">平均分配或「目前無法決定」的 {total - decided} 題沒有方向，不計入優先保留次數。</p>}
   </>;
 }
+
+/** 結果怎麼整理, one rule per entry; a version 3 result link states the rules about counting in the same words. */
+export const countingRules = {
+  counted: '每題最多讓一個價值多 1 次：選定的方案，或分得較多的一側，記 1 次；分配差距不加權。',
+  undirected: '平均分配和目前無法決定都不加次數；明確決策題數只算有方向的題目。',
+  perValue: `每個價值這一輪出現在 ${appearancesPerValue} 題，最多 ${appearancesPerValue} 次。同次數並列，不用第一幕排序拆開；0 次標成「本輪未優先保留」，不表示不重要。`,
+  comparison: '逐題對照只看方向：這題保留的價值在第一幕排得比較前面，就是一致，反之是不同；平均分配和目前無法決定標成無法對照。自訂價值不參與比較。',
+  scope: '次數只描述這一輪情境中的選擇，不代表偏好強度，也不是完整或穩定的價值排序。',
+};
 
 /**
  * The interactive result: the first act's top three beside the values kept first most often, 明確決策 N / 15 題, every core value's
@@ -62,13 +75,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
         <li key={value.id}><span>{value.word}</span><b>{fullListCountText(count)}</b></li>)}</ul>
     </section>
     <details className="counting-rules"><summary>結果怎麼整理</summary>
-      <ul>
-        <li>每題最多讓一個價值多 1 次：分得多的一側記 1 次，分配差距不加權。</li>
-        <li>平均分配和目前無法決定都不加次數，也不和原先排序比較；明確決策題數只算有方向的題目。</li>
-        <li>每個價值這一輪出現在 3 題，最多 3 次。同次數並列，不用第一幕排序拆開；0 次標成「本輪未優先保留」，不表示不重要。</li>
-        <li>逐題對照只看方向：這題保留的價值在第一幕排得比較前面，就是一致，反之是不同。自訂價值不參與比較。</li>
-        <li>次數只描述這一輪情境中的選擇，不代表偏好強度，也不是完整或穩定的價值排序。</li>
-      </ul>
+      <ul>{Object.values(countingRules).map(rule => <li key={rule}>{rule}</li>)}</ul>
     </details>
     <p className="sticky-note" role="note">這些次數和名次只用來回顧這一輪的選擇，不是測驗成績，也不是人格判定。題目與解讀尚未驗證。</p>
     <ReflectionStep session={session} onChange={onReflect} />
