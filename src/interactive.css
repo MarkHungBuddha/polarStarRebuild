@@ -45,3 +45,9 @@
 @media (max-width: 600px) {
   .choice-cards { grid-template-columns: minmax(0, 1fr); }
 }
+.reflection-step { margin: 40px 0; padding-top: 20px; border-top: 1.5px dashed var(--rule); }
+.reflection-step label { display: grid; gap: 8px; margin: 16px 0 0; color: var(--ink); font-weight: 700; }
+.reflection-card { display: grid; gap: 12px; margin: 20px 0 0; overflow-wrap: anywhere; text-wrap: pretty; }
+.reflection-card .evidence-label { justify-self: start; }
+.reflection-prompts { margin: 0; padding-left: 20px; color: var(--body); line-height: 1.8; }
+.reflection-card textarea { min-height: 96px; padding: 10px; border: 1px solid var(--opt-border); border-radius: var(--radius-control); background: var(--paper); color: var(--text); font: 400 16px/1.7 var(--font-sans); resize: vertical; }
