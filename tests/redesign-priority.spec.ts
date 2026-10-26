@@ -4,7 +4,7 @@ import { expectNoHorizontalScroll, expectTouchTargets } from './support/experien
 import { dragWithTouch } from './support/object-drag';
 
 test('排序跨過容量界線後，確認及回顧保留完整先後', async ({ page }) => {
-  await startRedesign(page, 'redesign-slot05-priority');
+  await startRedesign(page, 'redesign-slot06-priority');
   await expect(page.getByRole('heading', { name: '只有三次空檔，哪些先留下？' })).toBeVisible();
   await expect(page.getByRole('button', { name: '確認答案', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '將重拍攝影作品往前移' }).click();
@@ -23,7 +23,7 @@ test('排序跨過容量界線後，確認及回顧保留完整先後', async ({
 });
 
 test('維持、撤回、重設和無法決定都須確認，首尾有移動界線', async ({ page }) => {
-  await startRedesign(page, 'redesign-slot05-priority');
+  await startRedesign(page, 'redesign-slot06-priority');
   await expect(page.getByRole('button', { name: '將試一堂木工課往前移' })).toBeDisabled();
   await expect(page.getByRole('button', { name: '將完成攝影作品說明往後移' })).toBeDisabled();
   await page.getByRole('button', { name: '維持初始順序' }).click();
@@ -52,7 +52,7 @@ test('維持、撤回、重設和無法決定都須確認，首尾有移動界�
 });
 
 test('滑鼠拖曳和先選再放保持相同先後，無效放置不改安排', async ({ page }) => {
-  await startRedesign(page, 'redesign-slot05-priority');
+  await startRedesign(page, 'redesign-slot06-priority');
   const photo = page.getByRole('button', { name: /4\. 重拍攝影作品/ });
   const sound = page.getByRole('button', { name: /3\. 到街上採集聲音/ });
   await photo.dragTo(sound);
@@ -68,7 +68,7 @@ test('滑鼠拖曳和先選再放保持相同先後，無效放置不改安排',
 test.describe('排序觸控', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 1600 } });
   test('實際觸控跨過容量界線，窄螢幕深淺色均可操作', async ({ page }) => {
-    await startRedesign(page, 'redesign-slot05-priority');
+    await startRedesign(page, 'redesign-slot06-priority');
     await dragWithTouch(page, page.getByRole('button', { name: /4\. 重拍攝影作品/ }), page.getByRole('button', { name: /3\. 到街上採集聲音/ }));
     await expect(page.getByRole('region', { name: '本月保留' })).toContainText('重拍攝影作品');
     for (const width of [320, 390, 1280]) {
