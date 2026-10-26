@@ -11,7 +11,9 @@ test('收件者打開結果連結，看到分享者的兩份前三名和解讀�
   const link = resultLinksV1.general;
   await page.goto('/' + link.fragment);
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
-  await expect(page.getByText('這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。')).toBeVisible();
+  // Version 1's question bank is gone, so the header never promises the same questions.
+  await expect(page.getByText('這是分享者自己作答的結果。你可以閱讀，也可以用目前的題目自己作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。')).toBeVisible();
+  await expect(page.getByText(/同一份題目作答/)).toHaveCount(0);
   await expect(statedColumn(page).getByRole('listitem')).toHaveText(link.stated);
   await expect(chosenColumn(page).getByRole('listitem')).toHaveText(link.chosen);
   await expect(page.getByText('這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值在一次作答中只出現在三題，改一題就可能換名次。')).toBeVisible();

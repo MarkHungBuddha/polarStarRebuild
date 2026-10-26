@@ -45,7 +45,8 @@ function SharedConclusion({ result }: { result: SharedResult }) {
 
 function SharedResultPage({ result, questionLink }: { result: SharedResult; questionLink?: string }) {
   return <section className="result-page result-cover">
-    <PageHeader eyebrow="分享給你的反思 · 一頁摘要" title="這一次，分享者的選擇。" description="這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。" />
+    {/* Only a link whose questions today's bank still reproduces promises the same questions. */}
+    <PageHeader eyebrow="分享給你的反思 · 一頁摘要" title="這一次，分享者的選擇。" description={`這是分享者自己作答的結果。你可以閱讀，也可以用${questionLink ? '同一份題目' : '目前的題目自己'}作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。`} />
     <section className="conclusion paper-card"><SharedConclusion result={result} /></section>
     {result.custom.length > 0 && <section className="custom-results"><h2>分享者的自訂價值</h2><p>由分享者自行加入，沒有納入兩份前三名。</p><ul>{result.custom.map((word, index) => <li key={index}>{word}</li>)}</ul></section>}
     <p className="sticky-note" role="note">這是分享者在假設情境下的自我回報，不是人格判定，也不代表實際行為。每個價值在一次作答中只出現在三題，改一題就可能換名次。</p>

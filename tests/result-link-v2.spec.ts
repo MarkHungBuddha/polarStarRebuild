@@ -43,6 +43,8 @@ test('五段偏向題已移除，格式版本 2 的連結不再提供用同一�
     await page.goto('/' + fragment);
     await expect(scoreColumn(page).getByRole('listitem')).toHaveText(resultLinksV2.fixedFlow.scored);
     await expect(page.getByRole('button', { name: '用同一份題目作答' })).toHaveCount(0);
+    await expect(page.getByText('這是分享者自己作答的結果。你可以閱讀，也可以用目前的題目自己作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。')).toBeVisible();
+    await expect(page.getByText(/同一份題目作答/)).toHaveCount(0);
     await expect(page.getByText('這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。')).toBeVisible();
   }
   await page.getByRole('button', { name: '用目前題目開始' }).click();
@@ -61,6 +63,7 @@ test('打開格式版本 2 的結果連結不讀也不寫本機的作答紀錄',
   await expect(scoreColumn(page).getByRole('listitem')).toHaveText(resultLinksV2.fixedFlow.scored);
   expect(await storageSnapshot(page)).toBe(before);
   await page.goto('/');
+  await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
 });
 

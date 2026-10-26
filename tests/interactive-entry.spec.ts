@@ -123,6 +123,7 @@ test('收件者用今天題庫的互動結果連結，可以用同一份題目�
   const fresh = await context.newPage();
   await fresh.addInitScript(() => { Math.random = () => 0.99; });
   await fresh.goto(link);
+  await expect(fresh.getByText('這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。')).toBeVisible();
   await fresh.getByRole('button', { name: '用同一份題目作答' }).click();
   await expect(fresh.getByRole('heading', { name: '這一次，分享者的選擇。' })).toHaveCount(0);
   expect(await roundTitles(fresh)).toEqual(titles);

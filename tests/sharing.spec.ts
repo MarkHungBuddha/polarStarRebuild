@@ -1,6 +1,6 @@
 import { expect, test } from './support/fixtures';
 import { classifyAndRankValues } from './support/experience';
-import { confirmDecision, questionHeading } from './support/interactive';
+import { confirmDecision, questionHeading, reopenAndContinue } from './support/interactive';
 
 test('照題目連結作答到一半重新開啟，仍續答同一份已確認進度', async ({ page }) => {
   await page.goto('/');
@@ -11,7 +11,7 @@ test('照題目連結作答到一半重新開啟，仍續答同一份已確認�
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
   await confirmDecision(page, '目前無法決定');
   const nextTitle = await questionHeading(page).textContent();
-  await page.reload();
+  await reopenAndContinue(page);
   await expect(questionHeading(page)).toHaveText(nextTitle!);
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
 });
