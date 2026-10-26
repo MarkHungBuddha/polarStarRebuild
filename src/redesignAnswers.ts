@@ -6,6 +6,7 @@ import { linkedArrangement } from './linkedArrangement';
 
 /** Counts only a semantically comparable allocation; never infer direction from distance or text. */
 export function redesignDirection({ interaction }: InteractiveScenario, answer: RedesignAnswer): ValueId | undefined {
+  if (answer.kind === 'scene' && interaction.kind === 'scene') return interaction.locations.find(location => location.id === answer.locationId)?.valueId;
   if (answer.kind === 'priority' && interaction.kind === 'priority' && interaction.resourceUnit) {
     const kept = answer.order.slice(0, interaction.capacity).map(id => interaction.items.find(item => item.id === id)?.valueId);
     if (kept.some(value => value === undefined)) return undefined;
@@ -23,6 +24,10 @@ export function redesignDirection({ interaction }: InteractiveScenario, answer: 
 }
 
 export function redesignText({ interaction }: InteractiveScenario, answer: RedesignAnswer): string {
+  if (answer.kind === 'scene' && interaction.kind === 'scene') {
+    const location = interaction.locations.find(location => location.id === answer.locationId);
+    return location ? `${location.action ?? location.label}：${location.consequence}` : '';
+  }
   if (answer.kind === 'priority' && interaction.kind === 'priority') {
     const labels = answer.order.map(id => interaction.items.find(item => item.id === id)!.label);
     return `${answer.kept ? '維持初始順序；' : ''}${interaction.keepLabel}：${labels.slice(0, interaction.capacity).join('、')}；${interaction.deferLabel}：${labels.slice(interaction.capacity).join('、')}`;
@@ -37,6 +42,7 @@ export function redesignText({ interaction }: InteractiveScenario, answer: Redes
 /** Only completed mechanisms accept answers. Each mechanism adds its own validation here. */
 export function isRedesignAnswer(answer: unknown, { interaction, id }: InteractiveScenario): answer is RedesignAnswer {
   if (!isRecord(answer) || answer.variantId !== id || answer.kind !== interaction.kind) return false;
+  if (interaction.kind === 'scene') return interaction.locations.some(location => location.id === answer.locationId);
   if (interaction.kind === 'priority') {
     const order = answer.order;
     return Array.isArray(order) && order.length === interaction.items.length && new Set(order).size === order.length

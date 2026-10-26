@@ -3,7 +3,7 @@ import type { AllocationSide } from './interactiveTypes';
 /** Raw decisions, independent of their eventual direction. Kept alongside the legacy answer shapes. */
 export interface CalendarInteraction { kind: 'calendar'; slots: readonly string[]; sides: readonly [AllocationSide, AllocationSide] }
 export interface ResourceInteraction { kind: 'resources'; objects: readonly string[]; unit: string; sides: readonly [AllocationSide, AllocationSide]; initial?: readonly (0 | 1)[] }
-export interface SceneInteraction { kind: 'scene'; object: string; locations: readonly { id: string; label: string; consequence: string; valueId?: AllocationSide['valueId'] }[] }
+export interface SceneInteraction { kind: 'scene'; object: string; transitionLabel?: string; locations: readonly { id: string; label: string; action?: string; consequence: string; valueId?: AllocationSide['valueId'] }[] }
 export interface MessageInteraction { kind: 'message'; sentences: readonly { id: string; text: string }[] }
 export interface PriorityInteraction { kind: 'priority'; capacity: number; keepLabel: string; deferLabel: string; resourceUnit?: string; items: readonly { id: string; label: string; detail: string; valueId?: AllocationSide['valueId'] }[] }
 export interface LinkedMetric { label: string; unit: string; source: 'value' | 'remainder'; multiplier?: number; subtractFrom?: number; minimum?: number }

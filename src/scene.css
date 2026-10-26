@@ -1,0 +1,20 @@
+.scene-control button { min-width: 44px; min-height: 52px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; touch-action: none; }
+.scene-object, .scene-destination, .scene-transition > button { padding: 12px; border: 1.5px solid var(--opt-border); border-radius: var(--radius-control); background: var(--paper); color: var(--text); }
+.scene-floor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; border: 2px solid var(--ink); background: var(--paper); padding: 16px; }
+.scene-rooms { display: contents; }
+.scene-room, .scene-transition, .scene-actor-position { grid-column: var(--scene-column); grid-row: var(--scene-row); }
+.scene-room { display: flex; flex-direction: column; gap: 12px; border: 2px dashed currentColor; padding: 16px; min-width: 0; }
+.scene-room h2, .scene-room p, .scene-transition h2 { margin: 0; }
+.scene-room-occupied { border-style: solid; }
+.scene-occupant { display: flex; justify-content: center; align-items: center; min-height: 92px; }
+.scene-destination { margin-top: auto; }
+.scene-transition { border-top: 2px dashed currentColor; padding-top: 16px; text-align: center; }
+.scene-actor-position { align-self: end; justify-self: center; margin-bottom: 80px; z-index: 1; pointer-events: none; }
+.scene-actor-transition { margin-bottom: 52px; }
+.scene-object { display: grid; justify-items: center; gap: 8px; padding: 12px; cursor: grab; }
+.scene-actor-position .scene-object { pointer-events: auto; }
+.scene-object[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: 2px; }
+.scene-person { display: block; position: relative; width: 32px; height: 36px; }
+.scene-person::before { content: ''; position: absolute; top: 0; left: 10px; width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 50%; }
+.scene-person::after { content: ''; position: absolute; bottom: 0; left: 4px; width: 24px; height: 20px; border: 2px solid currentColor; border-radius: var(--radius-control); }
+@media (max-width: 500px) { .scene-floor { grid-template-columns: minmax(0, 1fr); padding: 12px; } .scene-room, .scene-transition, .scene-actor-position { grid-column: 1; grid-row: var(--scene-mobile-row); } }

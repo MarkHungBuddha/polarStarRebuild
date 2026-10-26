@@ -97,8 +97,8 @@ test.describe('觸控', () => {
     const from = await clockPoint(page, 4);
     const to = await clockPoint(page, 6);
     const touch = await page.context().newCDPSession(page);
-    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
-    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...from, id: 41 }] });
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...to, id: 41 }] });
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await touch.detach();
     await expect(clockOf(page)).toHaveAttribute('aria-valuenow', '5');
