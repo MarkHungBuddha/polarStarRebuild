@@ -88,7 +88,7 @@ test('格式版本 2 的任何一條合法性規則不通過，整份結果都�
     '上線題庫、題數不對': v2('2-care', launchCatalog, launchPlan().slice(2)),
   };
   for (const [rule, fragment] of Object.entries(cases)) await expectUnreadable(page, fragment, corrupt).catch(error => { throw new Error(`${rule}：${error.message}`); });
-  await expectUnreadable(page, '#r=4' + resultLinksV2.fixedFlow.fragment.slice('#r=2'.length), unsupported);
+  await expectUnreadable(page, '#r=5' + resultLinksV2.fixedFlow.fragment.slice('#r=2'.length), unsupported);
 });
 
 test('格式版本 2 的分數剛好等於題數的 2 倍，是合法的結果；上線題庫的其他變體也照常顯示', async ({ page }) => {
