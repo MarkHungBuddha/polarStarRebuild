@@ -99,7 +99,7 @@ async function confirmByKeyboard(page: Page, decision: InteractiveDecision) {
   await expect(page.getByRole('heading', { name: title!, exact: true })).toHaveCount(0);
 }
 
-// The preview draws each slot's variant with Math.random, so these three fixed values reach every variant in catalog order.
+// A round draws each slot's variant with Math.random, so these three fixed values reach every variant in catalog order.
 for (const [index, random] of [0, 0.4, 0.8].entries()) test.describe(`第 ${index + 1} 個變體`, () => {
   test.use({ scenarioRandom: random });
   const slotIds = Object.keys(slots) as SlotId[];

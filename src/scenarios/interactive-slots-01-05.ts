@@ -1,11 +1,11 @@
 import type { InteractiveScenario } from '../interactiveTypes';
 
 /**
- * Slots 1–5 of the interactive bank (#68), three variants each, rewritten from the five-step questions in preference-slots-01-05.ts.
+ * Slots 1–5 of the interactive bank (#68), three variants each, rewritten from the five-step questions of the same slots.
  * Side or card A leans to pair[0], B to pair[1]; valueId is the only source of direction. Variant order within a slot is the order
- * the preview draws from (Math.random 0 → first), and slot 1 lists allocate, adjust, choose in that order so specs can reach each kind first.
- * AI-drafted content with AI self-review in docs/interactive-content/slots-01-05.md; not reviewed by a person and not a
- * psychometrically validated item set.
+ * a round draws from (Math.random 0 → first), and slot 1 lists allocate, adjust, choose in that order so specs can reach each kind first.
+ * AI-drafted content with AI self-review in docs/interactive-content/slots-01-05.md, approved by the project owner on 2026-10-26;
+ * not a psychometrically validated item set.
  */
 export const interactiveSlots01To05: InteractiveScenario[] = [{
   id: 'interactive-slot01-trip', slotId: 'slot01', pair: ['autonomy', 'security'], domain: '旅行',

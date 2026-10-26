@@ -1,7 +1,6 @@
 import { coreValueWord } from './data';
-import { scoreCount } from './columnRows';
 import { priorityCountText } from './priorityRanking';
-import { withPositions, type PreferenceSharedResult, type PrioritySharedResult } from './resultLink';
+import { withPositions, type PrioritySharedResult } from './resultLink';
 
 export const resultImageColors = {
   light: { background: '#f6f1e7', paper: '#fffdf8', ink: '#2b2a27', muted: '#5e584d', accent: '#2f4a6d', line: '#ddd3c2', sticky: '#fff6d6' },
@@ -20,13 +19,7 @@ const imageText = {
   title: '這一次，我的選擇。',
   statedTitle: '我最重視的',
   statedCaption: '第一幕的分類與排序',
-  /** The second column and the line above the limits, per scoring: preference scores (version 2) or 優先保留次數 (version 3). */
-  'preference-score': {
-    title: '我在情境中的偏向分數',
-    caption: '第二幕的偏向分數',
-    empty: '這次作答沒有明確偏向',
-    rule: () => '計分：強烈偏向 2 分，稍微偏向 1 分，兩者相當 0 分，不是百分比。',
-  },
+  /** The second column and the line above the limits: 優先保留次數 and 明確決策 N / M 題 (format version 3). */
   'priority-count': {
     title: '我在情境中優先保留的',
     caption: '第二幕的優先保留次數',
@@ -60,18 +53,16 @@ function layoutColumn(rows: readonly { ids: string[]; count?: string }[], limit:
   return { rows: drawn, extra: extra ? `另有 ${extra} 個並列` : undefined };
 }
 
-/** Where each part sits, top to bottom; the scoring rule (or 明確決策 N / M 題) sits above the limits, then the footer rule and the tagline. */
+/** Where each part sits, top to bottom; 明確決策 N / M 題 sits above the limits, then the footer rule and the tagline. */
 const layout = { title: 150, box: 250, boxHeight: 600, heading: 320, caption: 370, rows: 430, custom: 880, rule: 1154, limits: 1196, footerRule: 1260, tagline: 1310 };
 
 /**
  * Draw only the public conclusion, the same one the result link carries. The returned PNG is also the file used by system sharing.
- * The second column shows every value at positions 1–3 with its score (and the 2／1／0 scoring rule) or its「N 次／3 題」(and
- * 明確決策 N / M 題); with no rows it says why instead.
+ * The second column shows every value at positions 1–3 with its「N 次／3 題」, and 明確決策 N / M 題 sits above the limits;
+ * with no rows it says why instead.
  */
-export async function createResultImage(result: PreferenceSharedResult | PrioritySharedResult, theme: ImageTheme): Promise<File> {
-  const second = result.scoring === 'priority-count'
-    ? { ...imageText['priority-count'], rule: imageText['priority-count'].rule(result), rows: result.counted.map(row => ({ ids: row.ids, count: priorityCountText(row.count) })) }
-    : { ...imageText['preference-score'], rule: imageText['preference-score'].rule(), rows: result.scored.map(row => ({ ids: row.ids, count: scoreCount(row) })) };
+export async function createResultImage(result: PrioritySharedResult, theme: ImageTheme): Promise<File> {
+  const second = { ...imageText['priority-count'], rule: imageText['priority-count'].rule(result), rows: result.counted.map(row => ({ ids: row.ids, count: priorityCountText(row.count) })) };
   const statedColumn = layoutColumn(result.stated.map(ids => ({ ids })), 10, true);
   const scoredColumn = layoutColumn(second.rows, Infinity, true);
   const customShown = result.custom.slice(0, imageCustomLimit);

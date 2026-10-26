@@ -1,16 +1,16 @@
 # Coding standards
 
-Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc、ESLint、`scripts/check-css.mjs`）擋下，例如 `src/scenarios.ts` 不能直接寫題目、CSS 不用 rem、圓角只用 token；題庫版本由 `tests/catalog.spec.ts` 固定。這裡只放需要判斷的規則。用詞以 [GLOSSARY.md](GLOSSARY.md) 為準。
+Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc、ESLint、`scripts/check-css.mjs`）擋下，例如 `src/interactiveScenarios.ts` 不能直接寫題目、CSS 不用 rem、圓角只用 token；題庫版本與 15 組 × 3 個變體的契約由 `tests/catalog.spec.ts` 固定。這裡只放需要判斷的規則。用詞以 [GLOSSARY.md](GLOSSARY.md) 為準。
 
 ## 版本適用範圍
 
-現行程式依下列規則與 [五段偏向規格](docs/preference-strength-spec.md)、[ADR 0006](docs/adr/0006-explicit-preference-strength.md) review。舊版「只數選邊次數、不准強度加權」的規則只適用於讀取已發布的格式版本 1 結果連結，見文末「舊版結果（格式版本 1）」；不要拿它否定新版的 2／1／0 計分。
+現行程式依下列規則與 [互動情境題規格](docs/interactive-scenario-spec.md)、[ADR 0007](docs/adr/0007-interactive-scenario-answers.md) review。[五段偏向規格](docs/preference-strength-spec.md)和 [ADR 0006](docs/adr/0006-explicit-preference-strength.md) 是歷史文件，2／1／0 計分只用來讀取已發布的格式版本 2 結果連結；格式版本 1 的選邊次數也一樣，只用在讀取舊連結。兩者見文末「舊版結果」，不要拿來 review 現行的優先保留次數。
 
 ## 結果解讀
 
-- **分數只來自已確認的偏向程度。** 強烈偏向給該側 2 分、稍微偏向 1 分、兩者相當兩側都不加分；未作答不等於兩者相當。這是產品計分約定，文案不能說成偏好強度的倍數、百分比或價值重要性。
-- **排名只看總分。** 同分並列、零分不列名次，第 1–3 名的並列全部列出；全部零分時寫「這次作答沒有明確偏向」。不加名次差、跨幕差距、診斷或「真正的你」類說法。
-- **兩幕比較只看方向。** 第一幕兩價值有先後，且答案偏向其中一側時，才標示相符／不同；強烈與稍微偏向比較的結果相同，不用程度推論差異大小。兩者相當顯示「無明確偏向」。第一幕沒有並列，排序頁的順序（包含沒有調整的初始順序）都視為使用者的排序，見 [ADR 0004](docs/adr/0004-strict-first-act-order.md)；舊紀錄裡的並列只描述答案。
+- **次數只來自已確認的決策。** 每題最多讓一個價值多 1 次：選定的方案，或同種有限資源分得較多的一側。平均分配和「目前無法決定」都不加次數；未作答不等於平均分配，也不等於無法決定。分配差距不加權，文案不能說成偏好強度、百分比或價值重要性。
+- **排名只看次數。** 同次數並列、0 次不列名次（完整清單寫「本輪未優先保留」），第 1–3 名的並列全部列出，不用第一幕排序拆開；沒有方向明確的決策時不產生排名。結果一律寫「明確決策 N / M 題」。不加名次差、跨幕差距、診斷或「真正的你」類說法。
+- **兩幕比較只看方向。** 第一幕兩價值有先後，且答案有方向時，才標示「這次情境選擇與原先排序一致／不同」；平均分配和「目前無法決定」不比較。不直接判定言行矛盾。第一幕沒有並列，排序頁的順序（包含沒有調整的初始順序）都視為使用者的排序，見 [ADR 0004](docs/adr/0004-strict-first-act-order.md)；舊紀錄裡的並列只描述答案。
 
 ## 作答與保存
 
@@ -19,8 +19,8 @@ Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc、ESLint�
 
 ## 題庫
 
-- **題目只放在 registry 檔。** 內容依組別放在 `src/scenarios/preference-slots-*.ts`，`src/scenarios.ts` 只負責組合；新增或改寫題目不需要改元件。registry 順序決定題庫版本和連結裡的變體編號，只能附加，不能重排。
-- **代理寫的題目是草稿。** 題目文案依 [docs/content-authoring-notes.md](docs/content-authoring-notes.md)。代理起草的題目要在 `docs/preference-content/` 寫明是 AI 草稿，逐題記下取捨條件怎麼維持相近和待決問題；人工審稿前不寫成定稿，也不說經過心理測量驗證。
+- **題目只放在 registry 檔。** 內容依組別放在 `src/scenarios/interactive-slots-*.ts`，`src/interactiveScenarios.ts` 只負責組合；新增或改寫題目不需要改元件。registry 順序決定題庫版本和連結裡的變體編號，只能附加，不能重排。
+- **代理寫的題目是草稿。** 題目文案依 [docs/content-authoring-notes.md](docs/content-authoring-notes.md)。代理起草的題目要在 `docs/interactive-content/` 寫明是 AI 草稿，逐題記下取捨條件怎麼維持相近和待決問題；專案負責人審閱前不寫成定稿，也不說經過心理測量驗證。
 
 ## 測試
 
@@ -28,7 +28,7 @@ Review 時逐條對照 diff。機械性規則由 `npm run check`（tsc、ESLint�
 - **模擬損壞或舊版紀錄時只寫不透明資料**，不依照目前 session 結構拼裝內容；需要特定狀態時用使用者操作走到那裡。
 - **共用斷言放 `tests/support/`**，例如頁面不可橫向捲動的檢查，不在各 spec 重複。
 
-## 舊版結果（格式版本 1）
+## 舊版結果（格式版本 1、2）
 
-- **照分享當時顯示，不重算。** 收件者頁照連結裡的「選了 N 次／共 M 題」與名次顯示，註明使用舊版計分；不換算成偏向分數，也不和格式版本 2 共用欄位。
-- **定版範例只增不改，而且要全部通過。** 格式版本 1 的讀取行為由 `tests/support/result-links-v1.ts` 守住；讀取程式可以整理，但任何範例的顯示結果都不能變。舊題庫已移除，所以這類連結不再提供用同一份題目作答。
+- **照分享當時顯示，不重算。** 格式版本 1 照連結裡的「選了 N 次／共 M 題」與名次顯示，註明使用舊版計分；格式版本 2 照連結裡的偏向分數與名次顯示，附上 2／1／0 的計分說明。兩者都標明結果連結版本，不換算成優先保留次數，也不和其他格式版本共用欄位。
+- **定版範例只增不改，而且要全部通過。** 讀取行為由 `tests/support/result-links-v1.ts`、`result-links-v2.ts` 守住；讀取程式可以整理，但任何範例的顯示結果都不能變。兩個版本的題庫都已移除，所以這類連結不再提供用同一份題目作答。

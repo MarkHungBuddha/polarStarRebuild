@@ -58,7 +58,8 @@ export function AllocationQuestion({ scenario, interaction, answer, onConfirm, o
   return <ScenarioFrame scenario={scenario} caption={caption} canConfirm={ready}
     onConfirm={() => ready && onConfirm(confirmed())} onBack={onBack} onReview={onReview}>
     <div className="allocation-sides">{sides.map(side => <section className="paper-card" key={side.id}><h2>{side.label}</h2><p>{side.detail}</p></section>)}</div>
-    {initial && <p className="allocation-current">現況：{sides.map((side, at) => `${side.label} ${countsOf(initial)[at]} ${unit}`).join('、')}。每格標著現在排的是哪一邊。</p>}
+    {/* One string, so the sentence wraps as one run of text. */}
+    {initial && <p className="allocation-current">{`現況：${sides.map((side, at) => `${side.label} ${countsOf(initial)[at]} ${unit}`).join('、')}。每格標著現在排的是哪一邊。`}</p>}
     <div className="allocation-cells">{interaction.cells.map((cell, index) => <fieldset className="allocation-cell" key={cell}>
       <legend>{cell}</legend>
       {sides.map((side, at) => <button type="button" key={side.id} aria-pressed={draft[index] === at} onClick={() => place(index, at as Side)}>{side.label}</button>)}

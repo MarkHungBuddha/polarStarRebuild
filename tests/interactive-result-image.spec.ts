@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
 import { classifyAll } from './support/experience';
-import { answerInteractiveByTitle, decisionRecord, interactivePreviewPath, type InteractiveDecision } from './support/interactive';
+import { answerInteractiveByTitle, decisionRecord, type InteractiveDecision } from './support/interactive';
 import { shareRegion } from './support/result-share';
 import { allText, drawnImage, expectFullyLegible, expectRowsDrawn, recordImageText } from './support/result-image';
 
@@ -21,11 +21,11 @@ const decidedLine = (page: Page) => page.getByRole('region', { name: '你的前�
 const longCustom = '每天留一段完全不被打擾的時間好好想清楚自己要什麼';
 
 /**
- * Opens the interactive preview with these custom values, puts every value in「這就是我」in list order, then answers the listed
+ * Opens the site with these custom values, puts every value in「這就是我」in list order, then answers the listed
  * questions by title; every other question in the round is 目前無法決定, so only the listed ones count.
  */
 async function reachInteractiveShare(page: Page, decisions: Readonly<Record<string, InteractiveDecision>>, customWords: readonly string[] = []) {
-  await page.goto(interactivePreviewPath);
+  await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   for (const word of customWords) {
     await page.getByRole('textbox', { name: '自訂價值' }).fill(word);

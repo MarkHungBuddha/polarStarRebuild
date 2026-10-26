@@ -1,9 +1,9 @@
 import type { InteractiveScenario } from '../interactiveTypes';
 
 /**
- * Slots 6–10 (#69), three interactive variants each, rewritten from src/scenarios/preference-slots-06-10.ts with the same value
+ * Slots 6–10 (#69), three interactive variants each, rewritten from the five-step questions of the same slots with the same value
  * pairs. Side or option A leans to the pair's first value; valueId is the only source of direction. Each slot is ordered
- * allocate or adjust, then choose, then adjust or allocate. AI-drafted and AI-reviewed, not psychometrically validated; the
+ * allocate or adjust, then choose, then adjust or allocate. AI-drafted and AI-reviewed, approved by the project owner on 2026-10-26, not psychometrically validated; the
  * per-variant rationale is in docs/interactive-content/slots-06-10.md.
  */
 export const interactiveSlots06To10: InteractiveScenario[] = [{

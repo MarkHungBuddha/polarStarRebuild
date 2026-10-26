@@ -2,11 +2,11 @@
 
 題目在 `src/scenarios/interactive-slots-11-15.ts`，驗證在 `tests/interactive-slots-11-15.spec.ts`。
 
-這批文案和操作設定是 AI 依[互動情境題規格](../interactive-scenario-spec.md)、[ADR 0007](../adr/0007-interactive-scenario-answers.md) 與[題目撰寫須知](../content-authoring-notes.md)起草，再由 AI 逐題自審，沒有經過人工審閱，也沒有心理計量效度。要等專案負責人審閱通過，才算這一批定稿。
+這批文案和操作設定是 AI 依[互動情境題規格](../interactive-scenario-spec.md)、[ADR 0007](../adr/0007-interactive-scenario-answers.md) 與[題目撰寫須知](../content-authoring-notes.md)起草，再由 AI 逐題自審，沒有心理計量效度。專案負責人在 2026-10-26 審閱通過，這一批定稿，同日切換正式入口（#71）。
 
 ## 共通處理
 
-- 沿用五段版（`preference-slots-11-15.ts`）的價值配對和情境，A 一律偏向配對的第一個價值，方向只看 `valueId`。
+- 沿用五段版（`preference-slots-11-15.ts`，#71 已移除）的價值配對和情境，A 一律偏向配對的第一個價值，方向只看 `valueId`。
 - 每組三個變體都用到三種互動：第一個是分配，第二個是選方案，第三個是從初始安排調整。15 題裡三種各 5 題。順序固定是為了讓 spec 依抽題位置驗證；正式抽題時，一輪裡每組各抽一題，三種互動會混在一起。
 - 分配題的格數都是偶數（4 或 6），平均分配做得到。每一格是情境裡真的會分開決定的單位（一場活動、一次聚會、一個時段），不是抽象的「份」。
 - 調整題的現況寫在題面裡，交代是誰、什麼時候排好的，並說明現在改也來得及，讓「維持這個安排」和「調整」都是正常選項。

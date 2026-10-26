@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { copyLink } from './clipboard';
-import type { PreferenceSharedResult, PrioritySharedResult } from './resultLink';
+import type { PrioritySharedResult } from './resultLink';
 import { imagePreparing, resultImageAlt, useResultImage } from './useResultImage';
 
 const shareUnavailable = '這個瀏覽器無法直接分享圖片。請先下載結果圖，再複製結果連結一起貼出。';
@@ -9,7 +9,7 @@ const shareUnavailable = '這個瀏覽器無法直接分享圖片。請先下載
  * The lower half of a「分享結果」block: the result image's preview, 分享結果／下載結果圖／複製結果連結, the result link itself and one
  * status line for their feedback. The image is drawn from the same `result` the `link` encodes, and system sharing carries that link.
  */
-export function ShareActions({ result, link }: { result: PreferenceSharedResult | PrioritySharedResult; link: string }) {
+export function ShareActions({ result, link }: { result: PrioritySharedResult; link: string }) {
   const [status, setStatus] = useState('');
   const sharing = useRef(false);
   const { image, failed, retry } = useResultImage(result, setStatus);

@@ -62,9 +62,10 @@ for (const action of ['重新開始', '清除本機作答紀錄'] as const) {
     await page.getByRole('button', { name: action }).click();
     await page.reload();
     await startInteractiveScenarios(page);
-    await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
+    // 重新開始 keeps the seen history, so the next round may draw other variants; any of its questions shows an empty note.
+    const [first] = await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
     await expect(questionPicker(page)).toHaveValue('');
-    await pickQuestion(page, trip);
+    await pickQuestion(page, first);
     await expect(noteField(page)).toHaveValue('');
   });
 }
@@ -75,7 +76,8 @@ test('反思步驟照實帶出調整題的決策：維持原本安排或調整�
   await pickQuestion(page, afternoons);
   await expect(reflection(page)).toContainText('你當時的決策：維持原本安排');
 
-  await page.getByRole('button', { name: '重新開始' }).click();
+  // Clearing also resets the seen history, so the next round draws the same questions again.
+  await page.getByRole('button', { name: '清除本機作答紀錄' }).click();
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [afternoons]: { allocate: [1, 3] } });
   await pickQuestion(page, afternoons);

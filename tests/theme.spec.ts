@@ -1,6 +1,7 @@
 import { expect, test } from './support/fixtures';
 import type { Page } from '@playwright/test';
-import { classifyAndRankValues, confirmCurrentScenario } from './support/experience';
+import { classifyAndRankValues } from './support/experience';
+import { confirmDecision } from './support/interactive';
 
 const themeButton = (page: Page, name: '淺色' | '深色') => page.getByRole('group', { name: '顯示主題' }).getByRole('button', { name, exact: true });
 
@@ -51,15 +52,14 @@ test('作答中切換主題，不改變作答位置與已確認答案', async ({
   await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await confirmCurrentScenario(page, '稍微偏向 B');
+  await confirmDecision(page, '目前無法決定');
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await themeButton(page, '深色').click();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(page.getByText('第 2 題，共 15 題', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回上一頁' }).click();
-  await expect(page.getByRole('radio', { name: '稍微偏向 B', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: '目前無法決定', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.reload();
-  await page.getByRole('button', { name: '繼續上次作答' }).click();
   await expect(page.getByText('第 1 題，共 15 題', { exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
 });

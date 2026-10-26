@@ -37,7 +37,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
   const comparisons = session.scenarios.map(scenario => firstActComparison(scenario, session.answers[scenario.id], session.values));
   const same = comparisons.filter(item => item === '一致').length;
   return <section className="result-page result-cover">
-    <PageHeader eyebrow="本次反思 · 開發預覽" title="這一次，你的選擇。" description="對照你原先的排序，看看這次情境中你優先保留了什麼。" />
+    <PageHeader eyebrow="本次反思 · 兩幕對照" title="這一次，你的選擇。" description="對照你原先的排序，看看這次情境中你優先保留了什麼。" />
     <section className="conclusion paper-card" aria-labelledby="interactive-top-three"><h2 id="interactive-top-three">你的前三名</h2>
       <ConclusionColumns titles={['你最重視的', '情境中優先保留的']} {...priorityColumnText}
         stated={columnRows(byPosition(act1TopThree(session.values)).map(row => ({ ids: row.items.map(value => value.id) })))}
@@ -73,6 +73,7 @@ export function InteractiveResult({ session, onEdit, onReflect, onRestart }: {
         <li>次數只描述這一輪情境中的選擇，不代表偏好強度，也不是完整或穩定的價值排序。</li>
       </ul>
     </details>
+    <p className="sticky-note" role="note">這些次數和名次只用來回顧這一輪的選擇，不是測驗成績，也不是人格判定。題目與解讀尚未驗證。</p>
     <ReflectionStep session={session} onChange={onReflect} />
     <InteractiveShare session={session} />
     <nav className="actions"><button className="secondary" onClick={onRestart}>重新開始</button></nav>

@@ -4,9 +4,9 @@ import { interactiveSlots06To10 } from './scenarios/interactive-slots-06-10';
 import { interactiveSlots11To15 } from './scenarios/interactive-slots-11-15';
 
 /**
- * The interactive question bank, shown only by the development preview until the official entry switches (#71).
- * Each content ticket appends one line for its own slot file (src/scenarios/interactive-slots-*.ts); registry order will
- * key question and result links as in src/scenarios.ts, so append, never reorder.
+ * The question bank: fifteen slots, three interactive variants each. Question content lives in the slot files
+ * (src/scenarios/interactive-slots-*.ts); this file only composes them. Registry order is part of the bank version hash and of
+ * the variant index in question links and result links, so append, never reorder.
  */
 export const interactiveScenarios: InteractiveScenario[] = [
   ...interactiveSlots01To05,

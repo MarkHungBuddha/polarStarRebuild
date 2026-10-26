@@ -1,8 +1,8 @@
 import type { InteractiveScenario } from '../interactiveTypes';
 
 /**
- * Slots 11–15, three interactive variants each (#60). AI drafts rewritten from the five-step variants in
- * preference-slots-11-15.ts, keeping each slot's pair and situations; not authored or reviewed by a person, and no
+ * Slots 11–15, three interactive variants each (#60). AI drafts rewritten from the five-step variants of the same slots,
+ * keeping each slot's pair and situations; not authored by a person, approved by the project owner on 2026-10-26, and no
  * psychometric validity is claimed. Drafting and self-review notes: docs/interactive-content/slots-11-15.md.
  * In every slot the first variant allocates, the second chooses a plan and the third adjusts a current arrangement
  * that the setup already describes. Side or card A leans to the pair's first value; valueId is the only source of direction.

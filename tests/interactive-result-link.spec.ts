@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { answerInteractiveByTitle, interactivePreviewPath, startInteractiveScenarios } from './support/interactive';
+import { answerInteractiveByTitle, startInteractiveScenarios } from './support/interactive';
 import { corruptHeading as corrupt, expectUnreadable, shareRegion, statedColumn, unsupportedHeading as unsupported } from './support/result-share';
 import { noRanking, resultLinksV3, resultLinksV3Catalog } from './support/result-links-v3';
 import { interactiveCatalog } from '../src/interactiveCatalog';
@@ -77,7 +77,7 @@ test('沒有方向明確的決策時，收件者頁和本人結果一樣不產�
 });
 
 test('分享者逐項選擇自訂價值，勾選的才放進互動結果連結', async ({ page }) => {
-  await page.goto(interactivePreviewPath);
+  await page.goto('/');
   await page.getByRole('button', { name: '開始這次反思' }).click();
   for (const word of ['保有獨處的時間', '這就是我', '不分享的']) {
     await page.getByRole('textbox', { name: '自訂價值' }).fill(word);

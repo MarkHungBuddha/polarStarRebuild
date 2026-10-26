@@ -8,7 +8,7 @@ import { allocationCells, answerInteractiveByTitle, confirmButton, confirmDecisi
 test.use({ scenarioRandom: 0.5 });
 const quarters = '明年的合作，照草案走嗎？';
 
-/** Opens the preview's round, whose first question is the quarters. */
+/** Opens a round whose first question is the quarters. */
 async function openQuarters(page: Page) {
   await startInteractiveScenarios(page);
   await expect(questionHeading(page)).toHaveText(quarters);

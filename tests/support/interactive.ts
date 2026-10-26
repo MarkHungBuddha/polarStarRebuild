@@ -1,8 +1,10 @@
 import { expect, type Page } from '@playwright/test';
 import { classifyAndRankValues } from './experience';
-import { confirmButton, questionHeading, resultHeading } from './preference';
 
-export { confirmButton, questionHeading, resultHeading };
+export const confirmButton = (page: Page) => page.getByRole('button', { name: '確認答案', exact: true });
+/** The current question's title. */
+export const questionHeading = (page: Page) => page.locator('.scenario-card h1');
+export const resultHeading = (page: Page) => page.getByRole('heading', { name: '這一次，你的選擇。', exact: true });
 
 /**
  * One interactive decision, applied to whichever question carries the title it is listed under.
@@ -18,12 +20,9 @@ export const undecidedButton = (page: Page) => page.getByRole('button', { name: 
 /** The 維持這個安排 button an adjust question offers; it still needs 確認答案. */
 export const keepButton = (page: Page) => page.getByRole('button', { name: '維持這個安排', exact: true });
 
-/** The development preview of the interactive second act; it only exists on the dev server. */
-export const interactivePreviewPath = '/?preview=interactive';
-
-/** Opens the interactive preview, ranks the core values in list order and enters the scenarios. */
+/** Opens the site, ranks the core values in list order and enters the scenarios. */
 export async function startInteractiveScenarios(page: Page) {
-  await page.goto(interactivePreviewPath);
+  await page.goto('/');
   await classifyAndRankValues(page);
   await page.getByRole('button', { name: '進入情境中的取捨' }).click();
 }
@@ -91,4 +90,28 @@ export async function decisionRecord(page: Page, title: string) {
 /** Goes back from the result page to change the question with this title. */
 export async function editQuestion(page: Page, title: string) {
   await (await decisionRecord(page, title)).getByRole('button', { name: '修改這題' }).click();
+}
+
+/**
+ * Decides the current question with the keyboard alone and confirms it: Space on the first card of a 選方案 question, Enter on
+ * 維持這個安排 for an adjust question, or Enter on each cell's side-A button for an allocation except the last cell (side B).
+ */
+export async function decideWithKeyboard(page: Page) {
+  const title = await questionHeading(page).textContent();
+  if (await choiceCards(page).count()) {
+    await choiceCards(page).first().focus();
+    await page.keyboard.press('Space');
+  } else if (await keepButton(page).count()) {
+    await keepButton(page).focus();
+    await page.keyboard.press('Enter');
+  } else {
+    const cells = await allocationCells(page).all();
+    for (const [index, cell] of cells.entries()) {
+      await cell.getByRole('button').nth(index < cells.length - 1 ? 0 : 1).focus();
+      await page.keyboard.press('Enter');
+    }
+  }
+  await confirmButton(page).focus();
+  await page.keyboard.press('Enter');
+  if (title) await expect(page.getByRole('heading', { name: title, exact: true })).toHaveCount(0);
 }

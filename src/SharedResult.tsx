@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { interactiveCatalog } from './interactiveCatalog';
 import { DecidedCount, priorityColumnText } from './InteractiveResult';
 import { clearInteractiveSession } from './interactiveSessionStorage';
 import { PageHeader } from './PageHeader';
-import { questionShareLink } from './questionPlan';
+import { questionShareLink } from './interactiveQuestionLink';
 import type { ResultLinkOutcome, SharedResult } from './resultLink';
 import { clearSeenHistory } from './seenHistory';
-import { clearSavedSession } from './sessionStorage';
 import { ShareFooter } from './ShareFooter';
 import { StarIcon } from './StarIcon';
 import { storageClearFailedNotice } from './storageNotices';
 import { ThemeControl } from './ThemeControl';
 import { ConclusionColumns, preferenceColumnText } from './ValueConclusion';
 import { columnRows, scoreCount } from './columnRows';
-import { preferenceScoringNote } from './preferenceRanking';
 import { priorityCountText } from './priorityRanking';
 import { chosenCountText } from './valueRanking';
 import './techo-result.css';
+
+/** How a version 2 result was scored, as the five-step result said it. */
+const preferenceScoringNote = '強烈偏向給該側 2 分，稍微偏向給該側 1 分，兩者相當兩側都是 0 分。這只是計分方式，2 分不代表偏好多一倍，也不是百分比。';
 
 /** How a version 3 result was put together, in the words of the sharer's own 結果怎麼整理. */
 const priorityCountingNote = '每題最多讓一個價值多 1 次：分得多或選擇的一側記 1 次，平均分配和目前無法決定都不加次數。每個價值這一輪出現在 3 題，最多 3 次；同次數並列。次數只描述這一輪情境中的選擇，不代表偏好強度。';
@@ -44,8 +44,6 @@ function SharedConclusion({ result }: { result: SharedResult }) {
 }
 
 function SharedResultPage({ result, questionLink }: { result: SharedResult; questionLink?: string }) {
-  // A version 3 link made with today's interactive bank names questions that still exist; interactive question links arrive with #71.
-  const currentBank = result.scoring === 'priority-count' && result.catalog === interactiveCatalog.version;
   return <section className="result-page result-cover">
     <PageHeader eyebrow="分享給你的反思 · 一頁摘要" title="這一次，分享者的選擇。" description="這是分享者自己作答的結果。你可以閱讀，也可以用同一份題目作答；你的答案會另外保存在你的瀏覽器，不會改到這份結果。" />
     <section className="conclusion paper-card"><SharedConclusion result={result} /></section>
@@ -54,7 +52,7 @@ function SharedResultPage({ result, questionLink }: { result: SharedResult; ques
     {/* The original question set is offered only while today's catalog can still reproduce it; never swap in today's questions under its name. */}
     {questionLink
       ? <nav className="actions"><button className="primary" onClick={() => window.location.assign(questionLink)}>用同一份題目作答</button></nav>
-      : <>{!currentBank && <p>這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。</p>}
+      : <><p>這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。</p>
         <nav className="actions"><button className="primary" onClick={() => window.location.assign(window.location.pathname)}>用目前題目開始</button></nav></>}
   </section>;
 }
@@ -76,7 +74,7 @@ function UnreadableResult({ unsupported }: { unsupported: boolean }) {
 export function SharedResultApp({ outcome }: { outcome: ResultLinkOutcome }) {
   const [storageNotice, setStorageNotice] = useState('');
   const clearLocalRecords = () => {
-    const results = [clearInteractiveSession(), clearSavedSession(), clearSeenHistory()];
+    const results = [clearInteractiveSession(), clearSeenHistory()];
     setStorageNotice(results.every(Boolean) ? '' : storageClearFailedNotice);
   };
   const questionLink = outcome.kind === 'result' && outcome.questions ? questionShareLink(outcome.questions, window.location) : undefined;

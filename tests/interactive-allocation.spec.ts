@@ -1,12 +1,11 @@
 import { expect, test } from './support/fixtures';
-import { classifyAndRankValues } from './support/experience';
 import { allocationCells, answerInteractiveByTitle, applyDecision, confirmButton, confirmDecision, editQuestion, priorityRows, resultHeading, startInteractiveScenarios } from './support/interactive';
 
 // The round's first question at Math.random 0: six days of a trip, each planned by oneself (A, 自主) or spent on a fixed day tour
 // (B, 安全穩定). Every other question is answered 目前無法決定, so the counts come from this one.
 const trip = '六天的旅程，哪幾天自己排？';
 
-test('開發預覽：分配題從第一幕走到結果，分得多的一側記 1 次並與第一幕並列', async ({ page }) => {
+test('分配題從第一幕走到結果，分得多的一側記 1 次並與第一幕並列', async ({ page }) => {
   await startInteractiveScenarios(page);
   expect(await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } })).toContain(trip);
   await expect(resultHeading(page)).toBeVisible();
@@ -78,20 +77,11 @@ test('返回修改要重新確認才覆蓋；重新整理保留上次已確認�
   expect(await priorityRows(page)).toEqual(['第 1｜安全穩定｜1 次／3 題']);
 });
 
-test('新版結果分享結果圖和結果連結，還沒有題目連結的分享入口', async ({ page }) => {
+test('結果分享結果圖和結果連結，頁尾另有只分享題目的入口', async ({ page }) => {
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
-  // Question links (#71) come later.
-  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['分享結果', '下載結果圖', '複製結果連結']);
+  await expect(page.getByRole('button', { name: /分享|結果圖|複製/ })).toHaveText(['分享結果', '下載結果圖', '複製結果連結', '分享這份題目']);
   await expect(page.getByRole('link', { name: /分享|結果圖/ })).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveCount(1);
   await expect(page.getByRole('textbox', { name: '結果連結' })).toHaveValue(/#r=3\./);
-});
-
-test('沒有預覽參數時，正式入口仍是五段偏向作答', async ({ page }) => {
-  await page.goto('/');
-  await classifyAndRankValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await expect(page.getByRole('radio', { name: '兩者相當', exact: true })).toBeVisible();
-  await expect(allocationCells(page)).toHaveCount(0);
 });

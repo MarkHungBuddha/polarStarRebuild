@@ -1,13 +1,18 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import type { InteractiveScenario } from './interactiveTypes';
-import { hash } from './questionCatalog';
+
+export function hash(text: string): number {
+  let value = 2166136261;
+  for (let index = 0; index < text.length; index += 1) value = Math.imul(value ^ text.charCodeAt(index), 16777619);
+  return value >>> 0;
+}
 
 /**
- * The interactive question bank and its version, as the five-step bank has in questionCatalog.ts. Format version 3 result links
- * carry this version and the variant drawn in each slot (the plan); interactive question links (#71) will use the same pair.
+ * The question bank and its version. Drawing a round, seen history, question links, the saved session and format version 3
+ * result links all use it; records and links made under another version never apply to it (docs/scenario-feature-spec.md「本機保存」).
  */
 export const interactiveCatalog = {
-  /** Hash of the full interactive registry: any text, order or variant change makes a new version. */
+  /** Hash of the full registry: any text, order or variant change makes a new version. */
   version: `c${hash(JSON.stringify(interactiveScenarios)).toString(36)}`,
   scenarios: interactiveScenarios,
 } as const;
@@ -16,6 +21,15 @@ function slots(): InteractiveScenario[][] {
   const groups = new Map<string, InteractiveScenario[]>();
   for (const scenario of interactiveCatalog.scenarios) groups.set(scenario.slotId, [...(groups.get(scenario.slotId) ?? []), scenario]);
   return [...groups.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([, variants]) => variants);
+}
+
+/** One variant per slot, in slot order: each slot draws from its variants not in `seen`, and from all of them once every variant has been seen. */
+export function drawInteractiveQuestions(seen: ReadonlySet<string> = new Set()): InteractiveScenario[] {
+  return slots().map(variants => {
+    const unseen = variants.filter(variant => !seen.has(variant.id));
+    const candidates = unseen.length ? unseen : variants;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  });
 }
 
 /** The variant drawn in each slot, in slot order and base36; undefined unless `questions` is exactly one bank variant per slot. */
@@ -37,4 +51,11 @@ export function interactivePlan(questions: readonly InteractiveScenario[]): stri
 export function isInteractivePlan(plan: readonly string[]): boolean {
   const groups = slots();
   return plan.length === groups.length && plan.every((selector, index) => /^(0|[1-9a-z][0-9a-z]*)$/.test(selector) && Boolean(groups[index][parseInt(selector, 36)]));
+}
+
+/** The questions a plan of today's bank names, or undefined when it names none (see `isInteractivePlan`). */
+export function questionsOfPlan(plan: readonly string[]): InteractiveScenario[] | undefined {
+  if (!isInteractivePlan(plan)) return undefined;
+  const groups = slots();
+  return plan.map((selector, index) => groups[index][parseInt(selector, 36)]);
 }

@@ -1,17 +1,37 @@
 import { interactiveScenarios } from './interactiveScenarios';
 import { isAnswerTo } from './interactiveAnswers';
 import { reflectionNoteLimit, type InteractiveSession } from './interactiveTypes';
-import { isScreen, validValues } from './sessionStorage';
-import type { Screen } from './types';
+import { baseValues, categoryOrder } from './data';
+import { storageReadFailedNotice } from './storageNotices';
+import type { Screen, ValueItem } from './types';
 
 /** The interactive version's own record, apart from every earlier version's keys so no older answer is ever read as an interactive one. */
 export const interactiveSessionKey = 'polarstar.session.v3';
 /** The five-step version's record: only its first act (categories, order, custom values) is carried over, never its answers. */
 const fiveStepSessionKey = 'polarstar.session.v2';
-/** Records nothing can be carried from: the mixed-mechanism bank's, and the development preview's before the interactive key existed. */
-const unusableSessionKeys = ['polarstar.session.v1', 'polarstar.interactive-preview.v1'];
+/** The mixed-mechanism bank's record: nothing can be carried from it. */
+const unusableSessionKeys = ['polarstar.session.v1'];
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const screens = ['intro', 'classify', 'rank', 'scenario', 'result'];
+const isScreen = (screen: unknown): screen is Screen => typeof screen === 'string' && screens.includes(screen);
+
+/** Whether stored first-act values are the ten core values plus valid custom ones, categorized once the screen is past classifying. */
+function validValues(values: unknown, screen: Screen): values is ValueItem[] {
+  if (!Array.isArray(values) || values.length < baseValues.length) return false;
+  const ids = new Set<string>();
+  const words = new Set<string>();
+  for (const item of values) {
+    if (!isRecord(item) || typeof item.id !== 'string' || typeof item.word !== 'string' || !item.word.trim() || typeof item.description !== 'string' || typeof item.rank !== 'number' || !Number.isInteger(item.rank) || item.rank < 1 || item.rank > values.length || ids.has(item.id) || words.has(item.word)) return false;
+    const base = baseValues.find(core => core.id === item.id);
+    if (base ? item.custom === true || item.word !== base.word || item.description !== base.description : item.custom !== true || !item.id.startsWith('custom-') || item.word.length > 24) return false;
+    if (item.category !== undefined && !categoryOrder.some(category => category === item.category)) return false;
+    if (!['intro', 'classify'].includes(screen) && item.category === undefined) return false;
+    ids.add(item.id); words.add(item.word);
+  }
+  return baseValues.every(core => ids.has(core.id));
+}
 
 /** A reflection names one of the session's questions and holds a note of at most `reflectionNoteLimit` characters. */
 function validReflection(value: unknown, scenarioIds: string[]): boolean {
@@ -57,22 +77,26 @@ function fiveStepFirstAct(raw: string): Pick<InteractiveSession, 'screen' | 'val
  * session started by `start` (its fresh questions and no answers), which is returned to be saved under the interactive key.
  */
 export function loadInteractiveSession(start: () => InteractiveSession): { session?: InteractiveSession; notice?: string } {
+  let raw: string | null; let fiveStep: string | null; let unusable: boolean;
   try {
-    const raw = localStorage.getItem(interactiveSessionKey);
-    if (raw) {
+    raw = localStorage.getItem(interactiveSessionKey);
+    fiveStep = raw ? null : localStorage.getItem(fiveStepSessionKey);
+    unusable = unusableSessionKeys.some(key => localStorage.getItem(key) !== null);
+  } catch { return { notice: storageReadFailedNotice }; }
+  if (raw) {
+    try {
       const saved: unknown = JSON.parse(raw);
       return validSession(saved) ? { session: saved } : { notice: unusableNotice };
-    }
-    const fiveStep = localStorage.getItem(fiveStepSessionKey);
-    if (fiveStep !== null) {
-      const firstAct = fiveStepFirstAct(fiveStep);
-      if (!firstAct) return { notice: unusableLegacyNotice };
-      // A five-step record still on the home page holds nothing to carry.
-      if (firstAct.screen === 'intro') return {};
-      return { session: { ...start(), ...firstAct }, notice: keptFirstActNotice };
-    }
-    return unusableSessionKeys.some(key => localStorage.getItem(key) !== null) ? { notice: unusableLegacyNotice } : {};
-  } catch { return { notice: unusableNotice }; }
+    } catch { return { notice: unusableNotice }; }
+  }
+  if (fiveStep !== null) {
+    const firstAct = fiveStepFirstAct(fiveStep);
+    if (!firstAct) return { notice: unusableLegacyNotice };
+    // A five-step record still on the home page holds nothing to carry.
+    if (firstAct.screen === 'intro') return {};
+    return { session: { ...start(), ...firstAct }, notice: keptFirstActNotice };
+  }
+  return unusable ? { notice: unusableLegacyNotice } : {};
 }
 
 export function saveInteractiveSession(session: InteractiveSession): boolean {

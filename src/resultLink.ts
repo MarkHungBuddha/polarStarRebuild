@@ -1,12 +1,8 @@
 import { baseValues } from './data';
-import { catalog as currentCatalog } from './questionCatalog';
-import { questionPlan, selectQuestions } from './questionPlan';
 import { act1TopThree, byPosition } from './valueRanking';
-import { preferenceScores, preferenceTopThree } from './preferenceRanking';
-import { interactiveCatalog, interactivePlan, isInteractivePlan } from './interactiveCatalog';
-import type { InteractiveSession } from './interactiveTypes';
+import { interactiveCatalog, interactivePlan, questionsOfPlan } from './interactiveCatalog';
+import type { InteractiveScenario, InteractiveSession } from './interactiveTypes';
 import { decidedCount, priorityCounts, priorityTopThree } from './priorityRanking';
-import type { Scenario, Session } from './types';
 
 /** A legacy second-act row: the values sharing one position, with the leans and leaning appearances they share. */
 export interface SharedChosenRow { ids: string[]; chosen: number; directional: number }
@@ -28,7 +24,10 @@ interface SharedConclusion {
  * a published link is shown as shared and never turned into scores.
  */
 export interface LegacySharedResult extends SharedConclusion { scoring: 'legacy-count'; chosen: SharedChosenRow[] }
-/** Format version 2, preference scoring (2／1／0 per confirmed answer): no rows means every score was zero. */
+/**
+ * Format version 2, preference scoring (2／1／0 per confirmed answer) from the five-step bank: no rows means every score was zero.
+ * The site no longer writes it or keeps that bank; a published link is shown as shared.
+ */
 export interface PreferenceSharedResult extends SharedConclusion { scoring: 'preference-score'; scored: SharedScoreRow[] }
 /**
  * Format version 3, interactive questions: each row's 優先保留次數 out of the three questions a value meets, plus 明確決策題數 (confirmed
@@ -51,9 +50,9 @@ export function withPositions<T extends { ids: readonly string[] }>(rows: readon
   });
 }
 
-/** A readable result offers its original question set when `questions` holds it, which only today's catalog can reproduce. */
+/** A readable result offers its original question set when `questions` holds it, which only today's interactive bank can reproduce. */
 export type ResultLinkOutcome =
-  | { kind: 'result'; result: SharedResult; questions?: Scenario[] }
+  | { kind: 'result'; result: SharedResult; questions?: InteractiveScenario[] }
   | { kind: 'corrupt' }
   | { kind: 'unsupported' };
 
@@ -61,27 +60,6 @@ const coreIds = new Set(baseValues.map(value => value.id));
 // The one correct spelling of a base36 number: lowercase, no leading zero (docs/result-share-spec.md「只有一種正確寫法」).
 const positiveBase36 = /^[1-9a-z][0-9a-z]*$/;
 const base36 = /^(0|[1-9a-z][0-9a-z]*)$/;
-
-/** The session's public conclusion, with the custom values the sharer chose to include (already in first-act order). */
-export function sharedResultOf(session: Session, custom: readonly string[]): PreferenceSharedResult | undefined {
-  const plan = questionPlan(session.scenarios);
-  if (!plan) return undefined;
-  return {
-    scoring: 'preference-score',
-    stated: byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id)),
-    scored: byPosition(preferenceTopThree(preferenceScores(session))).map(row => ({ ids: row.items.map(item => item.value.id), score: row.items[0].score })),
-    custom: [...custom],
-    catalog: currentCatalog.version,
-    plan,
-  };
-}
-
-/** Format version 2 (preference scores): `r=2.<first act>.<score>-<id>….<custom values>.<v>.<plan>` (docs/result-share-spec.md). */
-export function resultLink(result: PreferenceSharedResult, location: Pick<Location, 'origin' | 'pathname'>): string {
-  const stated = result.stated.map(row => row.join('-')).join('~');
-  const scored = result.scored.map(row => [row.score.toString(36), ...row.ids].join('-')).join('~');
-  return `${new URL(location.pathname, location.origin).href}#r=2.${stated}.${scored}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
-}
 
 /** The interactive session's public conclusion: no per-question answer or reflection note, only the two top threes and 明確決策題數. */
 export function prioritySharedResultOf(session: InteractiveSession, custom: readonly string[]): PrioritySharedResult | undefined {
@@ -168,6 +146,9 @@ function readVersion1(fields: readonly string[]): ResultLinkOutcome {
 
 const knownIds = (ids: readonly string[]) => ids.length > 0 && ids.every(id => coreIds.has(id));
 
+/** The five-step bank the site launched with (removed in #71): fifteen slots of three variants under this version. */
+const fiveStepLaunchBank = { version: 'c2gdvoe', slots: 15, variants: 3 };
+
 /** Format version 2: second-act rows are `<score>-<id>…`, 1 ≤ score ≤ 2 × questions, strictly falling; zero-score values are never listed. */
 function readVersion2(fields: readonly string[]): ResultLinkOutcome {
   const [, statedField, scoredField, customField, catalog, planField] = fields;
@@ -187,11 +168,10 @@ function readVersion2(fields: readonly string[]): ResultLinkOutcome {
   if (!placesTopThree(scored.map(row => row.ids))) return { kind: 'corrupt' };
   // Equal scores would have been one tied row.
   if (scored.some((row, index) => index > 0 && row.score >= scored[index - 1].score)) return { kind: 'corrupt' };
-  const result: PreferenceSharedResult = { scoring: 'preference-score', stated, scored, custom, catalog, plan };
-  // Only a result made with today's catalog can be answered again.
-  if (catalog !== currentCatalog.version) return { kind: 'result', result };
-  try { return { kind: 'result', result, questions: selectQuestions(new Set(), `p.${plan.join('.')}`) }; }
-  catch { return { kind: 'corrupt' }; }
+  // A plan of the bank the five-step version launched with must still name one of its variants in every slot, as when that bank was here.
+  if (catalog === fiveStepLaunchBank.version && (plan.length !== fiveStepLaunchBank.slots || plan.some(selector => parseInt(selector, 36) >= fiveStepLaunchBank.variants))) return { kind: 'corrupt' };
+  // Its question bank is gone, so, like version 1, it never offers the original question set.
+  return { kind: 'result', result: { scoring: 'preference-score', stated, scored, custom, catalog, plan } };
 }
 
 /** Each value meets this many questions in a round, so no row of a version 3 link counts more. */
@@ -200,7 +180,7 @@ const maxPriorityCount = 3;
 /**
  * Format version 3: seven fields, rows `<count>-<id>…` with 1 ≤ count ≤ 3 strictly falling, then 明確決策題數 (≤ questions). Each
  * decided question adds 1 to one value, so the listed counts never add up to more than it, and rows exist exactly when it is not 0.
- * Interactive question links arrive with the entry switch (#71), so it never offers the original question set yet.
+ * A link made with today's bank offers its question set again.
  */
 function readVersion3(fields: readonly string[]): ResultLinkOutcome {
   if (fields.length !== 7) return { kind: 'corrupt' };
@@ -224,7 +204,9 @@ function readVersion3(fields: readonly string[]): ResultLinkOutcome {
   if (counted.some((row, index) => index > 0 && row.count >= counted[index - 1].count)) return { kind: 'corrupt' };
   const listed = counted.reduce((sum, row) => sum + row.count * row.ids.length, 0);
   if (decided > plan.length || listed > decided || (counted.length === 0) !== (decided === 0)) return { kind: 'corrupt' };
-  // A link made with today's bank must name one of its variants in every slot; an earlier bank's plan only has its syntax checked.
-  if (catalog === interactiveCatalog.version && !isInteractivePlan(plan)) return { kind: 'corrupt' };
-  return { kind: 'result', result: { scoring: 'priority-count', stated, counted, decided, custom, catalog, plan } };
+  const result: PrioritySharedResult = { scoring: 'priority-count', stated, counted, decided, custom, catalog, plan };
+  // An earlier bank's plan only has its syntax checked; a link made with today's bank must name one of its variants in every slot.
+  if (catalog !== interactiveCatalog.version) return { kind: 'result', result };
+  const questions = questionsOfPlan(plan);
+  return questions ? { kind: 'result', result, questions } : { kind: 'corrupt' };
 }

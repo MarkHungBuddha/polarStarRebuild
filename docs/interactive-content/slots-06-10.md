@@ -2,13 +2,13 @@
 
 題目在 `src/scenarios/interactive-slots-06-10.ts`，驗證在 `tests/interactive-slots-06-10.spec.ts`。
 
-這批文案和操作設定是 AI 依[互動情境題規格](../interactive-scenario-spec.md)、[ADR 0007](../adr/0007-interactive-scenario-answers.md) 與[題目撰寫須知](../content-authoring-notes.md)起草，再由 AI 逐題自審。沒有人工撰寫或審閱，也沒有經過心理計量驗證，不能拿來宣稱量到穩定的價值。正式切換入口前，要等專案負責人審閱通過。
+這批文案和操作設定是 AI 依[互動情境題規格](../interactive-scenario-spec.md)、[ADR 0007](../adr/0007-interactive-scenario-answers.md) 與[題目撰寫須知](../content-authoring-notes.md)起草，再由 AI 逐題自審。專案負責人在 2026-10-26 審閱通過，同日切換正式入口（#71）。題目不是人寫的，也沒有經過心理計量驗證，不能拿來宣稱量到穩定的價值。
 
 ## 共通處理
 
-- 沿用五段偏向版（`src/scenarios/preference-slots-06-10.ts`）的價值配對，大多也沿用原本的情境；A 一律是配對的第一個價值，方向只看 `valueId`。
+- 沿用五段偏向版（`src/scenarios/preference-slots-06-10.ts`，#71 已移除）的價值配對，大多也沿用原本的情境；A 一律是配對的第一個價值，方向只看 `valueId`。
 - 每組三個變體的順序固定為：分配或調整、選方案、調整或分配。15 題裡選方案、分配、調整各 5 題。
-- 開發預覽在 `Math.random` 固定為 0 時抽每組第一個變體，有些既有 spec 用 0.99 抽最後一個；這兩個位置都不放選方案題，舊 spec 用「平均分配」帶過其他題時才不會卡在卡片題上。
+- 每輪在 `Math.random` 固定為 0 時抽每組第一個變體，有些既有 spec 用 0.99 抽最後一個；這兩個位置都不放選方案題，舊 spec 用「平均分配」帶過其他題時才不會卡在卡片題上。
 - 分配題格數都是偶數（4、6 或 8 格），平均分配做得到。每一側的說明寫成「多一格得到什麼，也放下什麼」，作答時看得到代價。
 - 調整題的初始安排一定在題面先講清楚是誰排的、排成怎樣（行事曆、報名系統、場地預約），而且都說明改了不用付費或只要說一聲，避免「改了會被罰」把題目變成安全或規範題。
 - 原本只問接受條件的滑桿題（`study`、`weekends`、`accessible`、`environment`）都改寫成固定條件下的決策：週數、晚數或延後一個月都在題面寫定，不讓使用者自己報門檻。

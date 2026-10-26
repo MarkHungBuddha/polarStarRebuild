@@ -1,10 +1,9 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures';
-import { classifyValues, confirmCurrentScenario } from './support/experience';
+import { confirmDecision, startInteractiveScenarios } from './support/interactive';
 import { noChosen, resultLinksV1 } from './support/result-links-v1';
 import { chosenColumn, expectUnreadable, reachShare, statedColumn } from './support/result-share';
-import { scoreColumn } from './support/preference';
-import { catalog } from '../src/questionCatalog';
+import { interactiveCatalog } from '../src/interactiveCatalog';
 
 const storageSnapshot = (page: Page) => page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
 
@@ -34,7 +33,7 @@ test('定版範例連結的並列、第二幕沒有結果和全部並列都照�
 test('分享者的結果連結在別人的瀏覽器打開，兩份前三名和分數都相同', async ({ page, browser }) => {
   const share = await reachShare(page);
   await expect(share.getByRole('group', { name: '也分享自訂價值' })).toHaveCount(0);
-  await expect(share.getByText('結果圖和結果連結只放兩份前三名，不包含逐題答案和第一幕的完整排序。拿到圖片或連結的人都看得到這些內容。')).toBeVisible();
+  await expect(share.getByText('結果圖和結果連結只放兩份前三名和明確決策題數，不包含逐題安排、反思筆記和第一幕的完整排序。拿到圖片或連結的人都看得到這些內容。')).toBeVisible();
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).search).toBe('');
   const columns = page.getByRole('region', { name: '你的前三名' }).getByRole('list');
@@ -43,7 +42,7 @@ test('分享者的結果連結在別人的瀏覽器打開，兩份前三名和�
   const fresh = await (await browser.newContext()).newPage();
   await fresh.goto(link);
   await expect(statedColumn(fresh).getByRole('listitem')).toHaveText(stated);
-  await expect(scoreColumn(fresh, '分享者在情境中的偏向分數').getByRole('listitem')).toHaveText(chosen);
+  await expect(fresh.getByRole('heading', { name: '分享者在情境中優先保留的' }).locator('..').getByRole('listitem')).toHaveText(chosen);
   await fresh.context().close();
 });
 
@@ -70,15 +69,12 @@ test('舊版計分的結果連結不能再做同一份題目，改提供用目�
 });
 
 test('打開結果連結不讀也不寫本機的作答和已看題目紀錄', async ({ page, browser }) => {
-  await page.goto('/');
-  await classifyValues(page);
-  await page.getByRole('button', { name: '進入情境中的取捨' }).click();
-  await confirmCurrentScenario(page);
+  await startInteractiveScenarios(page);
+  await confirmDecision(page, '目前無法決定');
   const before = await storageSnapshot(page);
   expect(before).not.toBe('[]');
   await page.goto('/' + resultLinksV1.general.fragment);
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
-  await expect(page.getByText('上次的進度已保留。')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
   expect(await storageSnapshot(page)).toBe(before);
@@ -91,7 +87,7 @@ test('打開結果連結不讀也不寫本機的作答和已看題目紀錄', as
 
 test('網址同時有題目連結和結果連結時顯示結果；重新整理後還是同一份結果', async ({ page }) => {
   const link = resultLinksV1.general;
-  await page.goto(`/?seed=p.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1&v=${catalog.version}${link.fragment}`);
+  await page.goto(`/?seed=p.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1&v=${interactiveCatalog.version}${link.fragment}`);
   await expect(page.getByRole('heading', { level: 1, name: '這一次，分享者的選擇。' })).toBeVisible();
   await page.reload();
   expect(new URL(page.url()).hash).toBe(link.fragment);
