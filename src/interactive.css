@@ -19,3 +19,29 @@
 @media (max-width: 600px) {
   .allocation-sides, .allocation-cells { grid-template-columns: minmax(0, 1fr); }
 }
+.mechanic-extras { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.undecided-button { min-height: 44px; padding: 8px 16px; border: 1px dashed var(--opt-border); border-radius: var(--radius-control); background: transparent; color: var(--body); font-size: 14px; line-height: 1.5; cursor: pointer; }
+.undecided-button[aria-pressed='true'] { border-style: solid; border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.priority-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; margin: 12px 0 0; padding: 0; list-style: none; }
+.priority-counts li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--rule); }
+.priority-counts b { color: var(--muted); font-size: 14px; font-weight: 400; text-align: right; }
+@media (max-width: 600px) {
+  .priority-counts { grid-template-columns: minmax(0, 1fr); }
+}
+.decision-records summary { padding: 8px 0; color: var(--accent); font-weight: 700; cursor: pointer; }
+.decision-records ol { margin: 12px 0 0; padding: 0; list-style: none; }
+.decision-records .evidence-label { margin-right: 12px; }
+.counting-rules { margin: 24px 0; padding: 12px 20px; border-radius: var(--radius-sticky); background: var(--sticky); color: var(--ink); }
+.counting-rules summary { font-weight: 700; cursor: pointer; }
+.counting-rules ul { margin: 12px 0 4px; padding-left: 20px; line-height: 1.8; }
+.choice-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.choice-card { position: relative; display: grid; align-content: start; gap: 8px; padding: 20px 20px 20px 52px; border: 1px solid var(--opt-border); border-radius: var(--radius-paper); background: var(--paper); color: var(--body); line-height: 1.6; overflow-wrap: anywhere; text-wrap: pretty; cursor: pointer; }
+.choice-card:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice-card:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.choice-card input { position: absolute; top: 22px; left: 20px; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.choice-label { color: var(--ink); font-size: 18px; font-weight: 700; line-height: 1.5; }
+.choice-cost { display: flex; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--rule); }
+.choice-cost b { flex: none; color: var(--muted); font-size: 13px; line-height: 1.85; }
+@media (max-width: 600px) {
+  .choice-cards { grid-template-columns: minmax(0, 1fr); }
+}

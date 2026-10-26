@@ -12,6 +12,13 @@ export const appearancesPerValue = 3;
 /** A count as the second act shows it: 「N 次／3 題」. */
 export const priorityCountText = (count: number) => `${count} 次／${appearancesPerValue} 題`;
 
+/** A count in the full list of core values, where 0 reads 本輪未優先保留 (not 不重要). */
+export const fullListCountText = (count: number) => count ? priorityCountText(count) : '本輪未優先保留';
+
+/** 明確決策: confirmed answers this round that lean to one side; even splits and 目前無法決定 are not among them. */
+export const decidedCount = (session: Pick<InteractiveSession, 'scenarios' | 'answers'>) =>
+  session.scenarios.filter(scenario => answerDirection(scenario, session.answers[scenario.id])).length;
+
 /** Every core value's count. Each question adds at most 1, to the value its confirmed answer leans to; gaps and cell counts never weigh in. */
 export function priorityCounts(session: Pick<InteractiveSession, 'values' | 'scenarios' | 'answers'>): PriorityCount[] {
   const directions = session.scenarios.map(scenario => answerDirection(scenario, session.answers[scenario.id]));

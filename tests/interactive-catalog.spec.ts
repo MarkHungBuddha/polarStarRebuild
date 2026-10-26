@@ -41,3 +41,16 @@ test('初始安排題的現況每格標一側，格數為偶數，A／B 兩側�
     expect(new Set(sides.map(side => side.id)).size, scenario.id).toBe(2);
   }
 });
+
+test('選方案題恰有兩張卡片，各有方案內容與代價，A／B 依序對應價值配對，卡片文字不寫出價值名稱', () => {
+  for (const scenario of interactiveScenarios) {
+    if (scenario.interaction.kind !== 'choose') continue;
+    const { options } = scenario.interaction;
+    expect(options.map(option => option.valueId), scenario.id).toEqual([...scenario.pair]);
+    expect(new Set(options.map(option => option.id)).size, scenario.id).toBe(2);
+    for (const option of options) {
+      expect([option.label, option.content, option.cost].every(text => text.trim().length > 0), option.id).toBe(true);
+      expect(`${option.label}${option.content}${option.cost}`, option.id).not.toMatch(/自主|探索刺激|享受生活|成就|主導權|安全穩定|遵守規範|傳承|照顧身邊的人|普遍關懷/);
+    }
+  }
+});

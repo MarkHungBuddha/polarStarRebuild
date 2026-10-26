@@ -36,3 +36,20 @@ export const interactiveSampleWeekends: InteractiveScenario = {
     initial: [1, 1, 0, 1],
   },
 };
+
+/**
+ * AI 草稿，只供開發預覽打通選方案題，不是審閱過的題庫內容。跟六晚行事曆同屬 slot03，開發預覽固定抽第一個變體，
+ * 所以只有把 Math.random 調大的 spec 會抽到它。第 1–5 組的內容票（#68）寫好 slot03 時，跟上一題一起從題庫組合拿掉。
+ */
+export const interactiveSampleSaturday: InteractiveScenario = {
+  id: 'interactive-sample-saturday', slotId: 'slot03', pair: ['autonomy', 'care'], domain: '生活',
+  title: '這個週六，去上課還是去幫忙？',
+  setup: '你報名了一堂期待很久的單日木工課，就在這個週六，這次沒去要等明年才有名額。週五晚上，正在搬家的好友問你週六能不能來幫忙打包；他已經找了搬家公司，只是一個人收拾會很趕。兩件事時間重疊，只能選一件。這個週六，你會怎麼過？',
+  interaction: {
+    kind: 'choose',
+    options: [
+      { id: 'woodwork', label: '照原計畫去上木工課', content: '照自己排好的計畫，動手做出想了很久的小板凳。', cost: '朋友得自己收到半夜，你一整天都會惦記著他。', valueId: 'autonomy' },
+      { id: 'packing', label: '去幫朋友打包', content: '陪朋友一起收拾，讓他搬家輕鬆一點。', cost: '木工課要等到明年，想做的板凳先擱著。', valueId: 'care' },
+    ],
+  },
+};

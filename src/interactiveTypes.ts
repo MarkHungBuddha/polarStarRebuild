@@ -3,8 +3,9 @@ import type { Screen, ValueId, ValueItem } from './types';
 /*
  * The interactive second act's question and answer contracts (docs/interactive-scenario-spec.md, ADR 0007).
  * Each question declares one interaction; each confirmed answer is one of a few shapes whose direction needs no guessing
- * (interactiveAnswers.ts). Only allocation exists so far: 選方案 (#62) and 初始安排 (#63) add their members to `Interaction`,
- * and they and 目前無法決定 (#64) add theirs to `InteractiveAnswer`; every consumer switches on `kind`.
+ * (interactiveAnswers.ts). Interactions: allocation (#61), 從初始安排調整 (#63) and 選方案 (#62). Answers: one per interaction,
+ * plus 目前無法決定 (#64), which any question accepts. A new kind adds its members to `Interaction` and `InteractiveAnswer`;
+ * every consumer switches on `kind` (`answerDirection`, `decisionText`, `isAnswerTo`, the question dispatch in InteractivePreview.tsx).
  */
 
 /** One side of an allocation: what the cells given to it are spent on. Side A (first) and B lean to the slot's pair in order. */
@@ -30,7 +31,16 @@ export interface AdjustInteraction extends Omit<AllocationInteraction, 'kind'> {
   initial: readonly (0 | 1)[];
 }
 
-export type Interaction = AllocationInteraction | AdjustInteraction;
+/** One card of a 選方案 question: what the plan does and what it costs. Option A (first) and B lean to the slot's pair in order. */
+export interface ChoiceOption { id: string; label: string; content: string; cost: string; valueId: ValueId }
+
+/** 選一個方案: two mutually exclusive plans shown as cards; the user picks one. */
+export interface ChoiceInteraction {
+  kind: 'choose';
+  options: readonly [ChoiceOption, ChoiceOption];
+}
+
+export type Interaction = AllocationInteraction | AdjustInteraction | ChoiceInteraction;
 
 /** An interactive question variant. Slot, pair and three variants per slot work as in the five-step bank; `interaction` replaces its `kind: 'preference'`. */
 export interface InteractiveScenario {
@@ -56,8 +66,14 @@ export interface AllocationAnswer { kind: 'allocate'; variantId: string; counts:
  */
 export interface AdjustAnswer { kind: 'adjust'; variantId: string; counts: readonly [number, number]; kept: boolean }
 
+/** A confirmed 選方案 answer: the id of the card picked, which leans to that card's value. */
+export interface ChoiceAnswer { kind: 'choose'; variantId: string; optionId: string }
+
+/** 目前無法決定, confirmed like any answer and open to every interaction. It has no direction, unlike an unanswered question it counts as answered. */
+export interface UndecidedAnswer { kind: 'undecided'; variantId: string }
+
 /** Only confirmed answers are ever stored in a session; drafts stay in the question's own state. */
-export type InteractiveAnswer = AllocationAnswer | AdjustAnswer;
+export type InteractiveAnswer = AllocationAnswer | AdjustAnswer | ChoiceAnswer | UndecidedAnswer;
 
 export interface InteractiveSession {
   screen: Screen;

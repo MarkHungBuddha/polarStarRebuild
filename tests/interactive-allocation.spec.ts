@@ -17,7 +17,7 @@ test('平均分配兩側都不加次數，沒有方向時不產生第二幕排�
   await startInteractiveScenarios(page);
   await answerInteractiveByTitle(page, { [evenings]: '平均分配' });
   expect(await priorityRows(page)).toEqual([]);
-  await expect(page.getByText('這次的決策都沒有偏向哪一邊，不產生排名。')).toBeVisible();
+  await expect(page.getByText('這次沒有方向明確的決策，不產生第二幕排名。')).toBeVisible();
 });
 
 test('分配差距不加權：六比零和四比二一樣只記 1 次', async ({ page }) => {
