@@ -35,7 +35,7 @@ test('定版範例連結的並列、第二幕沒有結果和全部並列都照�
 test('分享者的結果連結在別人的瀏覽器打開，兩份前三名和分數都相同', async ({ page, browser }) => {
   const share = await reachShare(page);
   await expect(share.getByRole('group', { name: '也分享自訂價值' })).toHaveCount(0);
-  await expect(share.getByText('結果圖和結果連結只放兩份前三名和明確決策題數，不包含逐題安排、反思筆記和第一幕的完整排序。拿到圖片或連結的人都看得到這些內容。')).toBeVisible();
+  await expect(share.getByText('結果圖和結果連結只放兩份前三名、明確決策題數和你勾選的自訂價值，不包含逐題安排、反思筆記和第一幕的完整排序。拿到圖片或連結的人都看得到這些內容。')).toBeVisible();
   const link = await share.getByRole('textbox', { name: '結果連結' }).inputValue();
   expect(new URL(link).search).toBe('');
   const columns = page.getByRole('region', { name: '你的前三名' }).getByRole('list');
