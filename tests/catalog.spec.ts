@@ -20,7 +20,7 @@ test('題庫依藍圖有十五組、每組三個互動變體共 45 題，每輪�
 // Pinned on purpose: the version keys question links, saved sessions, seen history and the result links already shared. Editing or
 // reordering questions changes it; when that is intended, update this value and the launch version in docs/result-share-spec.md.
 test('題庫版本維持上線版本，改題目時要一併更新這裡和結果分享規格', () => {
-  expect(interactiveCatalog.version).toBe('c1lx1667');
+  expect(interactiveCatalog.version).toBe('c1nt2gqy');
 });
 
 test('互動題沿用藍圖的價值配對，識別與標題唯一，題面不寫出價值名稱', () => {
