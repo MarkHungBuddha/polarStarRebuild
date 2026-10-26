@@ -10,8 +10,12 @@ const visibleText = (pattern, message) => [
   { selector: `TemplateElement[value.raw=${pattern}]`, message },
   { selector: `JSXText[value=${pattern}]`, message },
 ];
+// GLOSSARY.md _Avoid_ labels that are never right on screen. Terms the copy uses in negated disclaimers (不代表真實行為, 不代表偏好強度)
+// stay with review.
+const glossaryAvoided = '/分享連結|結果網址|結果卡/';
 const srcSyntax = [
   ...visibleText(mainlandPattern, mainlandMessage),
+  ...visibleText(glossaryAvoided, 'Use the GLOSSARY.md term: 題目連結, 結果連結 or 結果圖.'),
   // The notebook look uses Chinese labels only; uppercase English words (MY SCHEDULE, NORTH STAR) were decoration the spec rules out.
   { selector: 'JSXText[value=/[A-Z]{2,}/]', message: 'Visible text is Chinese; uppercase English decoration is out of the techo spec (docs/techo-restyle-spec.md).' },
 ];
@@ -24,7 +28,13 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     files: ['src/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-syntax': ['error', ...srcSyntax] },
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      'no-restricted-syntax': ['error', ...srcSyntax],
+      // Answers and interactions are dispatched on `kind` in several places (src/interactiveTypes.ts); a new kind must fail
+      // every switch that misses it, since a silent fall-through drops the answer's direction.
+      '@typescript-eslint/switch-exhaustiveness-check': ['error', { considerDefaultExhaustiveForUnions: false }],
+    },
   },
   {
     // The registry only composes the slot files (CODING_STANDARDS.md「題庫」); question content lives in src/scenarios/interactive-slots-*.ts.

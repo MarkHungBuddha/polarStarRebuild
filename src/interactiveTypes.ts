@@ -5,7 +5,8 @@ import type { Screen, ValueId, ValueItem } from './types';
  * Each question declares one interaction; each confirmed answer is one of a few shapes whose direction needs no guessing
  * (interactiveAnswers.ts). Interactions: allocation (#61), 從初始安排調整 (#63) and 選方案 (#62). Answers: one per interaction,
  * plus 目前無法決定 (#64), which any question accepts. A new kind adds its members to `Interaction` and `InteractiveAnswer`;
- * every consumer switches on `kind` (`answerDirection`, `decisionText`, `isAnswerTo`, the question dispatch in App.tsx).
+ * every consumer switches on `kind` (`answerDirection`, `decisionText`, `isAnswerTo`, the question dispatch in App.tsx); ESLint's
+ * switch-exhaustiveness-check fails any `switch` that misses a kind.
  */
 
 /** One side of an allocation: what the cells given to it are spent on. Side A (first) and B lean to the slot's pair in order. */

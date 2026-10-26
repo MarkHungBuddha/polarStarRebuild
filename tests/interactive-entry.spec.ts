@@ -7,7 +7,7 @@ import { shareRegion } from './support/result-share';
 /** The question-only link the footer offers for the current round. */
 async function questionLink(page: Page) {
   await page.getByRole('button', { name: '分享這份題目', exact: true }).click();
-  return page.getByRole('textbox', { name: '題目分享連結' }).inputValue();
+  return page.getByRole('textbox', { name: '題目連結', exact: true }).inputValue();
 }
 
 /** From the home page: ranks the core values and answers every question 目前無法決定, returning the round's titles in order. */

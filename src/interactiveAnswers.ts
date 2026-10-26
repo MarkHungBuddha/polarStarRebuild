@@ -9,12 +9,18 @@ import type { ValueId, ValueItem } from './types';
  * A picked card leans to its value. An answer for another question never counts.
  */
 export function answerDirection(scenario: InteractiveScenario, answer: InteractiveAnswer | undefined): ValueId | undefined {
-  if (!answer || answer.variantId !== scenario.id || answer.kind === 'undecided') return undefined;
+  if (!answer || answer.variantId !== scenario.id) return undefined;
   const { interaction } = scenario;
-  if (answer.kind === 'choose') return interaction.kind === 'choose' ? interaction.options.find(option => option.id === answer.optionId)?.valueId : undefined;
-  if (interaction.kind === 'choose') return undefined;
-  const [a, b] = answer.counts;
-  return a === b ? undefined : interaction.sides[a > b ? 0 : 1].valueId;
+  switch (answer.kind) {
+    case 'undecided': return undefined;
+    case 'choose': return interaction.kind === 'choose' ? interaction.options.find(option => option.id === answer.optionId)?.valueId : undefined;
+    case 'allocate':
+    case 'adjust': {
+      if (interaction.kind === 'choose') return undefined;
+      const [a, b] = answer.counts;
+      return a === b ? undefined : interaction.sides[a > b ? 0 : 1].valueId;
+    }
+  }
 }
 
 /**
