@@ -171,3 +171,20 @@ export async function expectFocusRing(locator: Locator) {
   expect(outline.style).toBe('solid');
   expect(outline.width).toBeGreaterThanOrEqual(2);
 }
+
+/** No text inside `scope` ends with a line holding a single character (a lone 字 or punctuation mark wrapped onto its own line). */
+export async function expectNoLoneLastCharacter(scope: Locator) {
+  const lone = await scope.evaluate(root => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent?.trimEnd() ?? '';
+      if (text.length < 2 || node.parentElement?.offsetParent === null) continue;
+      const rectAt = (index: number) => { const range = document.createRange(); range.setStart(node!, index); range.setEnd(node!, index + 1); return range.getBoundingClientRect(); };
+      const [last, before] = [rectAt(text.length - 1), rectAt(text.length - 2)];
+      if (last.top - before.top > last.height / 2) found.push(text.slice(-12));
+    }
+    return found;
+  });
+  expect(lone).toEqual([]);
+}
