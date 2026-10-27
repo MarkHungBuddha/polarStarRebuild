@@ -33,9 +33,15 @@ export interface PreferenceSharedResult extends SharedConclusion { scoring: 'pre
  * Format version 3, interactive questions: each row's 優先保留次數 out of the three questions a value meets, plus 明確決策題數 (confirmed
  * answers with a direction). No rows means no answer had a direction. Version 1 also counted, but had no even split or 目前無法決定.
  */
-export interface PrioritySharedResult extends SharedConclusion { scoring: 'priority-count'; counted: SharedCountRow[]; decided: number }
+export interface LegacyPrioritySharedResult extends SharedConclusion { scoring: 'priority-count'; counted: SharedCountRow[]; decided: number }
+/**
+ * Format version 4, the six-mechanism interactive questions: the same rows as version 3, but the uncounted questions also include kept
+ * concrete decisions without a direction (sent-nothing, mixed, conditional), not only even splits and 目前無法決定. Its link says so by
+ * its version; a version 3 link is never read with this meaning.
+ */
+export interface PrioritySharedResult extends SharedConclusion { scoring: 'direction-count'; counted: SharedCountRow[]; decided: number }
 /** The conclusion a result link carries; `scoring` tells the meanings apart, and each keeps its numbers in its own rows. */
-export type SharedResult = LegacySharedResult | PreferenceSharedResult | PrioritySharedResult;
+export type SharedResult = LegacySharedResult | PreferenceSharedResult | LegacyPrioritySharedResult | PrioritySharedResult;
 
 /** At most this many custom values go into one result link (docs/result-share-spec.md). */
 export const maxSharedCustomValues = 10;
@@ -66,7 +72,7 @@ export function prioritySharedResultOf(session: InteractiveSession, custom: read
   const plan = interactivePlan(session.scenarios);
   if (!plan) return undefined;
   return {
-    scoring: 'priority-count',
+    scoring: 'direction-count',
     stated: byPosition(act1TopThree(session.values)).map(row => row.items.map(value => value.id)),
     counted: byPosition(priorityTopThree(priorityCounts(session))).map(row => ({ ids: row.items.map(item => item.value.id), count: row.items[0].count })),
     decided: decidedCount(session),
@@ -76,11 +82,11 @@ export function prioritySharedResultOf(session: InteractiveSession, custom: read
   };
 }
 
-/** Format version 3 (優先保留次數): `r=3.<first act>.<count>-<id>….<decided>.<custom values>.<v>.<plan>` (docs/result-share-spec.md). */
+/** Format version 4 (優先保留次數, six mechanisms): `r=4.<first act>.<count>-<id>….<decided>.<custom values>.<v>.<plan>` (docs/result-share-spec.md). */
 export function priorityResultLink(result: PrioritySharedResult, location: Pick<Location, 'origin' | 'pathname'>): string {
   const stated = result.stated.map(row => row.join('-')).join('~');
   const counted = result.counted.map(row => [row.count.toString(36), ...row.ids].join('-')).join('~');
-  return `${new URL(location.pathname, location.origin).href}#r=3.${stated}.${counted}.${result.decided.toString(36)}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
+  return `${new URL(location.pathname, location.origin).href}#r=4.${stated}.${counted}.${result.decided.toString(36)}.${result.custom.map(encodeCustom).join('~')}.${result.catalog}.${result.plan.join('-')}`;
 }
 
 function encodeCustom(word: string): string {
@@ -113,7 +119,8 @@ export function readResultLink(hash: string): ResultLinkOutcome | undefined {
   if (hash.length - 1 > 2000) return { kind: 'corrupt' };
   const fields = hash.slice(3).split('.');
   if (!/^(0|[1-9][0-9]*)$/.test(fields[0])) return { kind: 'corrupt' };
-  if (fields[0] === '3') return readVersion3(fields);
+  if (fields[0] === '3') return readCounts(fields, 'priority-count');
+  if (fields[0] === '4') return readCounts(fields, 'direction-count');
   if (fields[0] !== '1' && fields[0] !== '2') return { kind: 'unsupported' };
   if (fields.length !== 6) return { kind: 'corrupt' };
   return fields[0] === '1' ? readVersion1(fields) : readVersion2(fields);
@@ -175,11 +182,13 @@ function readVersion2(fields: readonly string[]): ResultLinkOutcome {
 }
 
 /**
- * Format version 3: seven fields, rows `<count>-<id>…` with 1 ≤ count ≤ 3 strictly falling, then 明確決策題數 (≤ questions). Each
- * decided question adds 1 to one value, so the listed counts never add up to more than it, and rows exist exactly when it is not 0.
- * A link made with today's bank offers its question set again.
+ * Format versions 3 and 4 share one syntax: seven fields, rows `<count>-<id>…` with 1 ≤ count ≤ 3 strictly falling, then 明確決策題數
+ * (≤ questions). Each decided question adds 1 to one value, so the listed counts never add up to more than it, and rows exist exactly
+ * when it is not 0. Only the meaning of the uncounted questions differs, so the result keeps its own `scoring`. Version 3 was written
+ * for the earlier banks and is never matched to today's: it only has its syntax checked and never offers a question set. A version 4
+ * link made with today's bank offers its question set again; one made with another bank is shown as shared, without it.
  */
-function readVersion3(fields: readonly string[]): ResultLinkOutcome {
+function readCounts(fields: readonly string[], scoring: 'priority-count' | 'direction-count'): ResultLinkOutcome {
   if (fields.length !== 7) return { kind: 'corrupt' };
   const [, statedField, countedField, decidedField, customField, catalog, planField] = fields;
   const plan = planField.split('-');
@@ -202,9 +211,8 @@ function readVersion3(fields: readonly string[]): ResultLinkOutcome {
   if (counted.some((row, index) => index > 0 && row.count >= counted[index - 1].count)) return { kind: 'corrupt' };
   const listed = counted.reduce((sum, row) => sum + row.count * row.ids.length, 0);
   if (decided > plan.length || listed > decided || (counted.length === 0) !== (decided === 0)) return { kind: 'corrupt' };
-  const result: PrioritySharedResult = { scoring: 'priority-count', stated, counted, decided, custom, catalog, plan };
-  // An earlier bank's plan only has its syntax checked; a link made with today's bank must name one of its variants in every slot.
-  if (catalog !== interactiveCatalog.version) return { kind: 'result', result };
+  const result: SharedResult = { scoring, stated, counted, decided, custom, catalog, plan };
+  if (scoring === 'priority-count' || catalog !== interactiveCatalog.version) return { kind: 'result', result };
   const questions = questionsOfPlan(plan);
   return questions ? { kind: 'result', result, questions } : { kind: 'corrupt' };
 }

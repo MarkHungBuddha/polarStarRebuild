@@ -9,15 +9,18 @@ import { interactiveCatalog } from '../src/interactiveCatalog';
 // (B, 安全穩定). Every other question is answered 目前無法決定.
 const trip = '六天的旅程，哪幾天自己排？';
 const recipientCounts = '分享者在情境中優先保留的';
-const versionLabel = '結果連結版本 3：優先保留次數';
+const versionLabel = '結果連結版本 4：優先保留次數';
+const v3Label = '結果連結版本 3：優先保留次數';
+const v3Undirected = '平均分配或「目前無法決定」的 3 題沒有方向，不計入優先保留次數。';
+const v4Undirected = /未計數的 \d+ 題可能是平均分配、目前無法決定，或保留具體決策但不判方向/;
 
 /** The second column of a top-three conclusion, found by its heading. */
 const countColumn = (page: Page, heading: string) => page.getByRole('heading', { name: heading, exact: true }).locator('..');
 
 /** Today's interactive bank has this many slots; a plan over it draws the first variant everywhere. */
 const slotCount = new Set(interactiveCatalog.scenarios.map(scenario => scenario.slotId)).size;
-/** A published version 3 link written against the bank of its day, swapped onto today's bank and all-first-variant plan. */
-const current = (fragment: string) => fragment.slice(0, fragment.lastIndexOf(`.${resultLinksV3Catalog}.`)) + `.${interactiveCatalog.version}.${Array(slotCount).fill('0').join('-')}`;
+/** A published version 3 link's fields, rewritten as a version 4 link of today's bank and all-first-variant plan. */
+const current = (fragment: string) => '#r=4' + fragment.slice('#r=3'.length, fragment.lastIndexOf(`.${resultLinksV3Catalog}.`)) + `.${interactiveCatalog.version}.${Array(slotCount).fill('0').join('-')}`;
 
 test('互動結果連結在別人的瀏覽器打開，前三名、次數和明確決策題數都和本人結果相同', async ({ page, browser }) => {
   await startInteractiveScenarios(page);
@@ -52,11 +55,16 @@ test('互動定版範例連結的並列、無排名、第一幕並列和自訂�
     await expect(countColumn(page, recipientCounts).getByRole('listitem')).toHaveText(link.counted);
     if (!link.counted.length) await expect(countColumn(page, recipientCounts).getByText(noRanking, { exact: true })).toBeVisible();
     await expect(page.getByText(link.decided, { exact: true })).toBeVisible();
-    await expect(page.getByText(versionLabel)).toBeVisible();
+    await expect(page.getByText(v3Label)).toBeVisible();
+    await expect(page.getByText(versionLabel)).toHaveCount(0);
+    // Version 3 keeps the wording it was published with: only even splits and 目前無法決定 were uncounted then.
     await expect(page.getByText(/平均分配和目前無法決定都不加次數/)).toBeVisible();
+    await expect(page.getByText('保留具體決策但不判方向')).toHaveCount(0);
     // The same counting rule the sharer's 結果怎麼整理 states.
     await expect(page.getByText(/每題最多讓一個價值多 1 次：選定的方案，或分得較多的一側，記 1 次；分配差距不加權。/)).toBeVisible();
     await expect(page.getByText(/偏向分數|舊版計分/)).toHaveCount(0);
+    // A version 3 link never offers a question set, whichever bank it names.
+    await expect(page.getByRole('button', { name: '用同一份題目作答' })).toHaveCount(0);
     const custom = page.getByRole('heading', { name: '分享者的自訂價值' }).locator('..').getByRole('listitem');
     await expect(custom).toHaveText('custom' in link ? link.custom : []);
   }
@@ -94,11 +102,12 @@ test('分享者逐項選擇自訂價值，勾選的才放進互動結果連結',
   await custom.getByRole('checkbox', { name: '保有獨處的時間' }).check();
   await custom.getByRole('checkbox', { name: '這就是我' }).check();
   const link = await shareRegion(page).getByRole('textbox', { name: '結果連結' }).inputValue();
-  expect(new URL(link).hash).toMatch(/^#r=3\.[^.]+\.[^.]*\.1\.5L-d5pyJ542o6JmV55qE5pmC6ZaT~6YCZ5bCx5piv5oiR\./);
+  expect(new URL(link).hash).toMatch(/^#r=4\.[^.]+\.[^.]*\.1\.5L-d5pyJ542o6JmV55qE5pmC6ZaT~6YCZ5bCx5piv5oiR\./);
 });
 
 // Each case breaks exactly one rule of an otherwise valid link (docs/result-share-spec.md「格式版本 3」); an earlier bank keeps the plan's own length as the question count.
 const v3 = (counted: string, decided = '9', v = 'c0ld', plan = '0-0-0-0-0-0-0-0-0') => `#r=3.autonomy~stimulation~hedonism.${counted}.${decided}..${v}.${plan}`;
+const v4 = (counted: string, decided = '9', v = 'c0ld', plan = '0-0-0-0-0-0-0-0-0') => v3(counted, decided, v, plan).replace('#r=3', '#r=4');
 
 test('互動格式的任何一條合法性規則不通過，整份結果都不顯示', async ({ page }) => {
   const cases: Record<string, string> = {
@@ -120,11 +129,15 @@ test('互動格式的任何一條合法性規則不通過，整份結果都不�
     '有排名卻沒有明確決策': v3('1-care', '0'),
     '少了明確決策題數那一欄': `#r=3.autonomy~stimulation~hedonism.2-care..c0ld.0-0-0-0-0-0-0-0-0`,
     '多一欄': v3('2-care') + '.0',
-    '題庫版本相同、題組對不到題庫': v3('1-care', '1', interactiveCatalog.version, Array(slotCount).fill('3').join('-')),
-    '題庫版本相同、題數不對': v3('1-care', '1', interactiveCatalog.version, Array(slotCount + 1).fill('0').join('-')),
+    '版本 4 的 0 次列入名次': v4('0-care'),
+    '版本 4 次數加起來超過明確決策題數': v4('3-care~2-autonomy-fairness', '6'),
+    '版本 4 有明確決策卻沒有排名': v4('', '1'),
+    '版本 4 少一欄': '#r=4.autonomy~stimulation~hedonism.2-care..c0ld.0-0-0-0-0-0-0-0-0',
+    '題庫版本相同、題組對不到題庫': v4('1-care', '1', interactiveCatalog.version, Array(slotCount).fill('3').join('-')),
+    '題庫版本相同、題數不對': v4('1-care', '1', interactiveCatalog.version, Array(slotCount + 1).fill('0').join('-')),
   };
   for (const [rule, fragment] of Object.entries(cases)) await expectUnreadable(page, fragment, corrupt).catch(error => { throw new Error(`${rule}：${error.message}`); });
-  await expectUnreadable(page, '#r=4' + resultLinksV3.general.fragment.slice('#r=3'.length), unsupported);
+  await expectUnreadable(page, '#r=5' + resultLinksV3.general.fragment.slice('#r=3'.length), unsupported);
 });
 
 test('互動格式的邊界剛好成立：次數 3、明確決策題數等於題數、次數加起來等於明確決策題數', async ({ page }) => {
@@ -145,4 +158,35 @@ test('反思筆記不會進入結果連結', async ({ page }) => {
   await page.getByRole('textbox', { name: '反思筆記（可不填）' }).fill('朋友那邊其實更急');
   await expect(linkBox).toHaveValue(before);
   expect(decodeURIComponent(before)).not.toContain('朋友那邊');
+});
+
+test('版本 3 的 v 和目前題庫相同也只照分享顯示，不假稱是新版題目；版本 4 才提供同一份題目', async ({ page }) => {
+  const nowPlan = Array(slotCount).fill('0').join('-');
+  await page.goto('/' + `#r=3.autonomy~stimulation~hedonism.1-autonomy.1..${interactiveCatalog.version}.${nowPlan}`);
+  await expect(page.getByText(v3Label)).toBeVisible();
+  await expect(page.getByText('這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。')).toBeVisible();
+  await expect(page.getByRole('button', { name: '用同一份題目作答' })).toHaveCount(0);
+  // A version 4 link of an earlier bank is shown as shared, with no same-question entry.
+  await page.goto('/' + v4('1-autonomy', '1', 'c0ld'));
+  await expect(page.getByText(versionLabel)).toBeVisible();
+  await expect(page.getByText('這份結果用的是舊版題目。題庫已經更新，沒辦法再做同一份題目。')).toBeVisible();
+  await expect(page.getByRole('button', { name: '用同一份題目作答' })).toHaveCount(0);
+  // A version 4 link of today's bank reproduces the same questions, and carries no answer.
+  await page.goto('/' + v4('1-autonomy', '1', interactiveCatalog.version, nowPlan));
+  await page.getByRole('button', { name: '用同一份題目作答' }).click();
+  await expect(page).toHaveURL(new RegExp(`[?]seed=p[.][0-9a-z.]+&v=${interactiveCatalog.version}$`));
+});
+
+test('沒有方向的題目在本人結果和收件者頁都說明未計數的三種原因，且不改寫成全部是平均或無法決定', async ({ page, browser }) => {
+  await startInteractiveScenarios(page);
+  await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
+  const link = await shareRegion(page).getByRole('textbox', { name: '結果連結' }).inputValue();
+  const own = await page.locator('.conclusion .caption').filter({ hasText: '未計數' }).textContent();
+  expect(own).toMatch(v4Undirected);
+  const fresh = await (await browser.newContext()).newPage();
+  await fresh.goto(link);
+  await expect(fresh.getByText(own!, { exact: true })).toBeVisible();
+  await expect(fresh.getByText(/保留具體決策但不判方向的題目（例如不傳訊息、混合考量、條件回報）都不加次數/)).toBeVisible();
+  await expect(fresh.getByText(v3Undirected)).toHaveCount(0);
+  await fresh.context().close();
 });

@@ -7,7 +7,7 @@ import { ShareActions } from './ShareActions';
 import { ShareCustomValues } from './ShareCustomValues';
 
 /**
- * The interactive result's「分享結果」block: what the result image and format version 3 result link make public, then the image, the
+ * The interactive result's「分享結果」block: what the result image and format version 4 result link make public, then the image, the
  * link and their actions. Both come from one public conclusion, so per-question arrangements and reflection notes never enter either.
  */
 export function InteractiveShare({ session }: { session: InteractiveSession }) {

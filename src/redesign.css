@@ -1,0 +1,7 @@
+.calendar-palette, .calendar-days { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.calendar-control button { min-height: 52px; min-width: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; touch-action: none; }
+.calendar-control button[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: 2px; }
+.calendar-days button { display: grid; gap: 12px; padding: 18px; text-align: left; }
+.object-picked { padding: 12px; border: 1px dashed currentColor; }
+.object-drag-ghost { position: fixed; z-index: 100; pointer-events: none; padding: 12px; background: var(--paper); border: 1px solid currentColor; }
+@media (max-width: 500px) { .calendar-palette, .calendar-days { grid-template-columns: minmax(0, 1fr); } }
