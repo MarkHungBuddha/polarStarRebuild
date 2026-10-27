@@ -6,6 +6,7 @@ import { redesignLinked } from './scenarios/redesign-linked';
 import { redesignResources } from './scenarios/redesign-resources';
 import { redesignSlots01To05 } from './scenarios/redesign-slots-01-05';
 import { redesignSlots06To10 } from './scenarios/redesign-slots-06-10';
+import { redesignSlots11To15 } from './scenarios/redesign-slots-11-15';
 import type { InteractiveScenario } from './interactiveTypes';
 
 /** Development review bank. Each completed mechanism contributes its own scenarios here. */
@@ -18,4 +19,5 @@ export const redesignScenarios: InteractiveScenario[] = [
   redesignMessage,
   ...redesignSlots01To05,
   ...redesignSlots06To10,
+  ...redesignSlots11To15,
 ];

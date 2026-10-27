@@ -27,7 +27,7 @@ export function CalendarQuestion({ scenario, answer, onConfirm, onBack, onReview
     if (undecided) onConfirm({ kind: 'undecided', variantId: scenario.id });
     else if (interaction.kind === 'calendar' && draft.every(side => side === 0 || side === 1)) onConfirm({ kind: 'calendar', variantId: scenario.id, placements: draft as (0 | 1)[] });
   };
-  return <ScenarioFrame scenario={scenario} caption={undecided ? '已選擇目前無法決定，請確認答案。' : '排完每天的行程後，再確認答案。'} canConfirm={undecided || draft.length > 0 && draft.every(side => side >= 0)} onConfirm={confirm} onBack={onBack} onReview={onReview}>
+  return <ScenarioFrame scenario={scenario} caption={undecided ? '已選擇目前無法決定，請確認答案。' : '每個空格都安排好後，再確認答案。'} canConfirm={undecided || draft.length > 0 && draft.every(side => side >= 0)} onConfirm={confirm} onBack={onBack} onReview={onReview}>
     {interaction.kind === 'calendar' && <CalendarControl key={`${controlVersion}-${undecided}`} interaction={interaction} placements={draft} onChange={change} />}
     <nav className="actions">
       <button className="secondary" disabled={!history.length} onClick={undo}>撤回最近一步</button>

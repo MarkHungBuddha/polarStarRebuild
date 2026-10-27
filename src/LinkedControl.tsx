@@ -38,7 +38,7 @@ export function LinkedControl({ interaction, value, onChange, onDragStart, onDra
           <circle className="linked-pin" cx="120" cy="120" r="5" />
         </svg>
         <p>拖動時針，或聚焦鐘面後按方向鍵；Home、End 移到兩端。</p>
-      </> : <div className="linked-calendar" aria-label="通知桌曆"><span>{interaction.label}</span><strong>{value}</strong><span>{interaction.unit}</span></div>}
+      </> : <div className="linked-calendar" aria-label={`${interaction.label}桌曆`}><span>{interaction.label}</span><strong>{value}</strong><span>{interaction.unit}</span></div>}
       <label>{interaction.label}（{interaction.unit}）<input type="range" min={interaction.min} max={interaction.max} step={interaction.step} value={value} onChange={event => onChange(Number(event.target.value))} /></label>
       <p>範圍 {interaction.min}–{interaction.max} {interaction.unit}，每次 {interaction.step} {interaction.unit}。</p>
     </div>

@@ -1,7 +1,8 @@
 import type { AllocationSide } from './interactiveTypes';
 
 /** Raw decisions, independent of their eventual direction. Kept alongside the legacy answer shapes. */
-export interface CalendarInteraction { kind: 'calendar'; slots: readonly string[]; sides: readonly [AllocationSide, AllocationSide] }
+/** `unit` names one slot in the live count (default 天) and `label` names the calendar for assistive technology (default 行事曆). */
+export interface CalendarInteraction { kind: 'calendar'; slots: readonly string[]; sides: readonly [AllocationSide, AllocationSide]; unit?: string; label?: string }
 export interface ResourceInteraction { kind: 'resources'; objects: readonly string[]; unit: string; sides: readonly [AllocationSide, AllocationSide]; initial?: readonly (0 | 1)[] }
 export interface SceneInteraction { kind: 'scene'; object: string; transitionLabel?: string; locations: readonly { id: string; label: string; action?: string; consequence: string; valueId?: AllocationSide['valueId'] }[] }
 export interface MessageInteraction { kind: 'message'; sentences: readonly { id: string; text: string }[] }

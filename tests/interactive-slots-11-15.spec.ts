@@ -8,11 +8,11 @@ const slots = ['slot11', 'slot12', 'slot13', 'slot14', 'slot15'] as const;
 test('第 11–15 組各恰有三個互動變體，沿用藍圖配對，三種互動各用五次，題面不寫出價值名稱也不催時間', () => {
   expectSlotContent(slots);
   // Slots 11–15 were drafted under one more rule: no wording of crossing out or finishing a sort.
-  for (const variant of slots.flatMap(variantsOf)) expect([variant.title, variant.setup].join(''), variant.id).not.toMatch(/刪掉|劃掉|排完|分完/);
+  for (const variant of slots.flatMap(slotId => variantsOf(slotId))) expect([variant.title, variant.setup].join(''), variant.id).not.toMatch(/刪掉|劃掉|排完|分完/);
 });
 
 test('有初始安排的題目，現況寫在題面裡', () => {
-  for (const variant of slots.flatMap(variantsOf)) {
+  for (const variant of slots.flatMap(slotId => variantsOf(slotId))) {
     if (variant.interaction.kind !== 'adjust') continue;
     // The setup tells what is already arranged, so the question has a 現況 to keep or change.
     expect(variant.setup, variant.id).toMatch(/已經|原本|先說好|初稿/);

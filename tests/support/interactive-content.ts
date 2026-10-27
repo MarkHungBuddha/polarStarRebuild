@@ -59,3 +59,47 @@ export function expectSlotContent(slotIds: readonly string[], scenarios: readonl
   // The live bank still uses the three original interactions evenly; the redesigned bank picks its mechanism per decision.
   if (scenarios === interactiveScenarios) for (const kind of ['allocate', 'adjust', 'choose']) expect(kinds.filter(item => item === kind), kind).toHaveLength(slotIds.length);
 }
+
+/**
+ * Mechanism data a redesigned question must carry so shared controls render it without per-question special cases and a direction
+ * exists only where the data defines one (#87): both sides of a pair in A, B order, an even number of equal units, and no
+ * direction at all for messages. Called by a batch's own spec; not part of the shared slot contract.
+ */
+export function expectMechanismData({ id, pair, interaction }: InteractiveScenario) {
+  const [first, second] = pair;
+  const sidesLean = (sides: readonly { valueId: string; detail: string }[]) => {
+    expect(sides.map(side => side.valueId), id).toEqual([first, second]);
+    // Each side says what it gains and what it gives up; the cost usually follows 「也」, sometimes 「就」.
+    for (const side of sides) expect(side.detail, id).toMatch(/也|就/);
+  };
+  switch (interaction.kind) {
+    case 'calendar': expect(interaction.slots.length % 2, `${id} slots can split evenly`).toBe(0); expect(new Set(interaction.slots).size, id).toBe(interaction.slots.length); sidesLean(interaction.sides); break;
+    case 'resources':
+      expect(interaction.objects.length % 2, `${id} objects can split evenly`).toBe(0); expect(new Set(interaction.objects).size, id).toBe(interaction.objects.length); sidesLean(interaction.sides);
+      if (interaction.initial) expect(interaction.initial, id).toHaveLength(interaction.objects.length);
+      break;
+    case 'scene':
+      expect(interaction.locations.map(location => location.valueId), id).toEqual([first, second]);
+      for (const location of interaction.locations) { expect(location.action, `${id} ${location.id} names the action`).toBeTruthy(); expect(location.consequence.length, id).toBeGreaterThan(10); }
+      break;
+    case 'message': {
+      expect(interaction.sentences.length, id).toBeGreaterThanOrEqual(5);
+      expect(new Set(interaction.sentences.map(sentence => sentence.id)).size, id).toBe(interaction.sentences.length);
+      for (const sentence of interaction.sentences) expect(sentence.text, `${id} ${sentence.id} ends as a sentence`).toMatch(/[。！？」]$/);
+      break;
+    }
+    case 'priority': {
+      expect(interaction.capacity, id).toBeGreaterThan(0); expect(interaction.capacity, id).toBeLessThan(interaction.items.length);
+      expect(interaction.resourceUnit, `${id} names the unit of a kept item`).toBeTruthy();
+      for (const valueId of pair) expect(interaction.items.filter(item => item.valueId === valueId).length, `${id} candidates for ${valueId}`).toBeGreaterThanOrEqual(interaction.capacity - 1);
+      expect(interaction.items.every(item => item.valueId && pair.includes(item.valueId as never)), id).toBe(true);
+      break;
+    }
+    case 'linked':
+      if (interaction.resourceSides) { sidesLean(interaction.resourceSides); expect([interaction.min, interaction.max, interaction.resourceTotal], id).toEqual([0, interaction.resourceTotal, interaction.resourceTotal]); }
+      break;
+    case 'choose': expect(interaction.options.map(option => option.valueId), id).toEqual([first, second]); break;
+    case 'allocate':
+    case 'adjust': sidesLean(interaction.sides); break;
+  }
+}
