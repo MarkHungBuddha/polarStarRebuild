@@ -57,7 +57,7 @@ test('平均分配與目前無法決定照原樣記錄，標成無法對照，�
 test('整理規則收在可展開的「結果怎麼整理」，結果用語不說言行矛盾或真實行為', async ({ page }) => {
   await startInteractiveScenarios(page);
   const titles = await answerInteractiveByTitle(page, { [trip]: { allocate: [4, 2] } });
-  const rule = page.getByText(/平均分配和目前無法決定都不加次數/);
+  const rule = page.getByText(/平均分配、目前無法決定，以及保留具體決策但不判方向的題目.*都不加次數/);
   await expect(rule).toBeHidden();
   await page.getByText('結果怎麼整理', { exact: true }).click();
   await expect(rule).toBeVisible();
